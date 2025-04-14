@@ -8,7 +8,11 @@ services:
     ports:
       - "3000:3000"
     volumes:
+      # reactproject(ホスト(PC側))の内容をコンテナ(Docker上)のAppに上書き
       - ./react-project:/app
+      # コンテナのapp/node_modulesだけは上書きから除外(axiosなどをコンテナでインストールしてるから)
+      # これでnpmの別途インストールもいらないはず
+      - /app/node_modules
     environment:
       # Docker for Mac/Windows などの場合、ホットリロードのために必要な場合あり
       - CHOKIDAR_USEPOLLING=true
