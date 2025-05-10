@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import axios from 'axios';
+import Navigation from './components/Navigation'; // Navigation.jsx のパスを正しく指定してください
+import {Container, Typography} from '@mui/material'; // コンテンツ用のコンテナ
 
 function App() {
   useEffect(() => {
@@ -21,6 +23,17 @@ function App() {
   return (
     <div className="App">
       <p>コンソールを確認してください。</p>
+      <Navigation />
+      {/* ナビゲーションバー以下のコンテンツエリア */}
+      <Container sx={{ mt: 4 }}> {/* 上部にマージンを追加 */}
+        <Typography variant="h4" component="h1" gutterBottom>
+          メインコンテンツエリア
+        </Typography>
+        <Typography variant="body1">
+          ここにアプリケーションの主要なコンテンツが表示されます。
+        </Typography>
+        {/* 他のコンポーネントや要素をここに追加できます */}
+      </Container>
     </div>
   );
 }
