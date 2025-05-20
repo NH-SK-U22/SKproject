@@ -1,0 +1,246 @@
+.container {
+  min-height: 97vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.bgShape {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: transparent;
+  border-radius: 50%;
+  z-index: 0;
+  overflow: visible;
+}
+
+.bgShape1 {
+  top: 6%;
+  left: 12%;
+}
+.bgShape2 {
+  top: 18%;
+  right: 10%;
+}
+.bgShape3 {
+  bottom: 12%;
+  left: 14%;
+}
+.bgShape4 {
+  bottom: 10%;
+  right: 12%;
+}
+.bgShape5 {
+  bottom: 44%;
+  left: 23%;
+}
+
+.bgShapeMoon {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  z-index: 0;
+  clip-path: ellipse(60% 100% at 40% 50%);
+}
+.bgShape1 .bgShapeMoon {
+  background: #ffd16688;
+  box-shadow: 0 0 16px 4px #ffd16688, 0 0 32px 8px #ffd16644;
+  transform: rotate(-20deg);
+}
+.bgShape2 .bgShapeMoon {
+  background: #06d6a088;
+  box-shadow: 0 0 16px 4px #06d6a088, 0 0 32px 8px #06d6a044;
+  transform: rotate(30deg);
+}
+.bgShape3 .bgShapeMoon {
+  background: #ff6b6b88;
+  box-shadow: 0 0 16px 4px #ff6b6b88, 0 0 32px 8px #ff6b6b44;
+  transform: rotate(-45deg);
+}
+.bgShape4 .bgShapeMoon {
+  background: #bca1df88;
+  box-shadow: 0 0 16px 4px #bca1df88, 0 0 32px 8px #bca1df44;
+  transform: rotate(15deg);
+}
+
+.bgShapeMask {
+  position: absolute;
+  width: 48px;
+  height: 60px;
+  left: 22px;
+  top: 0;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.signinBox {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  z-index: 1;
+}
+
+.signinBox h2 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #333;
+}
+
+.userTypeSelector {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 5rem;
+  background: transparent;
+  border-radius: 0;
+}
+
+.typeButton {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: none;
+  cursor: pointer;
+}
+
+.avatarWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.avatarImg {
+  width: 55px;
+  height: 55px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.18);
+  background: #eee;
+  object-fit: cover;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.typeButton.active:first-child .avatarImg {
+  border: 2px solid #ff6b6b;
+  box-shadow: 0 0 0 6px #ffc7c7, 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.typeButton.active:last-child .avatarImg {
+  border: 2px solid #00e6b8;
+  box-shadow: 0 0 0 6px #00e6b888, 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.typeLabel {
+  margin: 0;
+  margin-top: 0.1rem;
+  color: #ff6b6b;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+
+.typeButton.active .typeLabel {
+  color: #f83b3b;
+}
+
+.typeButton:last-child .typeLabel {
+  color: #00e6b8;
+}
+
+.typeButton.active:last-child .typeLabel {
+  color: #00bfa3;
+}
+
+.inputGroup {
+  margin-bottom: 1.3rem;
+}
+
+.inputGroup label {
+  margin-bottom: 0.5rem;
+  color: #333;
+  display: block;
+}
+
+.inputGroup input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1.1rem;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 0.75rem;
+  color: white;
+  background-color: #ffd166;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 4px 1px #ffd16688, 0 0 8px 2px #ffd16644;
+}
+
+.submitButton:hover {
+  background: rgb(255, 204, 64);
+  box-shadow: 0 0 8px 2px #ffd166cc, 0 0 12px 4px #ffd16688;
+}
+
+.loginLink {
+  text-align: center;
+  margin-top: 1.3rem;
+  color: #666;
+}
+
+.loginLink a {
+  color: #ffd166;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 0.5rem;
+}
+
+.loginLink a:hover {
+  text-decoration: underline;
+}
+.bgShape5 .bgShapeMoon {
+  background: #64dffcbb;
+  box-shadow: 0 0 16px 4px #64dffcbb, 0 0 32px 8px #64dffc77;
+  transform: rotate(60deg);
+}
+
+.bgFrosted {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  pointer-events: none;
+}
