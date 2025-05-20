@@ -1,0 +1,30 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  frontend:
+    build:
+      context: ./frontend
+    volumes:
+      - ./frontend:/app       # ソースマウントでホットリロード
+      - /app/node_modules     # コンテナ内 node_modules
+    ports:
+      - '3000:3000'
+    depends_on:
+      - backend
+    environment:
+      # ファイル変更をポーリングで監視
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=50
+
+  backend:
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/app        # ソースマウント
+    ports:
+      - '5000:5000'
+    environment:
+      # 念のため再指定（Dockerfile の ENV と重複しても OK）
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+      - PYTHONUNBUFFERED=1
