@@ -1,0 +1,143 @@
+.sidebar {
+  left: 0;
+  top: 0;
+  width: 70px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  background-color: #fff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  transition: width 0.3s;
+}
+
+.sidebar:hover {
+  width: 220px;
+}
+
+.logo {
+  margin-top: 20px;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 40px;
+}
+
+.logoText {
+  max-width: 0;
+  margin-left: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  display: inline-block;
+  font-size: 1.6rem;
+  font-weight: 700;
+  transition: opacity 0.3s, max-width 0.3s, margin-left 0.3s;
+}
+
+.sidebar:hover .logo {
+  width: 90%;
+  justify-content: flex-start;
+}
+
+.sidebar:hover .logoText {
+  max-width: 200px;
+  margin-left: 12px;
+  opacity: 1;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 30px;
+  width: 100%;
+}
+
+.sidebar:hover .menu {
+  align-items: flex-start;
+}
+
+.menuItem {
+  width: 36px;
+  height: 36px;
+  margin: 0 auto;
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, justify-content 0.3s;
+}
+
+.sidebar:hover .menuItem {
+  width: 89%;
+  justify-content: flex-start;
+}
+
+.menuItem svg {
+  width: 28px;
+  height: 28px;
+  color: #222;
+  transition: color 0.2s;
+}
+
+.menuItem.selected svg,
+.menuItem:hover svg,
+.profile:hover svg {
+  color: #00e6b8;
+  background-color: #EBFEF6;
+}
+
+.menuItem:hover,
+.menuItem.selected,
+.profile:hover {
+  background-color: #EBFEF6;
+}
+
+.profile {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.profileItem {
+  margin-bottom: 20px;
+}
+
+.sidebar:hover .profile {
+  width: 90%;
+  justify-content: flex-start;
+}
+
+.menuText {
+  display: none;
+  margin-left: 16px;
+  white-space: nowrap;
+  font-size: 1rem;
+  color: #222;
+}
+
+.sidebar:hover .menuText {
+  display: inline;
+}
+
+.sidebar:hover .logo,
+.sidebar:hover .profile {
+  width: 90%;
+  justify-content: flex-start;
+} 
