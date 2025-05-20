@@ -4,6 +4,11 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 
+// バックエンドからのレスポンスの型を定義
+interface BackendResponse {
+  status: string;
+}
+
 function App() {
   const [count, setCount] = useState(0);
   const [message, setMessage] = useState<string | null>(null); // バックエンドからのメッセージを保持するstate
@@ -13,17 +18,24 @@ function App() {
     // バックエンドAPIのエンドポイント
     const apiUrl = 'http://localhost:5000/'; // app.pyのルートパス
 
-    axios.get(apiUrl)
+    // axios.getに型を指定して、レスポンスデータの型安全性を高める
+    axios.get<BackendResponse>(apiUrl)
       .then(response => {
         // 成功した場合、レスポンスデータをコンソールに表示
         console.log('Data from backend:', response.data);
-        // 必要であればstateに保存
+        // stateに保存
         setMessage(response.data.status);
       })
       .catch(error => {
         // エラーが発生した場合、エラーをコンソールに表示
         console.error('Error fetching data:', error);
-        setMessage('Failed to fetch data');
+        if (axios.isAxiosError(error)) {
+          // Axiosエラーの場合、より詳細な情報をログに出力
+          console.error('Error details:', error.response?.data || error.message);
+          setMessage(`Failed to fetch data: ${error.message}`);
+        } else {
+          setMessage('Failed to fetch data: An unknown error occurred');
+        }
       });
   }, []); // 空の依存配列は、このeffectがマウント時に一度だけ実行されることを意味します
 
