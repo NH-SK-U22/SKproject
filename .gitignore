@@ -1,0 +1,15 @@
+# ルート
+**/.DS_Store
+**/__pycache__/
+**/*.py[cod]
+**/venv/
+
+# frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+
+# backend
+/backend/__pycache__/
+/backend/*.pyc
+/backend/.env
