@@ -1,6 +1,6 @@
 import { FaRegSmile, FaRegBell, FaUserCircle } from "react-icons/fa";
 import { LuLayoutDashboard } from "react-icons/lu";
-import { IoChatbubbleEllipsesOutline } from "react-icons/io5";
+import { MdCreate } from "react-icons/md";
 import { ImCoinYen } from "react-icons/im";
 import { PiRanking } from "react-icons/pi";
 import styles from "./Sidebar.module.css";
@@ -22,8 +22,8 @@ const Sidebar = () => {
           <span className={styles.menuText}>通知</span>
         </div>
         <div className={styles.menuItem}>
-          <IoChatbubbleEllipsesOutline />
-          <span className={styles.menuText}>チャット</span>
+          <MdCreate />
+          <span className={styles.menuText}>作成</span>
         </div>
         <div className={styles.menuItem}>
           <ImCoinYen />
