@@ -1,9 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/Login/Login";
-import Signin from "./components/Signin/Signin";
-import Dashboard from "./components/Dashboard/Dashboard";
+import Login from "./pages/Login/Login";
+import Signin from "./pages/Signin/Signin";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import SelectUsrtype from "./components/SelectUsertype/SelectUsertype";
 import Loading from "./components/Loading/Loading";
+import Setting from "./pages/Setting/Setting";
 import "./App.css";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/usertypeSelect" element={<SelectUsrtype />} />
           <Route path="/loading" element={<Loading />} />
+          <Route path="/setting" element={<Setting />} />
         </Routes>
       </Router>
     </>
