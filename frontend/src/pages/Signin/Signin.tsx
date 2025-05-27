@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import styles from "./Signin.module.css";
 
 const Signin = () => {
@@ -35,10 +35,21 @@ const Signin = () => {
         <h2>Sign in</h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
-            <label>{userType === "student" ? "学籍番号" : "教員番号"}</label>
+            <label>クラス記号</label>
             <input
               type="text"
-              name="email"
+              name="classNumber"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              autoComplete="email"
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label>{userType === "student" ? "出席番号" : "教員番号"}</label>
+            <input
+              type="text"
+              name="Number"
               value={formData.email}
               onChange={handleChange}
               required
@@ -56,24 +67,13 @@ const Signin = () => {
               autoComplete="new-password"
             />
           </div>
-          <div className={styles.inputGroup}>
-            <label>パスワード ( 確認 )</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              autoComplete="new-password"
-            />
-          </div>
           <button type="submit" className={styles.submitButton}>
             Sign in
           </button>
         </form>
         <p className={styles.loginLink}>
           すでにアカウントをお持ちの方は
-          <a href={"/login?userType=" + userType}> Login</a>
+          <Link to={`/login?userType=${userType}`}> Login</Link>
         </p>
       </div>
     </div>

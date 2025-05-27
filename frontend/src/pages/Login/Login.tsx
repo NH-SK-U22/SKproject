@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import styles from "./Login.module.css";
 
 const Login = () => {
@@ -57,7 +57,7 @@ const Login = () => {
         </form>
         <p className={styles.signupLink}>
           アカウントをお持ちでない方は
-          <a href={`/signin?userType=${userType}`}> Sign in</a>
+          <Link to={`/signin?userType=${userType}`}> Sign in</Link>
         </p>
       </div>
     </div>

@@ -1,0 +1,114 @@
+/* post form */
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e7e6ef;
+}
+
+.createForm {
+  width: 350px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+h2 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.formLabel {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #888;
+}
+
+.formTextarea {
+  min-height: 80px;
+  padding: 10px;
+  font-size: 15px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  resize: none;
+}
+
+.buttonGroup {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancelBtn {
+  padding: 8px 18px;
+  color: #888;
+  background-color: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.postBtn {
+  padding: 8px 18px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: bold;
+  background-color: #a084e8;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.postBtn:hover {
+  background-color: #a084e8bb;
+}
+
+/* color picker */
+.colorPicker {
+  display: flex;
+  align-items: center;
+}
+
+.label {
+  margin-right: 16px;
+  color: #888;
+  font-size: 16px;
+}
+
+.colorList {
+  display: flex;
+  gap: 16px;
+}
+
+.colorCircle {
+  width: 32px;
+  height: 32px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.colorCircle.selected {
+  box-shadow: 0 0 0 4px #b2f1ee;
+}
+
+.check {
+  padding: 2px 5px;
+  position: absolute;
+  color: #fff;
+  background-color: transparent;
+  font-size: 18px;
+  border-radius: 50%;
+}
