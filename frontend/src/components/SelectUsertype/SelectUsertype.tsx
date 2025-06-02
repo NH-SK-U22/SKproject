@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+// react
+import React from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+// assets
 import studentImg from "../../assets/student.png";
 import teacherImg from "../../assets/teacher.png";
+
+// css
 import styles from "./SelectUsertype.module.css";
 
 const SelectUser = () => {

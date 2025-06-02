@@ -95,13 +95,13 @@
 .menuItem:hover svg,
 .profile:hover svg {
   color: #00e6b8;
-  background-color: #EBFEF6;
+  background-color: #ebfef6;
 }
 
 .menuItem:hover,
 .menuItem.selected,
 .profile:hover {
-  background-color: #EBFEF6;
+  background-color: #ebfef6;
 }
 
 .profile {
@@ -140,4 +140,4 @@
 .sidebar.expanded .profile {
   width: 90%;
   justify-content: flex-start;
-} 
+}

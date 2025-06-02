@@ -1,0 +1,78 @@
+.dashboardContainer {
+  display: flex;
+  min-height: 100vh;
+  background-color: #fff;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 80px;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+.notesGrid {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 600px;
+  padding: 0;
+}
+
+.stickyNote {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.stickyNote.dragging {
+  transform: scale(1);
+  box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
+.noteText {
+  padding: 15px;
+  color: #333;
+  font-size: 1rem;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  word-wrap: break-word;
+}
+
+/* 付箋の右下隅の折り目効果 */
+.cornerFold {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.1) 50%);
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+
+.ellipsis {
+  margin-top: 12px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  cursor: grab;
+}
+
+.ellipsis span {
+  display: block;
+  width: 8px;
+  height: 8px;
+  background: #ccc;
+  border-radius: 50%;
+}
