@@ -4,71 +4,74 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #e7e6ef;
+  background-color: #fff;
 }
 
 .createForm {
-  width: 350px;
-  padding: 32px 28px;
+  width: 450px;
+  padding: 40px 32px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   background-color: #fff;
   border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 16px 4px rgba(0, 0, 0, 0.1);
 }
 
 h2 {
-  margin: 0 0 8px 0;
-  font-size: 24px;
+  margin: 0 0 10px 0;
+  font-size: 1.6rem;
   font-weight: bold;
 }
 
-.formLabel {
-  margin-bottom: 4px;
-  font-size: 14px;
-  color: #888;
-}
-
 .formTextarea {
-  min-height: 80px;
+  min-height: 200px;
+  margin-bottom: 10px;
   padding: 10px;
-  font-size: 15px;
+  font-size: 1rem;
   border: 1.5px solid #e0e0e0;
   border-radius: 10px;
   resize: none;
 }
 
 .buttonGroup {
-  margin-top: 8px;
+  margin-top: 1rem;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
 .cancelBtn {
-  padding: 8px 18px;
+  padding: 8px 20px;
   color: #888;
   background-color: #fff;
   border: 1.5px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 15px;
   cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancelBtn:hover {
+  color: #fff;
+  background-color: #333;
+  border: 1.5px solid #333;
 }
 
 .postBtn {
-  padding: 8px 18px;
+  padding: 8px 26px;
   color: #fff;
   font-size: 15px;
   font-weight: bold;
   background-color: #a084e8;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   cursor: pointer;
+  transition: all 0.3s;
 }
 
 .postBtn:hover {
-  background-color: #a084e8bb;
+  background-color: #8651d6;
 }
 
 /* color picker */
@@ -98,10 +101,6 @@ h2 {
   border-radius: 50%;
   cursor: pointer;
   transition: box-shadow 0.2s;
-}
-
-.colorCircle.selected {
-  box-shadow: 0 0 0 4px #b2f1ee;
 }
 
 .check {

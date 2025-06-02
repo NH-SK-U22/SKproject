@@ -1,26 +1,45 @@
+// react
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { usePost } from "../../context/PostContext";
+
+// components
+import Sidebar from "../../components/Sidebar/Sidebar";
+
+// css
 import styles from "./Create.module.css";
 
-export default function AddPostForm() {
+const Create = () => {
   const colors = ["#ffdf88", "#e0f7f4", "#ffc3c3", "#e8dff5", "#cdf7ff"];
-
   const [post, setPost] = useState("");
   const [selectColor, setSelectColor] = useState(0);
+  const navigate = useNavigate();
+  const { addPost } = usePost();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (post.trim() === "") return;
+
+    addPost({
+      text: post,
+      color: colors[selectColor],
+    });
+
+    setPost("");
+    setSelectColor(0);
+    navigate("/dashboard");
+  };
 
   return (
     <div className={styles.container}>
-      <form className={styles.createForm}>
+      <Sidebar />
+      <form className={styles.createForm} onSubmit={handleSubmit}>
         <h2>Add new post</h2>
-
-        {/* post */}
-        <label className={styles.formLabel}>Post</label>
         <textarea
           className={styles.formTextarea}
           value={post}
           onChange={(e) => setPost(e.target.value)}
         />
-
-        {/* color picker */}
         <div className={styles.colorPicker}>
           <span className={styles.label}>Color</span>
           <div className={styles.colorList}>
@@ -28,9 +47,11 @@ export default function AddPostForm() {
               <div
                 key={color}
                 className={`${styles.colorCircle}${
-                  selectColor === idx ? " selected" : ""
+                  selectColor === idx ? " " + styles.selected : ""
                 }`}
-                style={{ backgroundColor: color }}
+                style={{
+                  backgroundColor: color,
+                }}
                 onClick={() => setSelectColor(idx)}
               >
                 {selectColor === idx && (
@@ -40,9 +61,12 @@ export default function AddPostForm() {
             ))}
           </div>
         </div>
-
         <div className={styles.buttonGroup}>
-          <button type="button" className={styles.cancelBtn}>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            onClick={() => navigate("/dashboard")}
+          >
             Cancel
           </button>
           <button type="submit" className={styles.postBtn}>
@@ -52,4 +76,6 @@ export default function AddPostForm() {
       </form>
     </div>
   );
-}
+};
+
+export default Create;

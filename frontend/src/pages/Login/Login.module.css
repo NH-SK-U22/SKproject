@@ -32,6 +32,25 @@
   margin-bottom: 1.8rem;
 }
 
+.loginBox .inputWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.loginBox .inputIcon {
+  position: absolute;
+  left: 1rem;
+  color: #999;
+  font-size: 1.1rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.loginBox .largeIcon {
+  font-size: 1.3rem;
+}
+
 .loginBox .inputGroup label {
   margin-bottom: 0.5rem;
   color: #333;
@@ -42,17 +61,54 @@
 .loginBox .inputGroup input {
   width: 100%;
   margin-bottom: 0.05rem;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1rem 0.75rem 3rem;
   box-sizing: border-box;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1.15rem;
 }
 
+.loginBox .inputGroup input::placeholder {
+  color: #999;
+  font-size: 1rem;
+  font-weight: 400;
+  font-family: "Noto Sans JP", sans-serif;
+  opacity: 1;
+}
+
+.loginBox .inputGroup input::-webkit-input-placeholder {
+  color: #999;
+  font-size: 1rem;
+  font-weight: 400;
+  font-family: "Noto Sans JP", sans-serif;
+  opacity: 1;
+}
+
+.loginBox .inputGroup input::-moz-placeholder {
+  color: #999;
+  font-size: 1rem;
+  font-weight: 400;
+  font-family: "Noto Sans JP", sans-serif;
+  opacity: 1;
+}
+
+.loginBox .inputGroup input:-ms-input-placeholder {
+  color: #999;
+  font-size: 1rem;
+  font-weight: 400;
+  font-family: "Noto Sans JP", sans-serif;
+  opacity: 1;
+}
+
 .loginBox .inputGroup input:focus {
-  border: 2px solid #ffd166;
-  box-shadow: 0 2px 8px 0 #ffd16644;
+  border: 1px solid #ffd166;
+  box-shadow: 0 0 0 1px #ffd166, 0 2px 8px 0 #ffd16644;
   outline: none;
+}
+
+.loginBox .inputGroup input:focus + .loginBox .inputIcon,
+.loginBox .inputWrapper input:focus ~ .loginBox .inputIcon {
+  color: #ffd166;
 }
 
 .submitButton {
