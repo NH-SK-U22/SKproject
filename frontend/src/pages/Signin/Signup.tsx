@@ -5,22 +5,28 @@ import type { FormEvent, ChangeEvent } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 
 // css
-import styles from "./Login.module.css";
+import styles from "./Signup.module.css";
 
 // icons
-import { FaUser, FaLock } from "react-icons/fa";
+import { FaSchool, FaUser, FaLock } from "react-icons/fa";
 
-const Login = () => {
+const Signup = () => {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("userType") || "student";
   const [formData, setFormData] = useState({
+    classNumber: "",
     userId: "",
     password: "",
+    confirmPassword: "",
   });
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Login data:", formData);
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+    console.log("Signup data:", formData);
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -32,9 +38,23 @@ const Login = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.loginBox}>
-        <h2>Login</h2>
+      <div className={styles.signupBox}>
+        <h2>Sign up</h2>
         <form onSubmit={handleSubmit}>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWrapper}>
+              <FaSchool className={`${styles.inputIcon} ${styles.largeIcon}`} />
+              <input
+                type="text"
+                name="classNumber"
+                value={formData.classNumber}
+                onChange={handleChange}
+                placeholder="クラス記号"
+                required
+                autoComplete="off"
+              />
+            </div>
+          </div>
           <div className={styles.inputGroup}>
             <div className={styles.inputWrapper}>
               <FaUser className={styles.inputIcon} />
@@ -59,21 +79,35 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="パスワード"
                 required
-                autoComplete="current-password"
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWrapper}>
+              <FaLock className={styles.inputIcon} />
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="パスワード確認"
+                required
+                autoComplete="new-password"
               />
             </div>
           </div>
           <button type="submit" className={styles.submitButton}>
-            Login
+            Sign up
           </button>
         </form>
-        <p className={styles.signupLink}>
-          アカウントをお持ちでない方は
-          <Link to={`/signup?userType=${userType}`}> Sign up</Link>
+        <p className={styles.loginLink}>
+          すでにアカウントをお持ちの方は
+          <Link to={`/login?userType=${userType}`}> Login</Link>
         </p>
       </div>
     </div>
   );
 };
 
-export default Login;
+export default Signup;
