@@ -11,11 +11,10 @@ import Setting from "./pages/Setting/Setting";
 // components
 import SelectUsrtype from "./components/SelectUsertype/SelectUsertype";
 import Loading from "./components/Loading/Loading";
-import { PostProvider } from "./context/PostContext
+import { PostProvider } from "./context/PostContext";
 
 // css
 import "./App.css";
-
 
 function App() {
   return (
