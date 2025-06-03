@@ -15,6 +15,7 @@ import { PostProvider } from "./context/PostContext";
 
 // css
 import "./App.css";
+import Mypage from "./pages/Mypage/Mypage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/usertypeSelect" element={<SelectUsrtype />} />
           <Route path="/loading" element={<Loading />} />
+          <Route path="/mypage" element={<Mypage />} />
           <Route path="/create" element={<Create />} />
           <Route path="/setting" element={<Setting />} />
         </Routes>
