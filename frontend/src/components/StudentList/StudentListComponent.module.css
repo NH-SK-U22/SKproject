@@ -1,0 +1,77 @@
+.container{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.up{
+    width: 90%;
+    height: 10%;
+    display: flex;
+    background-color: grey;
+    border-radius: 20px;
+    justify-content: space-around;
+    margin: 20px 0;
+    background-color:#ccc;
+    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
+}
+.StudentList{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.class{
+    width: 10%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.down{
+    width: 90%;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+}
+.down a{
+    width: 95%;
+    height: 80px;
+    margin: 5px 0;
+    text-decoration: none;
+    color: black;
+}
+.Student{
+    width: 100%;
+    height: 80px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #ddd;
+    border-radius: 10px;
+}
+.Student:hover{
+    background-color: #ccc;
+}
+.lclass{
+    width: 10%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.lnumber{
+    width: 5%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.lname{
+    width: 85%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
