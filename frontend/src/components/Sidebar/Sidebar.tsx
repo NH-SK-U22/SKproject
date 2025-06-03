@@ -44,6 +44,10 @@ const Sidebar = () => {
     navigate("/create");
   };
 
+  const handleMypage = () => {
+    navigate("/mypage");
+  };
+
   return (
     <div className={styles.sidebarContainer}>
       <div 
@@ -80,7 +84,7 @@ const Sidebar = () => {
         </div>
         <div className={`${styles.menuItem} ${styles.profileItem}`}>
           <FaUserCircle />
-          <span className={styles.menuText}>プロフィール</span>
+          <span className={styles.menuText} onClick={handleMypage}>プロフィール</span>
         </div>
       </div>
       {showNotifications && (
