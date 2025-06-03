@@ -1,9 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Login from "./components/Login/Login";
-import Signin from "./components/Signin/Signin";
-import Dashboard from "./components/Dashboard/Dashboard";
+import Login from "./pages/Login/Login";
+import Signin from "./pages/Signin/Signin";
+import Dashboard from "./pages/Dashboard/Dashboard";
 import SelectUsrtype from "./components/SelectUsertype/SelectUsertype";
 import Loading from "./components/Loading/Loading";
+import Reward from "./pages/Reward/Reward";
+import TeacherReward from "./pages/TeacherReward/TeacherReward";
+import StudentList from "./pages/StudentList/StudentList";
 import "./App.css";
 
 function App() {
@@ -16,6 +19,9 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/usertypeSelect" element={<SelectUsrtype />} />
           <Route path="/loading" element={<Loading />} />
+          <Route path="/Reward" element={<Reward />} />
+          <Route path="/TeacherReward" element={<TeacherReward />} />
+          <Route path="/StudentList" element={<StudentList />} />
         </Routes>
       </Router>
     </>
