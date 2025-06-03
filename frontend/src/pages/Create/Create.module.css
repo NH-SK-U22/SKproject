@@ -1,0 +1,113 @@
+/* post form */
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+}
+
+.createForm {
+  width: 450px;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 16px 4px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  margin: 0 0 10px 0;
+  font-size: 1.6rem;
+  font-weight: bold;
+}
+
+.formTextarea {
+  min-height: 200px;
+  margin-bottom: 10px;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 10px;
+  resize: none;
+}
+
+.buttonGroup {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancelBtn {
+  padding: 8px 20px;
+  color: #888;
+  background-color: #fff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.cancelBtn:hover {
+  color: #fff;
+  background-color: #333;
+  border: 1.5px solid #333;
+}
+
+.postBtn {
+  padding: 8px 26px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: bold;
+  background-color: #a084e8;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.postBtn:hover {
+  background-color: #8651d6;
+}
+
+/* color picker */
+.colorPicker {
+  display: flex;
+  align-items: center;
+}
+
+.label {
+  margin-right: 16px;
+  color: #888;
+  font-size: 16px;
+}
+
+.colorList {
+  display: flex;
+  gap: 16px;
+}
+
+.colorCircle {
+  width: 32px;
+  height: 32px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+.check {
+  padding: 2px 5px;
+  position: absolute;
+  color: #fff;
+  background-color: transparent;
+  font-size: 18px;
+  border-radius: 50%;
+}

@@ -13,7 +13,7 @@
   transition: width 0.3s;
 }
 
-.sidebar:hover {
+.sidebar.expanded {
   width: 220px;
 }
 
@@ -41,12 +41,12 @@
   transition: opacity 0.3s, max-width 0.3s, margin-left 0.3s;
 }
 
-.sidebar:hover .logo {
+.sidebar.expanded .logo {
   width: 90%;
   justify-content: flex-start;
 }
 
-.sidebar:hover .logoText {
+.sidebar.expanded .logoText {
   max-width: 200px;
   margin-left: 12px;
   opacity: 1;
@@ -62,7 +62,7 @@
   width: 100%;
 }
 
-.sidebar:hover .menu {
+.sidebar.expanded .menu {
   align-items: flex-start;
 }
 
@@ -79,7 +79,7 @@
   transition: background 0.2s, box-shadow 0.2s, justify-content 0.3s;
 }
 
-.sidebar:hover .menuItem {
+.sidebar.expanded .menuItem {
   width: 89%;
   justify-content: flex-start;
 }
@@ -95,13 +95,13 @@
 .menuItem:hover svg,
 .profile:hover svg {
   color: #00e6b8;
-  background-color: #EBFEF6;
+  background-color: #ebfef6;
 }
 
 .menuItem:hover,
 .menuItem.selected,
 .profile:hover {
-  background-color: #EBFEF6;
+  background-color: #ebfef6;
 }
 
 .profile {
@@ -119,7 +119,7 @@
   margin-bottom: 20px;
 }
 
-.sidebar:hover .profile {
+.sidebar.expanded .profile {
   width: 90%;
   justify-content: flex-start;
 }
@@ -132,12 +132,12 @@
   color: #222;
 }
 
-.sidebar:hover .menuText {
+.sidebar.expanded .menuText {
   display: inline;
 }
 
-.sidebar:hover .logo,
-.sidebar:hover .profile {
+.sidebar.expanded .logo,
+.sidebar.expanded .profile {
   width: 90%;
   justify-content: flex-start;
-} 
+}
