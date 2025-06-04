@@ -3,6 +3,8 @@ import React, { useRef, useState, useEffect } from "react";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
+import EmojiFeedback from "../../components/EmojiFeedback/EmojiFeedback";
+import MessageModal from "../../components/MessageModal/MessageModal";
 
 // css
 import styles from "./Dashboard.module.css";
@@ -21,6 +23,7 @@ const StickyNote = ({
   maxPerRow,
   isLastMoved,
   onMoveEnd,
+  isSidebarHovered,
 }: {
   post: { id: number; text: string; color: string };
   idx: number;
@@ -28,6 +31,7 @@ const StickyNote = ({
   maxPerRow: number;
   isLastMoved: boolean;
   onMoveEnd: (id: number) => void;
+  isSidebarHovered: boolean;
 }) => {
   // ドラッグ状態
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
@@ -97,19 +101,33 @@ const StickyNote = ({
         }
       : { left: position.x, top: position.y };
 
-  // z-index の計算
+  // z-index の計算 - sidebarがhoverされている場合は低く設定
   const getZIndex = () => {
-    if (dragging) return 100;
+    if (dragging) {
+      // 调试信息
+      console.log("Dragging, isSidebarHovered:", isSidebarHovered);
+      return undefined; // 让CSS来控制z-index
+    }
     if (isLastMoved) return 10;
     return 1;
+  };
+
+  // CSS类名的计算
+  const getClassName = () => {
+    let className = styles.stickyNote;
+    if (dragging) {
+      className += ` ${styles.dragging}`;
+      if (isSidebarHovered) {
+        className += ` ${styles.belowSidebar}`;
+      }
+    }
+    return className;
   };
 
   return (
     <div
       ref={noteRef}
-      className={
-        dragging ? `${styles.stickyNote} ${styles.dragging}` : styles.stickyNote
-      }
+      className={getClassName()}
       style={{
         backgroundColor: post.color,
         left: defaultStyle.left,
@@ -125,6 +143,8 @@ const StickyNote = ({
       </div>
       <div className={styles.noteText}>{post.text}</div>
       <div className={styles.cornerFold}></div>
+      <EmojiFeedback />
+      <MessageModal />
     </div>
   );
 };
@@ -134,6 +154,7 @@ const Dashboard = () => {
   const gridRef = useRef<HTMLDivElement>(null);
   const [maxPerRow, setMaxPerRow] = useState(1);
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   const handleNoteMove = (id: number) => {
     setLastMovedNoteId(id);
@@ -156,6 +177,43 @@ const Dashboard = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // sidebarのhover状態を監視
+  useEffect(() => {
+    const checkSidebarHover = () => {
+      const sidebarElements = document.querySelectorAll('[class*="sidebar"]');
+      console.log("Found sidebar elements:", sidebarElements.length);
+
+      sidebarElements.forEach((element, index) => {
+        console.log(`Sidebar element ${index}:`, element.className);
+        if (
+          element.className.includes("sidebar") &&
+          !element.className.includes("Container")
+        ) {
+          const handleMouseEnter = () => {
+            console.log("Sidebar mouse enter");
+            setIsSidebarHovered(true);
+          };
+          const handleMouseLeave = () => {
+            console.log("Sidebar mouse leave");
+            setIsSidebarHovered(false);
+          };
+
+          element.addEventListener("mouseenter", handleMouseEnter);
+          element.addEventListener("mouseleave", handleMouseLeave);
+
+          return () => {
+            element.removeEventListener("mouseenter", handleMouseEnter);
+            element.removeEventListener("mouseleave", handleMouseLeave);
+          };
+        }
+      });
+    };
+
+    // 遅延実行
+    const timer = setTimeout(checkSidebarHover, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className={styles.dashboardContainer}>
       <Sidebar />
@@ -171,6 +229,7 @@ const Dashboard = () => {
                 maxPerRow={maxPerRow}
                 isLastMoved={post.id === lastMovedNoteId}
                 onMoveEnd={handleNoteMove}
+                isSidebarHovered={isSidebarHovered}
               />
             ))}
           </div>
