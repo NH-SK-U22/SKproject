@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styles from './mypage.module.css'
 import Sidebar from '../../components/Sidebar/Sidebar'
 
 const Mypage = () => {
+  const [tabs,setTabs]=useState(0)
   return (
     <div>
       <Sidebar/>
@@ -22,26 +23,44 @@ const Mypage = () => {
             </div>
           </div>
         </div>
-        <div className={styles.bottom}>
-          <div className={styles.card}>
-            <div className={styles.card_image}></div>
-            <div className={styles.card_text}>使用する</div>
-          </div>
-          <div className={styles.card}>
-            <div className={styles.card_image}></div>
-            <div className={styles.card_text}>使用する</div>
-          </div>
-          <div className={styles.card}>
-            <div className={styles.card_image}></div>
-            <div className={styles.card_text}>使用する</div>
-          </div>
-          <div className={styles.card}>
-            <div className={styles.card_image}></div>
-            <div className={styles.card_text}>使用する</div>
-          </div>
+
+        {/* タブボタン */}
+        <div className={styles.tabs}>
+          <button className={`${styles.tab_button}${tabs === 0 ? ` ${styles.active}` : ''}`} onClick={()=>{setTabs(0)}}>カード表示</button>
+          <button className={`${styles.tab_button}${tabs === 1 ? ` ${styles.active}` : ''}`} onClick={()=>{setTabs(1)}}>発言履歴</button>
         </div>
-      </div>
-      
+        {tabs===0?(
+          <div id="cards" className={`${styles.tab_content} ${tabs === 0 ? ` ${styles.active}` : ''}`}>
+            <div className={styles.bottom}>
+              <div className={styles.card}>
+                <div className={styles.card_image}></div>
+                <div className={styles.card_text}>使用する</div>
+              </div>
+              <div className={styles.card}>
+                <div className={styles.card_image}></div>
+                <div className={styles.card_text}>使用する</div>
+              </div>
+              <div className={styles.card}>
+                <div className={styles.card_image}></div>
+                <div className={styles.card_text}>使用する</div>
+              </div>
+              <div className={styles.card}>
+                <div className={styles.card_image}></div>
+                <div className={styles.card_text}>使用する</div>
+              </div>
+            </div>
+          </div>):""}
+        
+        {tabs===1?(
+          <div id="history" className={`${styles.tab_content} ${tabs === 1 ? ` ${styles.active}` : ''}`}>
+            <ul className={styles.history_list}>
+              <li className={styles.history_item}>ユーザーA: 開発進捗はどうですか？</li>
+              <li className={styles.history_item}>ユーザーB: 昨日のバグ修正が完了しました。</li>
+              <li className={styles.history_item}>ユーザーC: 次のミーティングは明日10時です。</li>
+            </ul>
+          </div>):""}
+
+    </div>
     </div>
   )
 }
