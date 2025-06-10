@@ -31,13 +31,13 @@ const EmojiFeedback: React.FC = () => {
     setSelectedEmoji(label);
   };
 
-  // 根据选中状态和hover状态决定显示哪些emoji
+  // hover時に表示するemojiを決定
   const getDisplayEmojis = () => {
     if (!selectedEmoji || isHovered) {
-      // 未选中或hover时显示所有选项
+      // 未選択またはhover時にすべてのemojiを表示
       return emojis;
     } else {
-      // 选中后只显示选中的emoji
+      // 選択後に選択されたemojiのみを表示
       return emojis.filter((emoji) => emoji.label === selectedEmoji);
     }
   };

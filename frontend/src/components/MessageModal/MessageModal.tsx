@@ -8,7 +8,19 @@ import { IoChatbubbleEllipsesOutline, IoClose } from "react-icons/io5";
 // css
 import styles from "./MessageModal.module.css";
 
-const MessageModal: React.FC = () => {
+// components
+import ChatRoom from "../ChatRoom/ChatRoom";
+import StickyNote from "../StickyNote/StickyNote";
+
+interface MessageModalProps {
+  post: {
+    id: number;
+    text: string;
+    color: string;
+  };
+}
+
+const MessageModal = ({ post }: MessageModalProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -29,7 +41,19 @@ const MessageModal: React.FC = () => {
       {isOpen &&
         createPortal(
           <div className={styles.modalOverlay} onClick={handleOverlayClick}>
-            <div className={styles.modalContainer}>
+            <div className={styles.modalWrapper}>
+              <div className={styles.modalContainer}>
+                <div className={styles.modalContent}>
+                  <div className={styles.mainArea}>
+                    <div className={styles.stickyNoteArea}>
+                      <StickyNote post={post} size="large" />
+                    </div>
+                  </div>
+                  <div className={styles.chatArea}>
+                    <ChatRoom />
+                  </div>
+                </div>
+              </div>
               <button
                 onClick={() => setIsOpen(false)}
                 className={styles.closeButton}

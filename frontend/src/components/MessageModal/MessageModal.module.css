@@ -53,18 +53,41 @@
 
 .modalContainer {
   position: relative;
-  width: 80vw;
-  height: 85vh;
-  max-width: 90vw;
-  max-height: 85vh;
+  width: 90vw;
+  height: 90vh;
   margin: 0 16px;
-  padding: 16px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
   animation: slideIn 0.3s ease-out;
   z-index: 1001;
+}
+
+.modalContent {
+  display: flex;
+  height: 100%;
+}
+
+.mainArea {
+  width: 50%;
+  padding: 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stickyNoteArea {
+  width: 90%;
+  max-width: 400px;
+}
+
+.chatArea {
+  width: 50%;
+  position: relative;
+  height: 100%;
 }
 
 @keyframes slideIn {
@@ -80,10 +103,10 @@
 
 .closeButton {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 50px;
-  height: 50px;
+  top: 28px;
+  right: 16px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -91,13 +114,152 @@
   background-color: transparent;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
+  z-index: 2;
 }
 
 .closeButton:hover .closeIcon {
-  color: #fc7171;
+  color: #ff5722;
 }
 
 .closeIcon {
-  font-size: 50px;
-  color: #ccc;
+  font-size: 48px;
+  color: #eee;
+}
+
+.chatContainer {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 60px);
+  padding: 20px;
+  gap: 20px;
+}
+
+.messageList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 10px;
+}
+
+.messageList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messageList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.messageList::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.messageItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 80%;
+}
+
+.userMessage {
+  margin-left: auto;
+  flex-direction: row-reverse;
+}
+
+.otherMessage {
+  margin-right: auto;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #666;
+  font-size: 24px;
+}
+
+.messageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.messageText {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.userMessage .messageText {
+  background-color: #495057;
+  color: white;
+  border-top-right-radius: 4px;
+}
+
+.otherMessage .messageText {
+  background-color: #f0f0f0;
+  color: #333;
+  border-top-left-radius: 4px;
+}
+
+.messageTime {
+  font-size: 12px;
+  color: #666;
+  margin: 0 4px;
+}
+
+.userMessage .messageTime {
+  text-align: right;
+}
+
+.inputContainer {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background-color: #fff;
+  border-top: 1px solid #eee;
+  position: sticky;
+  bottom: 0;
+}
+
+.messageInput {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.messageInput:focus {
+  border-color: #495057;
+}
+
+.sendButton {
+  padding: 0 24px;
+  border: none;
+  border-radius: 24px;
+  background-color: #495057;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sendButton:hover {
+  background-color: #343a40;
+}
+
+.sendButton:active {
+  transform: scale(0.98);
 }

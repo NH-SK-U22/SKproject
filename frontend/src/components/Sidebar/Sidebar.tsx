@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
 // react
+import React from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 // css
@@ -10,8 +11,10 @@ import { FaRegSmile, FaRegBell, FaUserCircle } from "react-icons/fa";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { MdCreate } from "react-icons/md";
 import { ImCoinYen } from "react-icons/im";
-import { PiRanking } from "react-icons/pi";
-import Notification from '../Notification/Notification';
+import { IoSettingsSharp } from "react-icons/io5";
+
+// components
+import Notification from "../Notification/Notification";
 
 const Sidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -44,11 +47,15 @@ const Sidebar = () => {
     navigate("/create");
   };
 
+  const handleSetting = () => {
+    navigate("/setting");
+  };
+
   return (
     <div className={styles.sidebarContainer}>
-      <div 
+      <div
         ref={sidebarRef}
-        className={`${styles.sidebar} ${isHovered ? styles.expanded : ''}`}
+        className={`${styles.sidebar} ${isHovered ? styles.expanded : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -73,9 +80,9 @@ const Sidebar = () => {
             <ImCoinYen />
             <span className={styles.menuText}>報酬</span>
           </div>
-          <div className={styles.menuItem}>
-            <PiRanking />
-            <span className={styles.menuText}>ランク</span>
+          <div className={styles.menuItem} onClick={handleSetting}>
+            <IoSettingsSharp />
+            <span className={styles.menuText}>設定</span>
           </div>
         </div>
         <div className={`${styles.menuItem} ${styles.profileItem}`}>
@@ -84,8 +91,8 @@ const Sidebar = () => {
         </div>
       </div>
       {showNotifications && (
-        <Notification 
-          isSidebarExpanded={isHovered} 
+        <Notification
+          isSidebarExpanded={isHovered}
           onClose={handleCloseNotifications}
         />
       )}

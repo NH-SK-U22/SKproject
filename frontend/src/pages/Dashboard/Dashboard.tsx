@@ -104,15 +104,14 @@ const StickyNote = ({
   // z-index の計算 - sidebarがhoverされている場合は低く設定
   const getZIndex = () => {
     if (dragging) {
-      // 调试信息
       console.log("Dragging, isSidebarHovered:", isSidebarHovered);
-      return undefined; // 让CSS来控制z-index
+      return undefined; // CSSでz-indexを制御
     }
     if (isLastMoved) return 10;
     return 1;
   };
 
-  // CSS类名的计算
+  // CSSクラス名の計算
   const getClassName = () => {
     let className = styles.stickyNote;
     if (dragging) {
@@ -144,7 +143,7 @@ const StickyNote = ({
       <div className={styles.noteText}>{post.text}</div>
       <div className={styles.cornerFold}></div>
       <EmojiFeedback />
-      <MessageModal />
+      <MessageModal post={post} />
     </div>
   );
 };

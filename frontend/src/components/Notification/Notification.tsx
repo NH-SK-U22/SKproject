@@ -10,7 +10,7 @@ import {
   Fade,
   IconButton,
 } from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
+import { FaRegBell } from "react-icons/fa";
 import CloseIcon from "@mui/icons-material/Close";
 import { styled } from "@mui/material/styles";
 
@@ -35,8 +35,13 @@ const NotificationHeader = styled(Box)(({ theme }) => ({
   borderBottom: "1px solid #e0e0e0",
   display: "flex",
   alignItems: "center",
-  gap: theme.spacing(1),
+  gap: theme.spacing(1.5),
   flexShrink: 0,
+  "& svg": {
+    display: "flex",
+    alignItems: "center",
+    marginTop: "2px",
+  },
 }));
 
 const NotificationList = styled(List)(() => ({
@@ -109,13 +114,17 @@ const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
       }}
     >
       <NotificationHeader>
-        <NotificationsIcon color="primary" />
+        <FaRegBell color="#00e6b8" size={22} />
         <Typography
           variant="h6"
           color="text.primary"
           sx={{
-            flexGrow: 1,
+            flexGrow: 2,
             fontFamily: '"Noto Sans JP", sans-serif',
+            display: "flex",
+            alignItems: "center",
+            fontSize: "1.1rem",
+            fontWeight: 500,
           }}
         >
           通知
@@ -142,12 +151,20 @@ const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
                   py: 2,
                   px: 2,
                   "&:hover": {
-                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                    backgroundColor: "#f6f6f6",
+                  },
+                  "& .MuiListItemIcon-root": {
+                    minWidth: "32px",
+                    marginTop: "3px",
                   },
                 }}
               >
                 <ListItemIcon>
-                  <NotificationsIcon color="action" />
+                  <FaRegBell
+                    color="#757575"
+                    size={18}
+                    style={{ marginTop: "4.5px" }}
+                  />
                 </ListItemIcon>
                 <ListItemText
                   primary={notification.text}
@@ -156,17 +173,19 @@ const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
                     variant: "body1",
                     color: "text.primary",
                     fontFamily: '"Noto Sans JP", sans-serif',
+                    lineHeight: 1.4,
+                    fontSize: "0.95rem",
                   }}
                   secondaryTypographyProps={{
                     variant: "caption",
                     color: "text.secondary",
                     fontFamily: '"Noto Sans JP", sans-serif',
+                    marginTop: "4px",
+                    display: "block",
                   }}
                 />
               </ListItem>
-              {index < notifications.length - 1 && (
-                <Divider variant="inset" component="li" />
-              )}
+              {index < notifications.length - 1 && <Divider component="li" />}
             </div>
           </Fade>
         ))}
