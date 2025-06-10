@@ -11,6 +11,7 @@ import StudentList from "./pages/StudentList/StudentList";
 import Signup from "./pages/Signin/Signup";
 import Create from "./pages/Create/Create";
 import Setting from "./pages/Setting/Setting";
+import TopicSet from "./pages/TopicSet/Topicset";
 import { PostProvider } from "./context/PostContext";
 
 // css
@@ -34,6 +35,7 @@ function App() {
           <Route path="/mypage" element={<Mypage />} />
           <Route path="/create" element={<Create />} />
           <Route path="/setting" element={<Setting />} />
+          <Route path="/topicset" element={<TopicSet />} />
         </Routes>
       </Router>
     </PostProvider>
