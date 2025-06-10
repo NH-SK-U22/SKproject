@@ -15,6 +15,34 @@
     margin: 20px 0;
     background-color:#ccc;
     box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+.sort{
+    width: 15%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 25px;
+    position: absolute;
+    left: 0;
+    z-index: 1;
+}
+.sortSelect {
+    width: 100%;
+    height: 50px;
+    font-size: 20px;
+    padding: 5px;
+    margin-left: 20px;
+    border: none;
+    background-color: #ccc;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+.sortSelect:focus {
+    outline: none;
+    border-color: #333;
 }
 .StudentList{
     width: 100%;
@@ -22,6 +50,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 30px;
+    position: absolute;
+    left: 0;
+    z-index: 0;
 }
 .class{
     width: 10%;
@@ -29,6 +61,27 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    font-size: 25px;
+    position: absolute;
+    right: 0;
+    z-index: 1;
+}
+.classSelect {
+    width: 100%;
+    height: 50px;
+    font-size: 20px;
+    padding: 5px;
+    margin-right: 20px;
+    border: none;
+    background-color: #ccc;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+.classSelect:focus {
+    outline: none;
+    border-color: #333;
 }
 .down{
     width: 90%;
@@ -53,25 +106,45 @@
     align-items: center;
     background-color: #ddd;
     border-radius: 10px;
+    font-size: 25px;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.3);
 }
 .Student:hover{
     background-color: #ccc;
 }
 .lclass{
     width: 10%;
+    height: 60px;
     display: flex;
     justify-content: center;
     align-items: center;
+    border-right: 3px dotted grey;
 }
 .lnumber{
-    width: 5%;
+    width: 8%;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-right: 3px dotted grey;
+}
+.lname{
+    width: 72%;
+    height: 60px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    border-right: 3px dotted grey;
+    padding-left: 20px;
+}
+.llank{
+    width: 10%;
+    height: 60px;
     display: flex;
     justify-content: center;
     align-items: center;
 }
-.lname{
-    width: 85%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.limg{
+    width: auto;
+    height: 70px;
 }
