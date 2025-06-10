@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
 // react
+import React from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 // css
@@ -10,9 +11,8 @@ import { FaRegSmile, FaRegBell, FaUserCircle } from "react-icons/fa";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { MdCreate } from "react-icons/md";
 import { ImCoinYen } from "react-icons/im";
-import { PiRanking } from "react-icons/pi";
 import { PiStudentFill } from "react-icons/pi";
-import Notification from '../Notification/Notification';
+import Notification from "../Notification/Notification";
 
 const TeacherSidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -44,7 +44,7 @@ const TeacherSidebar = () => {
   const handleCreate = () => {
     navigate("/create");
   };
-  
+
   const handleTeacherReward = () => {
     navigate("/TeacherReward");
   };
@@ -55,9 +55,9 @@ const TeacherSidebar = () => {
 
   return (
     <div className={styles.sidebarContainer}>
-      <div 
+      <div
         ref={sidebarRef}
-        className={`${styles.sidebar} ${isHovered ? styles.expanded : ''}`}
+        className={`${styles.sidebar} ${isHovered ? styles.expanded : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -78,13 +78,13 @@ const TeacherSidebar = () => {
             <MdCreate />
             <span className={styles.menuText}>作成</span>
           </div>
-          <div className={styles.menuItem}>
+          <div className={styles.menuItem} onClick={handleTeacherReward}>
             <ImCoinYen />
-            <span className={styles.menuText} onClick={handleTeacherReward}>報酬</span>
+            <span className={styles.menuText}>報酬</span>
           </div>
-          <div className={styles.menuItem}>
+          <div className={styles.menuItem} onClick={handleStudentList}>
             <PiStudentFill />
-            <span className={styles.menuText} onClick={handleStudentList}>生徒一覧</span>
+            <span className={styles.menuText}>生徒一覧</span>
           </div>
         </div>
         <div className={`${styles.menuItem} ${styles.profileItem}`}>
@@ -93,8 +93,8 @@ const TeacherSidebar = () => {
         </div>
       </div>
       {showNotifications && (
-        <Notification 
-          isSidebarExpanded={isHovered} 
+        <Notification
+          isSidebarExpanded={isHovered}
           onClose={handleCloseNotifications}
         />
       )}

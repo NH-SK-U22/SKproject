@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap");
+
 /* Genel stil */
 .toggle-switch {
   position: relative;
@@ -50,11 +52,11 @@
 
 /* Light tema */
 .toggle-switch.light .toggle-label {
-  background-color: #BEBEBE;
+  background-color: #bebebe;
 }
 
 .toggle-switch.light .toggle-input:checked + .toggle-label {
-  background-color: #9B9B9B;
+  background-color: #9b9b9b;
 }
 
 .toggle-switch.light .toggle-input:checked + .toggle-label::before {
@@ -63,7 +65,7 @@
 
 /* Dark tema */
 .toggle-switch.dark .toggle-label {
-  background-color: #4B4B4B;
+  background-color: #4b4b4b;
 }
 
 .toggle-switch.dark .toggle-input:checked + .toggle-label {
