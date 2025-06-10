@@ -59,6 +59,7 @@ const Sidebar = () => {
     navigate("/mypage");
   };
 
+
   return (
     <div className={styles.sidebarContainer}>
       <div
