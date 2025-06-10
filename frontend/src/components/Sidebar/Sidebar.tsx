@@ -51,6 +51,14 @@ const Sidebar = () => {
     navigate("/setting");
   };
 
+  const handleReward = () => {
+    navigate("/Reward");
+  };
+
+  const handleMypage = () => {
+    navigate("/mypage");
+  };
+
   return (
     <div className={styles.sidebarContainer}>
       <div
@@ -78,8 +86,11 @@ const Sidebar = () => {
           </div>
           <div className={styles.menuItem}>
             <ImCoinYen />
-            <span className={styles.menuText}>報酬</span>
+            <span className={styles.menuText} onClick={handleReward}>
+              報酬
+            </span>
           </div>
+
           <div className={styles.menuItem} onClick={handleSetting}>
             <IoSettingsSharp />
             <span className={styles.menuText}>設定</span>
@@ -87,7 +98,9 @@ const Sidebar = () => {
         </div>
         <div className={`${styles.menuItem} ${styles.profileItem}`}>
           <FaUserCircle />
-          <span className={styles.menuText}>プロフィール</span>
+          <span className={styles.menuText} onClick={handleMypage}>
+            プロフィール
+          </span>
         </div>
       </div>
       {showNotifications && (
