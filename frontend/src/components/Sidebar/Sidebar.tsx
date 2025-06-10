@@ -11,6 +11,7 @@ import { LuLayoutDashboard } from "react-icons/lu";
 import { MdCreate } from "react-icons/md";
 import { ImCoinYen } from "react-icons/im";
 import { PiRanking } from "react-icons/pi";
+import { IoMdSettings } from "react-icons/io";
 import Notification from '../Notification/Notification';
 
 const Sidebar = () => {
@@ -44,6 +45,10 @@ const Sidebar = () => {
     navigate("/create");
   };
 
+  const handleReward = () => {
+    navigate("/Reward");
+  };
+
   return (
     <div className={styles.sidebarContainer}>
       <div 
@@ -71,11 +76,11 @@ const Sidebar = () => {
           </div>
           <div className={styles.menuItem}>
             <ImCoinYen />
-            <span className={styles.menuText}>報酬</span>
+            <span className={styles.menuText} onClick={handleReward}>報酬</span>
           </div>
           <div className={styles.menuItem}>
-            <PiRanking />
-            <span className={styles.menuText}>ランク</span>
+            <IoMdSettings />
+            <span className={styles.menuText}>設定</span>
           </div>
         </div>
         <div className={`${styles.menuItem} ${styles.profileItem}`}>

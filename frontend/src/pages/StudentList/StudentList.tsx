@@ -1,12 +1,12 @@
 import React from "react";
-import Sidebar from "../../components/Sidebar/Sidebar";
+import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import StudentListComponent from "../../components/StudentList/StudentListComponent";
 import styles from "./StudentList.module.css";
 
 const StudentList = () => {
     return (
         <>
-            <Sidebar />
+            <TeacherSidebar />
             <div className={styles.container}>
                 <StudentListComponent />
             </div>
