@@ -84,11 +84,9 @@ const Sidebar = () => {
             <MdCreate />
             <span className={styles.menuText}>作成</span>
           </div>
-          <div className={styles.menuItem}>
+          <div className={styles.menuItem} onClick={handleReward}>
             <ImCoinYen />
-            <span className={styles.menuText} onClick={handleReward}>
-              報酬
-            </span>
+            <span className={styles.menuText}>報酬</span>
           </div>
 
           <div className={styles.menuItem} onClick={handleSetting}>
@@ -96,11 +94,12 @@ const Sidebar = () => {
             <span className={styles.menuText}>設定</span>
           </div>
         </div>
-        <div className={`${styles.menuItem} ${styles.profileItem}`}>
+        <div
+          className={`${styles.menuItem} ${styles.profileItem}`}
+          onClick={handleMypage}
+        >
           <FaUserCircle />
-          <span className={styles.menuText} onClick={handleMypage}>
-            プロフィール
-          </span>
+          <span className={styles.menuText}>プロフィール</span>
         </div>
       </div>
       {showNotifications && (
