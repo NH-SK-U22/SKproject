@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import styles from './mypage.module.css'
 import Sidebar from '../../components/Sidebar/Sidebar'
+import Card from '../../components/Mypage/Card'
+import Progressbar from '../../components/Mypage/Progressbar'
+import itist from '../../../public/images/1st.png'
 
 const Mypage = () => {
   const [tabs,setTabs]=useState(0)
@@ -14,12 +17,13 @@ const Mypage = () => {
             <div className={styles.status_left}>
               <p>あなたは</p>
               <p className={styles.rank}>プラチナランク</p>
+              <img src={itist} alt="" width={30} />
               <p>です</p>
             </div>
             <div className={styles.status_right}>
               <p>次のxxxランクへは</p>
-              <p className={styles.points}>あと、500pt</p>
-              <p>です</p>
+              {/* <p className={styles.points}>あと、500pt</p> */}
+              <Progressbar  remaining={500} target={2000} />
             </div>
           </div>
         </div>
@@ -31,32 +35,23 @@ const Mypage = () => {
         </div>
         {tabs===0?(
           <div id="cards" className={`${styles.tab_content} ${tabs === 0 ? ` ${styles.active}` : ''}`}>
+            
             <div className={styles.bottom}>
-              <div className={styles.card}>
-                <div className={styles.card_image}></div>
-                <div className={styles.card_text}>使用する</div>
-              </div>
-              <div className={styles.card}>
-                <div className={styles.card_image}></div>
-                <div className={styles.card_text}>使用する</div>
-              </div>
-              <div className={styles.card}>
-                <div className={styles.card_image}></div>
-                <div className={styles.card_text}>使用する</div>
-              </div>
-              <div className={styles.card}>
-                <div className={styles.card_image}></div>
-                <div className={styles.card_text}>使用する</div>
-              </div>
+              <Card text="それ" point={6} click="/mypage"/>
+              <Card text="それ" point={6} click="/mypage"/>
+              <Card text="それ" point={6} click="/mypage"/>
+              <Card text="それ" point={6} click="/mypage"/>
+              <Card text="それ" point={6} click="/mypage"/>
             </div>
           </div>):""}
         
         {tabs===1?(
           <div id="history" className={`${styles.tab_content} ${tabs === 1 ? ` ${styles.active}` : ''}`}>
             <ul className={styles.history_list}>
-              <li className={styles.history_item}>ユーザーA: 開発進捗はどうですか？</li>
-              <li className={styles.history_item}>ユーザーB: 昨日のバグ修正が完了しました。</li>
-              <li className={styles.history_item}>ユーザーC: 次のミーティングは明日10時です。</li>
+              <li className={styles.history_item}>チョコたっぷり: 美味しいと思います</li>
+              <li className={styles.history_item}>FIFA: ボール持ったフランスのが持ってない日本より速いです</li>
+              <li className={styles.history_item}>きのこ派: 手が汚れにくいですよね???</li>
+              <li className={styles.history_item}>タスク:ランクの表示画像、残りのポイントプログレスバー</li>
             </ul>
           </div>):""}
 
