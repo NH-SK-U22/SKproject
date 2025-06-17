@@ -12,7 +12,8 @@ const Card = ({text,point,click}:{text:string,point:number,click:string}) => {
             <p className={styles.rewardtxt}>{text}</p>
         </div>
         <div className={styles.card_down}>
-            <p className={styles.card_point}>{point}p</p>
+            {/* <p className={styles.card_point}>{point}p</p> */}
+            <p className={styles.card_point}>使う</p>
         </div>
     </div>
   )

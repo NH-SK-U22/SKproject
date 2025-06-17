@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import styles from './mypage.module.css'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Card from '../../components/Mypage/Card'
+import Progressbar from '../../components/Mypage/Progressbar'
+import itist from '../../../public/images/1st.png'
 
 const Mypage = () => {
   const [tabs,setTabs]=useState(0)
@@ -15,12 +17,13 @@ const Mypage = () => {
             <div className={styles.status_left}>
               <p>あなたは</p>
               <p className={styles.rank}>プラチナランク</p>
+              <img src={itist} alt="" width={30} />
               <p>です</p>
             </div>
             <div className={styles.status_right}>
               <p>次のxxxランクへは</p>
-              <p className={styles.points}>あと、500pt</p>
-              <p>です</p>
+              {/* <p className={styles.points}>あと、500pt</p> */}
+              <Progressbar  remaining={500} target={2000} />
             </div>
           </div>
         </div>
@@ -34,6 +37,7 @@ const Mypage = () => {
           <div id="cards" className={`${styles.tab_content} ${tabs === 0 ? ` ${styles.active}` : ''}`}>
             
             <div className={styles.bottom}>
+              <Card text="それ" point={6} click="/mypage"/>
               <Card text="それ" point={6} click="/mypage"/>
               <Card text="それ" point={6} click="/mypage"/>
               <Card text="それ" point={6} click="/mypage"/>
