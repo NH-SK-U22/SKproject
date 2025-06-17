@@ -8,7 +8,7 @@ import itist from '../../../public/images/1st.png'
 const Mypage = () => {
   const [tabs,setTabs]=useState(0)
   return (
-    <div>
+    <div className={styles.vh}>
       <Sidebar/>
       <div className={styles.container}>
         <div className={styles.top}>
@@ -16,8 +16,10 @@ const Mypage = () => {
           <div className={styles.status_container}>
             <div className={styles.status_left}>
               <p>あなたは</p>
-              <p className={styles.rank}>プラチナランク</p>
-              <img src={itist} alt="" width={30} />
+              <div className={styles.rankimg}>
+                <p className={styles.rank}>プラチナランク</p>
+                <img src={itist} alt="" width={50} />
+              </div>
               <p>です</p>
             </div>
             <div className={styles.status_right}>
