@@ -1,3 +1,12 @@
+/* src/index.css （グローバルに読み込まれる CSS） */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;  /* これでブラウザのスクロールを無効化 */
+}
+
+
 .container {
   display: flex;
   flex-direction: column;
@@ -59,6 +68,10 @@
   margin: 2px 0;
   font-size: 14px;
 }
+.status_left .rankimg {
+  display: flex;           
+  align-items: center;
+}
 .status_left .rank {
   font-size: 20px;
   font-weight: bold;
@@ -85,7 +98,7 @@
   /* max-width: 1000px; */
   border-bottom: 2px solid #ccc;
   margin-bottom: 20px;
-  margin-top: 3%;
+  /* margin-top: 3%; */
 }
 .tab_button {
   flex: 1;
