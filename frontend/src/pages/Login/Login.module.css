@@ -101,33 +101,33 @@
 }
 
 .loginBox .inputGroup input:focus {
-  border: 1px solid #ffd166;
-  box-shadow: 0 0 0 1px #ffd166, 0 2px 8px 0 #ffd16644;
+  border: 1px solid #00e6b8;
+  box-shadow: 0 0 0 1px #00e6b8, 0 2px 8px 0 #ffd16644;
   outline: none;
 }
 
 .loginBox .inputGroup input:focus + .loginBox .inputIcon,
 .loginBox .inputWrapper input:focus ~ .loginBox .inputIcon {
-  color: #ffd166;
+  color: #00e6b8;
 }
 
 .submitButton {
   width: 100%;
   padding: 0.9rem;
   color: white;
-  background: linear-gradient(90deg, #ffd166 0%, #ffb800 100%);
+  background: linear-gradient(90deg, #00e6b8 0%, #05b18e 100%);
   border: none;
   border-radius: 24px;
   font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 2px 12px 0 #ffd16655, 0 0 8px 2px #ffd16633;
+  box-shadow: 0 2px 12px 0 #25e2b655, 0 0 8px 2px #25e2b633;
 }
 
 .submitButton:hover {
-  background: linear-gradient(90deg, #ffb800 0%, #ffd166 100%);
-  box-shadow: 0 4px 16px 0 #ffd16699, 0 0 12px 4px #ffd16655;
+  background: linear-gradient(90deg, #00a484 0%, #00e6b8 100%);
+  box-shadow: 0 4px 16px 0 #25e2b699, 0 0 12px 4px #25e2b655;
 }
 
 .signupLink {
@@ -139,7 +139,7 @@
 }
 
 .signupLink a {
-  color: #ffd166;
+  color: #00e6b8;
   font-weight: 600;
   text-decoration: none;
   margin-left: 0.3rem;
@@ -147,6 +147,6 @@
 }
 
 .signupLink a:hover {
-  color: #ffb800;
+  color: #00a484;
   text-decoration: underline;
 }

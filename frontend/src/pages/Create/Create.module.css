@@ -63,7 +63,7 @@ h2 {
   color: #fff;
   font-size: 15px;
   font-weight: bold;
-  background-color: #a084e8;
+  background-color: #00e6b8;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -71,7 +71,7 @@ h2 {
 }
 
 .postBtn:hover {
-  background-color: #8651d6;
+  background-color: #00a484;
 }
 
 /* color picker */
