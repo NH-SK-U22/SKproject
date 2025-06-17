@@ -53,14 +53,14 @@
 
 .usertypeSelectBtn:hover,
 .usertypeSelectBtn.active {
-  border: 5px solid #3b82f6;
-  box-shadow: 0 0 30px 6px #3b82f633;
+  border: 5px solid #00e6b8;
+  box-shadow: 0 0 30px 6px #00e6b833;
   z-index: 1;
 }
 
 .usertypeSelectBtn:hover span,
 .usertypeSelectBtn.active span {
-  color: #3b82f6;
+  color: #00e6b8;
 }
 
 .next {
@@ -70,13 +70,13 @@
   font-size: 1.5rem;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
-  box-shadow: 0 0 16px 4px #3b82f633;
+  background: linear-gradient(90deg, #00e6b8 0%, #a0fadd 100%);
+  box-shadow: 0 0 16px 4px #00e6b833;
   cursor: pointer;
   transition: background 0.2s, box-shadow 0.2s;
 }
 
 .next:hover {
-  background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
-  box-shadow: 0 6px 24px 2px #3b82f655;
+  background: linear-gradient(90deg, #a0fadd 0%, #00e6b8 100%);
+  box-shadow: 0 6px 24px 2px #00e6b855;
 }

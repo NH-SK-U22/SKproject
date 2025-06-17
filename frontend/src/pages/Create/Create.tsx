@@ -10,7 +10,7 @@ import Sidebar from "../../components/Sidebar/Sidebar";
 import styles from "./Create.module.css";
 
 const Create = () => {
-  const colors = ["#ffdf88", "#e0f7f4", "#ffc3c3", "#e8dff5", "#cdf7ff"];
+  const colors = ["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"];
   const [post, setPost] = useState("");
   const [selectColor, setSelectColor] = useState(0);
   const navigate = useNavigate();
