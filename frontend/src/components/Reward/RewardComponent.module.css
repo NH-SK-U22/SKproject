@@ -1,97 +1,187 @@
-.container{
-    width: 18%;
-    height: 300px;
-    background-color: #ccc;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    border-radius: 10px;
-    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease;
-    cursor: pointer;
+.container {
+  width: 240px;
+  height: 320px;
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-.container:hover {
-    transform: scale(1.05);
+.imageSection {
+  height: 140px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
 }
 
-.up{
-    width: 90%;
-    height: 75%;
-    background-color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 20px 0;
-    border-radius: 10px;
-}
-.rewardtxt{
-    margin: 0;
-}
-.down{
-    width: 90%;
-    height: 25%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-top: 2px dotted #000;
-}
-.point{
-    font-size: 25px;
-    margin: 0;
+.rewardTitle {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #333;
 }
 
+.contentSection {
+  padding: 16px 20px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.pointAmount {
+  margin: 12px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.pointIcon {
+  margin-top: 3px;
+  font-size: 1.3rem;
+  color: #f8d76b;
+}
+
+.redeemButton {
+  width: calc(100% - 24px);
+  height: 36px;
+  margin: 0 12px 12px 12px;
+  padding: 6px 0;
+  color: #fff;
+  background-color: #00e6b8;
+  border: 1px solid #00d4a8;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.redeemButton:hover {
+  background-color: #00d4a8;
+  box-shadow: 0 4px 10px rgba(0, 212, 195, 0.3);
+}
+
+.redeemButton:active {
+  background-color: #00c299;
+}
+
+/* popup modal */
 .overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
 .popup {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
+  width: 300px;
+  height: 300px;
+  padding: 2rem 1.5rem 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: space-between;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  background-color: #f5f5f5;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  color: #333;
+  background-color: #e0e0e0;
 }
 
 .popupText {
-    font-size: 1.2rem;
-    margin-bottom: 1.5rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.currencyIcon {
+  margin-top: 3px;
+  color: #f8d76b;
+  font-size: 1.5rem;
+}
+
+.popupContent {
+  width: 100%;
+  padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
 }
 
 .buttonContainer {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
 }
 
 .button {
-    padding: 0.5rem 2rem;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.3s;
-}
-
-.button:first-child {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.button:last-child {
-    background-color: #f44336;
-    color: white;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  color: #fff;
+  background-color: #00e6b8;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
 }
 
 .button:hover {
-    opacity: 0.9;
+  background-color: #00d4a8;
+  box-shadow: 0 4px 15px rgba(0, 212, 195, 0.3);
 }

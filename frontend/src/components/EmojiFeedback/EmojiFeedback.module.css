@@ -13,6 +13,7 @@
   width: 36px;
   height: 36px;
   background-color: #274c77;
+  border: 2px solid #fff;
   border-radius: 50%;
   box-shadow: 0 8px 15px 3px #274c7799;
   transition: all 0.2s ease-in-out;
@@ -100,7 +101,7 @@
 .emojiButton[data-color="green"] {
   position: absolute;
   top: -3px;
-  left: 5px;
+  left: 5.5px;
   color: #70b02c;
   z-index: 10;
 }
@@ -108,15 +109,15 @@
 .emojiButton[data-color="yellow"] {
   position: absolute;
   top: 8px;
-  left: -4px;
+  left: -3px;
   color: #ffc84a;
   z-index: 9;
 }
 
 .emojiButton[data-color="red"] {
   position: absolute;
-  top: 11px;
-  left: 9px;
+  top: 10.5px;
+  left: 10px;
   color: #ff441f;
   z-index: 8;
 }
