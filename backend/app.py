@@ -1,13 +1,115 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+import sqlite3
+import json
 from flask_cors import CORS # Flask-CORSをインポート
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
 
+def init_db():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS test(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    
+    # colorsets tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS colorsets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_number INTEGER NOT NULL,
+        camp_type INTEGER NOT NULL,
+        colors TEXT NOT NULL,
+        UNIQUE(group_number, camp_type)
+    )''')
+    
+    # colorsetsデータの挿入
+    colorsets_data = [
+        (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1
+        (1, 2, '["#faeada", "#f5d2b3", "#eeb483", "#e68c51", "#df6624"]'),  # 1 陣営2
+        (2, 1, '["#6c84ff", "#4959ff", "#2929ff", "#211ee4", "#1a1aaf"]'),  # 2 陣営1
+        (2, 2, '["#faeccb", "#f4d893", "#eec05b", "#eaa935", "#e38d24"]'),  # 2 陣営2
+        (3, 1, '["#8b7bff", "#6646ff", "#5321ff", "#450ff2", "#3a0ccd"]'),  # 3 陣営1
+        (3, 2, '["#effc8c", "#ecfa4a", "#eef619", "#e6e50c", "#d0bf08"]'),  # 3 陣営2
+        (4, 1, '["#c3b5fd", "#a58bfa", "#885df5", "#783bec", "#6325cd"]'),  # 4 陣営1
+        (4, 2, '["#fbfbea", "#f4f6d1", "#e8eda9", "#d7e076", "#bfcd41"]'),  # 4 陣営2
+        (5, 1, '["#c76bff", "#b333ff", "#a10cff", "#8d00f3", "#6e04b6"]'),  # 5 陣営1
+        (5, 2, '["#ffc472", "#fea039", "#fc8313", "#ed6809", "#cd510a"]'),  # 5 陣営2
+        (6, 1, '["#ead5ff", "#dab5fd", "#c485fb", "#ad57f5", "#9025e6"]'),  # 6 陣営1
+        (6, 2, '["#fdf9e9", "#fbf2c6", "#f8e290", "#f4ca50", "#efb121"]'),  # 6 陣営2
+        (7, 1, '["#fad3fb", "#f6b1f3", "#ef83e9", "#e253da", "#ba30b0"]'),  # 7 陣営1
+        (7, 2, '["#f8fbea", "#eef6d1", "#dceda9", "#c3df77", "#a0c937"]'),  # 7 陣営2
+        (8, 1, '["#f8d2e9", "#f4add7", "#ec7aba", "#e1539e", "#c12d74"]'),  # 8 陣営1
+        (8, 2, '["#dffcdc", "#c0f7bb", "#8fee87", "#56dd4b", "#2cb721"]'),  # 8 陣営2
+        (9, 1, '["#f6d4e5", "#efb2cf", "#e482ae", "#d85c91", "#c43a6e"]'),  # 9 陣営1
+        (9, 2, '["#cef9ef", "#9cf3e1", "#62e6cf", "#32cfb9", "#1bbfab"]'),  # 9 陣営2
+        (10, 1, '["#fcd4cc", "#f9b5a8", "#f48975", "#e9634a", "#d74b31"]'), # 10 陣営1
+        (10, 2, '["#cef9f0", "#9df2e0", "#64e4cf", "#35ccb8", "#1ec0ad"]'), # 10 陣営2
+    ]
+    
+    # データが存在しない場合は挿入
+    for group_num, camp_type, colors in colorsets_data:
+        c.execute('INSERT OR IGNORE INTO colorsets (group_number, camp_type, colors) VALUES (?, ?, ?)',
+                 (group_num, camp_type, colors))
+    
+    conn.commit()
+    conn.close()
+
+init_db()
+
 @app.route('/')
 def health():
-    print('yattane')
-    return jsonify({'status': 'okdedidimaru'})
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/messages', methods=['POST'])
+def add_message():
+    if not request.json or 'content' not in request.json:
+        return jsonify({'error': 'Content is required'}), 400
+    
+    content = request.json['content']
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('INSERT INTO test (content) VALUES (?)', (content,))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'status': 'success'}), 201
+
+@app.route('/api/messages', methods=['GET'])
+def get_messages():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM test ORDER BY created_at DESC')
+    messages = [{'id': row[0], 'content': row[1], 'created_at': row[2]} for row in c.fetchall()]
+    conn.close()
+    
+    return jsonify(messages)
+
+@app.route('/api/colorsets/<camp>', methods=['GET'])
+def get_colorsets(camp):
+    try:
+        # camp1 = camp_type 1, camp2 = camp_type 2
+        camp_type = 1 if camp == 'camp1' else 2
+        
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('SELECT group_number, colors FROM colorsets WHERE camp_type = ? ORDER BY group_number', (camp_type,))
+        rows = c.fetchall()
+        conn.close()
+        
+        colorsets = []
+        for row in rows:
+            colors = json.loads(row[1])
+            colorsets.append({
+                'group_number': row[0],
+                'colors': colors
+            })
+        
+        return jsonify(colorsets)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
