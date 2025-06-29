@@ -15,6 +15,17 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
+    # users tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_number TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        password TEXT NOT NULL,
+        user_type TEXT NOT NULL CHECK(user_type IN ('student', 'teacher')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(class_number, user_id, user_type)
+    )''')
+    
     # colorsets tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS colorsets(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,6 +119,120 @@ def get_colorsets(camp):
             })
         
         return jsonify(colorsets)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/signup', methods=['POST'])
+def signup():
+    if not request.json:
+        return jsonify({'error': 'Request body is required'}), 400
+    
+    required_fields = ['classNumber', 'userId', 'password', 'userType']
+    for field in required_fields:
+        if field not in request.json:
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    class_number = request.json['classNumber']
+    user_id = request.json['userId']
+    password = request.json['password']
+    user_type = request.json['userType']
+    
+    if user_type not in ['student', 'teacher']:
+        return jsonify({'error': 'Invalid user type'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # ユーザーがすでに存在するか確認
+        c.execute('SELECT id FROM users WHERE class_number = ? AND user_id = ? AND user_type = ?',
+                 (class_number, user_id, user_type))
+        existing_user = c.fetchone()
+        
+        if existing_user:
+            conn.close()
+            return jsonify({'error': 'User already exists'}), 409
+        
+        # 新しいユーザーを挿入
+        c.execute('INSERT INTO users (class_number, user_id, password, user_type) VALUES (?, ?, ?, ?)',
+                 (class_number, user_id, password, user_type))
+        
+        user_id_db = c.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'User created successfully',
+            'user_id': user_id_db
+        }), 201
+        
+    except sqlite3.IntegrityError as e:
+        return jsonify({'error': 'User already exists'}), 409
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    if not request.json:
+        return jsonify({'error': 'Request body is required'}), 400
+    
+    required_fields = ['classNumber', 'userId', 'password', 'userType']
+    for field in required_fields:
+        if field not in request.json:
+            return jsonify({'error': f'{field} is required'}), 400
+    
+    class_number = request.json['classNumber']
+    user_id = request.json['userId']
+    password = request.json['password']
+    user_type = request.json['userType']
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # 查找用戶
+        c.execute('SELECT id, class_number, user_id, user_type, created_at FROM users WHERE class_number = ? AND user_id = ? AND password = ? AND user_type = ?',
+                 (class_number, user_id, password, user_type))
+        user = c.fetchone()
+        conn.close()
+        
+        if user:
+            return jsonify({
+                'status': 'success',
+                'message': 'Login successful',
+                'user': {
+                    'id': user[0],
+                    'class_number': user[1],
+                    'user_id': user[2],
+                    'user_type': user[3],
+                    'created_at': user[4]
+                }
+            }), 200
+        else:
+            return jsonify({'error': 'Invalid credentials'}), 401
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('SELECT id, class_number, user_id, user_type, created_at FROM users ORDER BY created_at DESC')
+        users = []
+        for row in c.fetchall():
+            users.append({
+                'id': row[0],
+                'class_number': row[1],
+                'user_id': row[2],
+                'user_type': row[3],
+                'created_at': row[4]
+            })
+        conn.close()
+        
+        return jsonify(users)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
