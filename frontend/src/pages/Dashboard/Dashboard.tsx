@@ -3,7 +3,6 @@ import React, { useRef, useState, useEffect } from "react";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
-import EmojiFeedback from "../../components/EmojiFeedback/EmojiFeedback";
 import MessageModal from "../../components/MessageModal/MessageModal";
 
 // css
@@ -142,7 +141,6 @@ const StickyNote = ({
       </div>
       <div className={styles.noteText}>{post.text}</div>
       <div className={styles.cornerFold}></div>
-      <EmojiFeedback />
       <MessageModal post={post} />
     </div>
   );
