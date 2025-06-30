@@ -8,13 +8,13 @@ import { useSearchParams, Link } from "react-router-dom";
 import styles from "./Signup.module.css";
 
 // icons
-import { FaSchool, FaUser, FaLock } from "react-icons/fa";
+import { FaSchool, FaUser, FaLock, FaChalkboardTeacher } from "react-icons/fa";
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("userType") || "student";
   const [formData, setFormData] = useState({
-    classNumber: "",
+    classID: "",
     userId: "",
     password: "",
     confirmPassword: "",
@@ -46,8 +46,24 @@ const Signup = () => {
               <FaSchool className={`${styles.inputIcon} ${styles.largeIcon}`} />
               <input
                 type="text"
-                name="classNumber"
-                value={formData.classNumber}
+                name="schoolID"
+                value={formData.classID}
+                onChange={handleChange}
+                placeholder="学校記号"
+                required
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWrapper}>
+              <FaChalkboardTeacher
+                className={`${styles.inputIcon} ${styles.largeIcon}`}
+              />
+              <input
+                type="text"
+                name="classID"
+                value={formData.classID}
                 onChange={handleChange}
                 placeholder="クラス記号"
                 required
@@ -78,20 +94,6 @@ const Signup = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="パスワード"
-                required
-                autoComplete="new-password"
-              />
-            </div>
-          </div>
-          <div className={styles.inputGroup}>
-            <div className={styles.inputWrapper}>
-              <FaLock className={styles.inputIcon} />
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="パスワード確認"
                 required
                 autoComplete="new-password"
               />
