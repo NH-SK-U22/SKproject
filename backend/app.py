@@ -9,6 +9,11 @@ CORS(app) # CORSをアプリケーション全体に適用
 def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS test(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
     
     # users tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS users(
@@ -67,6 +72,31 @@ init_db()
 @app.route('/')
 def health():
     return jsonify({'status': 'ok'})
+
+@app.route('/api/messages', methods=['POST'])
+def add_message():
+    if not request.json or 'content' not in request.json:
+        return jsonify({'error': 'Content is required'}), 400
+    
+    content = request.json['content']
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('INSERT INTO test (content) VALUES (?)', (content,))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'status': 'success'}), 201
+
+@app.route('/api/messages', methods=['GET'])
+def get_messages():
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute('SELECT * FROM test ORDER BY created_at DESC')
+    messages = [{'id': row[0], 'content': row[1], 'created_at': row[2]} for row in c.fetchall()]
+    conn.close()
+    
+    return jsonify(messages)
 
 @app.route('/api/colorsets/<camp>', methods=['GET'])
 def get_colorsets(camp):
@@ -161,7 +191,7 @@ def login():
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        # ユーザーを調べる
+        # 查找用戶
         c.execute('SELECT id, class_number, user_id, user_type, created_at FROM users WHERE class_number = ? AND user_id = ? AND password = ? AND user_type = ?',
                  (class_number, user_id, password, user_type))
         user = c.fetchone()
