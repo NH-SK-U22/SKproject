@@ -8,14 +8,14 @@ import styles from "./CampSelect.module.css";
 
 const CampSelect = () => {
   const navigate = useNavigate();
-  const [userType, setUserType] = useState("student");
+  const [selectedCamp, setSelectedCamp] = useState("camp1");
 
-  const handleSelect = (type: string) => {
-    setUserType(type);
+  const handleSelect = (camp: string) => {
+    setSelectedCamp(camp);
   };
 
   const handleNext = () => {
-    navigate("/dashboard");
+    navigate(`/create?camp=${selectedCamp}`);
   };
 
   return (
@@ -23,18 +23,18 @@ const CampSelect = () => {
       <h1 className={styles.title}>Select Camp</h1>
       <div className={styles.campSelect}>
         <button
-          className={`${styles.usertypeSelectBtn} ${
-            userType === "student" ? styles.active : ""
+          className={`${styles.campSelectBtn} ${
+            selectedCamp === "camp1" ? styles.active : ""
           }`}
-          onClick={() => handleSelect("student")}
+          onClick={() => handleSelect("camp1")}
         >
           <span>陣営1</span>
         </button>
         <button
-          className={`${styles.usertypeSelectBtn} ${
-            userType === "teacher" ? styles.active : ""
+          className={`${styles.campSelectBtn} ${
+            selectedCamp === "camp2" ? styles.active : ""
           }`}
-          onClick={() => handleSelect("teacher")}
+          onClick={() => handleSelect("camp2")}
         >
           <span>陣営2</span>
         </button>

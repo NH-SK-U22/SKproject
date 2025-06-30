@@ -1,48 +1,74 @@
 // react
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePost } from "../../context/PostContext";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
+import Loading from "../../components/Loading/Loading";
 
 // css
 import styles from "./Create.module.css";
 
+interface ColorSetResponse {
+  group_number: number;
+  colors: string[];
+}
+
 const Create = () => {
-  const colorSets = [
-    ["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"],
-    ["#faeada", "#f5d2b3", "#eeb483", "#e68c51", "#df6624"],
-    ["#6c84ff", "#4959ff", "#2929ff", "#211ee4", "#1a1aaf"],
-    ["#faeccb", "#f4d893", "#eec05b", "#eaa935", "#e38d24"],
-    ["#8b7bff", "#6646ff", "#5321ff", "#450ff2", "#3a0ccd"],
-    ["#effc8c", "#ecfa4a", "#eef619", "#e6e50c", "#d0bf08"],
-    ["#c3b5fd", "#a58bfa", "#885df5", "#783bec", "#6325cd"],
-    ["#fbfbea", "#f4f6d1", "#e8eda9", "#d7e076", "#bfcd41"],
-    ["#c76bff", "#b333ff", "#a10cff", "#8d00f3", "#6e04b6"],
-    ["#ffc472", "#fea039", "#fc8313", "#ed6809", "#cd510a"],
-    ["#ead5ff", "#dab5fd", "#c485fb", "#ad57f5", "#9025e6"],
-    ["#fdf9e9", "#fbf2c6", "#f8e290", "#f4ca50", "#efb121"],
-    ["#fad3fb", "#f6b1f3", "#ef83e9", "#e253da", "#ba30b0"],
-    ["#f8fbea", "#eef6d1", "#dceda9", "#c3df77", "#a0c937"],
-    ["#f8d2e9", "#f4add7", "#ec7aba", "#e1539e", "#c12d74"],
-    ["#dffcdc", "#c0f7bb", "#8fee87", "#56dd4b", "#2cb721"],
-    ["#f6d4e5", "#efb2cf", "#e482ae", "#d85c91", "#c43a6e"],
-    ["#cef9ef", "#9cf3e1", "#62e6cf", "#32cfb9", "#1bbfab"],
-    ["#fcd4cc", "#f9b5a8", "#f48975", "#e9634a", "#d74b31"],
-    ["#cef9f0", "#9df2e0", "#64e4cf", "#35ccb8", "#1ec0ad"],
-  ];
+  const [searchParams] = useSearchParams();
+  const camp = searchParams.get("camp") || "camp1";
 
   const [colors, setColors] = useState<string[]>([]);
   const [post, setPost] = useState("");
   const [selectColor, setSelectColor] = useState(0);
+  const [showLoading, setShowLoading] = useState(false);
   const navigate = useNavigate();
   const { addPost } = usePost();
 
   useEffect(() => {
-    const randomIndex = Math.floor(Math.random() * colorSets.length);
-    setColors(colorSets[randomIndex]);
-  }, []);
+    // loading画面の表示を遅らせるタイマー
+    const loadingTimer = setTimeout(() => {
+      setShowLoading(true);
+    }, 500); // loading画面は500ms後に表示
+
+    const fetchColorSets = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/colorsets/${camp}`
+        );
+        if (response.ok) {
+          const data: ColorSetResponse[] = await response.json();
+          const colorSetsArray = data.map((item) => item.colors);
+
+          // 陣営のcolorsetからランダムに選ぶ
+          if (colorSetsArray.length > 0) {
+            const randomIndex = Math.floor(
+              Math.random() * colorSetsArray.length
+            );
+            setColors(colorSetsArray[randomIndex]);
+          }
+        } else {
+          console.error("Failed to fetch colorsets");
+          // デフォルトのカラーにフォールバック
+          setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
+        }
+      } catch (error) {
+        console.error("Error fetching colorsets:", error);
+        // デフォルトのカラーにフォールバック
+        setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
+      } finally {
+        setShowLoading(false);
+        clearTimeout(loadingTimer);
+      }
+    };
+
+    fetchColorSets();
+
+    return () => {
+      clearTimeout(loadingTimer);
+    };
+  }, [camp]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +83,15 @@ const Create = () => {
     setSelectColor(0);
     navigate("/dashboard");
   };
+
+  if (showLoading) {
+    return (
+      <div className={styles.container}>
+        <Sidebar />
+        <Loading />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
