@@ -203,7 +203,7 @@ def login():
                 }
             }), 200
         else:
-            return jsonify({'error': 'Invalid credentials'}), 401
+            return jsonify({'error': '無効な認証情報'}), 401
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500

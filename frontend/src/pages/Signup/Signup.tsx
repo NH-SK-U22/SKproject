@@ -2,7 +2,7 @@
 import React from "react";
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 
 // css
 import styles from "./Signup.module.css";
@@ -12,21 +12,57 @@ import { FaSchool, FaUser, FaLock, FaChalkboardTeacher } from "react-icons/fa";
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const userType = searchParams.get("userType") || "student";
   const [formData, setFormData] = useState({
+    schoolID: "",
     classID: "",
     userId: "",
     password: "",
     confirmPassword: "",
   });
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("");
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+      setError("パスワードが一致しません");
       return;
     }
-    console.log("Signup data:", formData);
+
+    if (formData.password.length < 6) {
+      setError("パスワードの長さ6文字以上");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          schoolID: formData.schoolID,
+          classID: formData.classID,
+          userId: formData.userId,
+          password: formData.password,
+          userType: userType,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigate(`/login?userType=${userType}`);
+      } else {
+        setError(data.error || "失敗");
+      }
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError("サーバーに接続できません");
+    }
   };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -34,12 +70,15 @@ const Signup = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+    // エラーメッセージの削除
+    if (error) setError("");
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.signupBox}>
         <h2>Sign up</h2>
+        {error && <div className={styles.error}>{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className={styles.inputGroup}>
             <div className={styles.inputWrapper}>
@@ -47,7 +86,7 @@ const Signup = () => {
               <input
                 type="text"
                 name="schoolID"
-                value={formData.classID}
+                value={formData.schoolID}
                 onChange={handleChange}
                 placeholder="学校記号"
                 required
@@ -94,6 +133,20 @@ const Signup = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="パスワード"
+                required
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWrapper}>
+              <FaLock className={styles.inputIcon} />
+              <input
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="パスワード(再確認)"
                 required
                 autoComplete="new-password"
               />
