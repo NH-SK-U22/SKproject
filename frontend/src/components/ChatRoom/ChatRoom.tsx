@@ -1,5 +1,5 @@
 // react
-import React, { useState } from "react";
+import { useState } from "react";
 
 // react-icons
 import { IoSend } from "react-icons/io5";
@@ -23,7 +23,7 @@ interface AvatarProps {
   userId: string;
 }
 
-const Avatar: React.FC<AvatarProps> = ({ isUser, userId }) => (
+const Avatar = ({ isUser, userId }: AvatarProps) => (
   <div className={styles.messageAvatarBox}>
     <div className={styles.messageAvatar}>
       <FaCircleUser
@@ -34,7 +34,7 @@ const Avatar: React.FC<AvatarProps> = ({ isUser, userId }) => (
   </div>
 );
 
-const ChatRoom: React.FC = () => {
+const ChatRoom = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
 
@@ -71,9 +71,11 @@ const ChatRoom: React.FC = () => {
               <div className={styles.messageContent}>
                 <div className={styles.messageTextContainer}>
                   <div className={styles.messageText}>{message.text}</div>
-                  <div className={styles.emojiFeedbackContainer}>
-                    <EmojiFeedback />
-                  </div>
+                  {!message.isUser && (
+                    <div className={styles.emojiFeedbackContainer}>
+                      <EmojiFeedback />
+                    </div>
+                  )}
                 </div>
                 <div className={styles.messageTime}>{message.timestamp}</div>
               </div>
