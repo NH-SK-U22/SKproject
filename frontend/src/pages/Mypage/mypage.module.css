@@ -91,6 +91,15 @@ html, body {
   display: flex;
   justify-content: space-around;
 }
+.rewardContainer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0;
+  display: flex;
+  justify-content: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
 /* タブボタン */
 .tabs {
   display: flex;
@@ -128,7 +137,7 @@ html, body {
   list-style: none;
   padding: 0;
   margin: 0;
-  width: 90%;
+  width: 100%;
 }
 .history_item {
   background-color: #fff;
