@@ -8,6 +8,9 @@ import { FaCircleUser } from "react-icons/fa6";
 // css
 import styles from "./ChatRoom.module.css";
 
+// components
+import EmojiFeedback from "../EmojiFeedback/EmojiFeedback";
+
 interface Message {
   id: number;
   text: string;
@@ -66,7 +69,12 @@ const ChatRoom: React.FC = () => {
             <div className={styles.messageBox}>
               {!message.isUser && <Avatar isUser={false} userId="1234" />}
               <div className={styles.messageContent}>
-                <div className={styles.messageText}>{message.text}</div>
+                <div className={styles.messageTextContainer}>
+                  <div className={styles.messageText}>{message.text}</div>
+                  <div className={styles.emojiFeedbackContainer}>
+                    <EmojiFeedback />
+                  </div>
+                </div>
                 <div className={styles.messageTime}>{message.timestamp}</div>
               </div>
               {message.isUser && <Avatar isUser={true} userId="5678" />}

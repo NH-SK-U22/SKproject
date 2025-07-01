@@ -11,6 +11,7 @@ import styles from "./MessageModal.module.css";
 // components
 import ChatRoom from "../ChatRoom/ChatRoom";
 import StickyNote from "../StickyNote/StickyNote";
+import EmojiFeedbackWithStats from "../EmojiFeedback/EmojiFeedbackWithStats";
 
 interface MessageModalProps {
   post: {
@@ -47,6 +48,11 @@ const MessageModal = ({ post }: MessageModalProps) => {
                   <div className={styles.mainArea}>
                     <div className={styles.stickyNoteArea}>
                       <StickyNote post={post} size="large" />
+                      <div className={styles.emojiFeedbackWrapper}>
+                        <EmojiFeedbackWithStats
+                          stats={{ happy: 10, neutral: 3, sad: 1 }}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className={styles.chatArea}>

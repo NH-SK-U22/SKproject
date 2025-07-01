@@ -13,7 +13,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 25px;
   padding: 20px;
 }
 
@@ -91,6 +91,27 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.messageTextContainer {
+  position: relative;
+  display: inline-block;
+  width: fit-content;
+}
+
+.emojiFeedbackContainer {
+  position: absolute;
+  top: 100%;
+  left: -20px;
+  z-index: 10;
+  transform: scale(0.7);
+  transform-origin: left top;
+  margin-top: 8px;
+}
+
+.userMessage .emojiFeedbackContainer {
+  left: -20px;
+  transform-origin: left top;
 }
 
 .messageText {
