@@ -15,15 +15,23 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )''')
     
-    # users tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS users(
+    # students tableを作成（図片の内容に基づく）
+    c.execute('''CREATE TABLE IF NOT EXISTS students(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        class_number TEXT NOT NULL,
-        user_id TEXT NOT NULL,
+        school_id TEXT NOT NULL,
+        name TEXT,
+        number TEXT NOT NULL,
+        class_id TEXT NOT NULL,
         password TEXT NOT NULL,
         user_type TEXT NOT NULL CHECK(user_type IN ('student', 'teacher')),
+        sum_point INTEGER DEFAULT 0,
+        have_point INTEGER DEFAULT 0,
+        camp_id INTEGER,
+        theme_color TEXT,
+        user_color TEXT,
+        blacklist_point INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(class_number, user_id, user_type)
+        UNIQUE(school_id, class_id, number, user_type)
     )''')
     
     # colorsets tableを作成
@@ -127,15 +135,17 @@ def signup():
     if not request.json:
         return jsonify({'error': 'Request body is required'}), 400
     
-    required_fields = ['classNumber', 'userId', 'password', 'userType']
+    required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
     for field in required_fields:
         if field not in request.json:
             return jsonify({'error': f'{field} is required'}), 400
     
-    class_number = request.json['classNumber']
-    user_id = request.json['userId']
+    school_id = request.json['schoolID']
+    class_id = request.json['classID']
+    number = request.json['userId']  # userId in frontend corresponds to number (出席番号)
     password = request.json['password']
     user_type = request.json['userType']
+    name = request.json.get('name', '')  # Optional name field
     
     if user_type not in ['student', 'teacher']:
         return jsonify({'error': 'Invalid user type'}), 400
@@ -145,8 +155,8 @@ def signup():
         c = conn.cursor()
         
         # ユーザーがすでに存在するか確認
-        c.execute('SELECT id FROM users WHERE class_number = ? AND user_id = ? AND user_type = ?',
-                 (class_number, user_id, user_type))
+        c.execute('SELECT id FROM students WHERE school_id = ? AND class_id = ? AND number = ? AND user_type = ?',
+                 (school_id, class_id, number, user_type))
         existing_user = c.fetchone()
         
         if existing_user:
@@ -154,8 +164,9 @@ def signup():
             return jsonify({'error': 'User already exists'}), 409
         
         # 新しいユーザーを挿入
-        c.execute('INSERT INTO users (class_number, user_id, password, user_type) VALUES (?, ?, ?, ?)',
-                 (class_number, user_id, password, user_type))
+        c.execute('''INSERT INTO students (school_id, class_id, number, password, user_type, name) 
+                     VALUES (?, ?, ?, ?, ?, ?)''',
+                 (school_id, class_id, number, password, user_type, name))
         
         user_id_db = c.lastrowid
         conn.commit()
@@ -177,13 +188,14 @@ def login():
     if not request.json:
         return jsonify({'error': 'Request body is required'}), 400
     
-    required_fields = ['classNumber', 'userId', 'password', 'userType']
+    required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
     for field in required_fields:
         if field not in request.json:
             return jsonify({'error': f'{field} is required'}), 400
     
-    class_number = request.json['classNumber']
-    user_id = request.json['userId']
+    school_id = request.json['schoolID']
+    class_id = request.json['classID']
+    number = request.json['userId']  # userId in frontend corresponds to number (出席番号)
     password = request.json['password']
     user_type = request.json['userType']
     
@@ -191,9 +203,12 @@ def login():
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        # 查找用戶
-        c.execute('SELECT id, class_number, user_id, user_type, created_at FROM users WHERE class_number = ? AND user_id = ? AND password = ? AND user_type = ?',
-                 (class_number, user_id, password, user_type))
+        # ユーザーを調べる
+        c.execute('''SELECT id, school_id, class_id, number, name, user_type, sum_point, have_point, 
+                            camp_id, theme_color, user_color, blacklist_point, created_at 
+                     FROM students 
+                     WHERE school_id = ? AND class_id = ? AND number = ? AND password = ? AND user_type = ?''',
+                 (school_id, class_id, number, password, user_type))
         user = c.fetchone()
         conn.close()
         
@@ -203,36 +218,171 @@ def login():
                 'message': 'Login successful',
                 'user': {
                     'id': user[0],
-                    'class_number': user[1],
-                    'user_id': user[2],
-                    'user_type': user[3],
-                    'created_at': user[4]
+                    'school_id': user[1],
+                    'class_id': user[2],
+                    'number': user[3],
+                    'name': user[4],
+                    'user_type': user[5],
+                    'sum_point': user[6],
+                    'have_point': user[7],
+                    'camp_id': user[8],
+                    'theme_color': user[9],
+                    'user_color': user[10],
+                    'blacklist_point': user[11],
+                    'created_at': user[12]
                 }
             }), 200
         else:
-            return jsonify({'error': 'Invalid credentials'}), 401
+            return jsonify({'error': '無効な認証情報'}), 401
             
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/users', methods=['GET'])
-def get_users():
+@app.route('/api/students', methods=['GET'])
+def get_students():
     try:
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
-        c.execute('SELECT id, class_number, user_id, user_type, created_at FROM users ORDER BY created_at DESC')
-        users = []
+        c.execute('''SELECT id, school_id, class_id, number, name, user_type, sum_point, have_point,
+                            camp_id, theme_color, user_color, blacklist_point, created_at 
+                     FROM students ORDER BY created_at DESC''')
+        students = []
         for row in c.fetchall():
-            users.append({
+            students.append({
                 'id': row[0],
-                'class_number': row[1],
-                'user_id': row[2],
-                'user_type': row[3],
-                'created_at': row[4]
+                'school_id': row[1],
+                'class_id': row[2],
+                'number': row[3],
+                'name': row[4],
+                'user_type': row[5],
+                'sum_point': row[6],
+                'have_point': row[7],
+                'camp_id': row[8],
+                'theme_color': row[9],
+                'user_color': row[10],
+                'blacklist_point': row[11],
+                'created_at': row[12]
             })
         conn.close()
         
-        return jsonify(users)
+        return jsonify(students)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/students/<int:student_id>/points', methods=['PATCH'])
+def update_student_points(student_id):
+    if not request.json:
+        return jsonify({'error': 'Request body is required'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        update_fields = []
+        values = []
+        
+        if 'sum_point' in request.json:
+            update_fields.append('sum_point = ?')
+            values.append(request.json['sum_point'])
+        
+        if 'have_point' in request.json:
+            update_fields.append('have_point = ?')
+            values.append(request.json['have_point'])
+            
+        if 'blacklist_point' in request.json:
+            update_fields.append('blacklist_point = ?')
+            values.append(request.json['blacklist_point'])
+        
+        if not update_fields:
+            return jsonify({'error': 'No valid fields to update'}), 400
+        
+        values.append(student_id)
+        query = f"UPDATE students SET {', '.join(update_fields)} WHERE id = ?"
+        
+        c.execute(query, values)
+        conn.commit()
+        
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({'error': 'Student not found'}), 404
+            
+        conn.close()
+        return jsonify({'status': 'success', 'message': 'Points updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/students/<int:student_id>/camp', methods=['PATCH'])
+def update_student_camp(student_id):
+    if not request.json:
+        return jsonify({'error': 'Request body is required'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        update_fields = []
+        values = []
+        
+        if 'camp_id' in request.json:
+            update_fields.append('camp_id = ?')
+            values.append(request.json['camp_id'])
+        
+        if 'theme_color' in request.json:
+            update_fields.append('theme_color = ?')
+            values.append(request.json['theme_color'])
+            
+        if 'user_color' in request.json:
+            update_fields.append('user_color = ?')
+            values.append(request.json['user_color'])
+        
+        if not update_fields:
+            return jsonify({'error': 'No valid fields to update'}), 400
+        
+        values.append(student_id)
+        query = f"UPDATE students SET {', '.join(update_fields)} WHERE id = ?"
+        
+        c.execute(query, values)
+        conn.commit()
+        
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({'error': 'Student not found'}), 404
+            
+        conn.close()
+        return jsonify({'status': 'success', 'message': 'Camp settings updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/students/class/<class_id>', methods=['GET'])
+def get_students_by_class(class_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('''SELECT id, school_id, class_id, number, name, user_type, sum_point, have_point,
+                            camp_id, theme_color, user_color, blacklist_point, created_at 
+                     FROM students WHERE class_id = ? ORDER BY number''', (class_id,))
+        students = []
+        for row in c.fetchall():
+            students.append({
+                'id': row[0],
+                'school_id': row[1],
+                'class_id': row[2],
+                'number': row[3],
+                'name': row[4],
+                'user_type': row[5],
+                'sum_point': row[6],
+                'have_point': row[7],
+                'camp_id': row[8],
+                'theme_color': row[9],
+                'user_color': row[10],
+                'blacklist_point': row[11],
+                'created_at': row[12]
+            })
+        conn.close()
+        
+        return jsonify(students)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
