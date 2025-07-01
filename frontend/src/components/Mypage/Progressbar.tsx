@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { Box, Typography, LinearProgress } from '@mui/material'
-import styles from '../../pages/Mypage/mypage.module.css'
+
 
 type ProgressBarProps = {
   remaining: number    // 残りポイント
