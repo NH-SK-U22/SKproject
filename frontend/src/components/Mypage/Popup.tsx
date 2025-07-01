@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
+import styles from '../../pages/Mypage/mypage.module.css'
 
 const Popup = () => {
    const [open, setOpen] = useState(false)
@@ -19,9 +20,12 @@ const Popup = () => {
       </Button>
 
       <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>ポップアップタイトル</DialogTitle>
+        <DialogTitle>過去ランク</DialogTitle>
         <DialogContent>
-          <p>ここに好きなコンテンツを置けます。</p>
+           <ul className={styles.history_list}>
+              <li className={styles.history_item}>たけのこ/きのこ:ダイヤランク</li>
+              <li className={styles.history_item}>室内/外:ダイヤランク</li>
+            </ul>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>閉じる</Button>

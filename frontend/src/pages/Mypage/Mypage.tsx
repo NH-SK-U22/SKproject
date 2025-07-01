@@ -5,9 +5,28 @@ import Card from '../../components/Mypage/Card'
 import Progressbar from '../../components/Mypage/Progressbar'
 import itist from '../../../public/images/1st.png'
 import Popup from '../../components/Mypage/Popup'
+import RewardComponent from "../../components/Reward/RewardComponent";
 
 const Mypage = () => {
   const [tabs,setTabs]=useState(0)
+  const RewardData: Rewarddata[] = [
+  {
+    rewardInfo: "報酬1",
+    point: 50,
+  },
+  {
+    rewardInfo: "報酬2",
+    point: 100,
+  },
+  {
+    rewardInfo: "報酬3",
+    point: 150,
+  },
+  {
+    rewardInfo: "報酬4",
+    point: 200,
+  },
+];
   return (
     <div className={styles.vh}>
       <Sidebar/>
@@ -41,11 +60,15 @@ const Mypage = () => {
           <div id="cards" className={`${styles.tab_content} ${tabs === 0 ? ` ${styles.active}` : ''}`}>
             
             <div className={styles.bottom}>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
+              <div className={styles.rewardContainer}>
+                {RewardData.map((reward, index) => (
+                  <RewardComponent
+                    key={index}
+                    rewardInfo={reward.rewardInfo}
+                    point={reward.point}
+                  />
+                ))}
+              </div>
             </div>
           </div>):""}
         
