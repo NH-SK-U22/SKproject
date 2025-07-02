@@ -4,9 +4,29 @@ import Sidebar from '../../components/Sidebar/Sidebar'
 import Card from '../../components/Mypage/Card'
 import Progressbar from '../../components/Mypage/Progressbar'
 import itist from '../../../public/images/1st.png'
+import Popup from '../../components/Mypage/Popup'
+import RewardComponent from "../../components/Reward/RewardComponent";
 
 const Mypage = () => {
   const [tabs,setTabs]=useState(0)
+  const RewardData: Rewarddata[] = [
+  {
+    rewardInfo: "報酬1",
+    point: 50,
+  },
+  {
+    rewardInfo: "報酬2",
+    point: 100,
+  },
+  {
+    rewardInfo: "報酬3",
+    point: 150,
+  },
+  {
+    rewardInfo: "報酬4",
+    point: 200,
+  },
+];
   return (
     <div className={styles.vh}>
       <Sidebar/>
@@ -27,6 +47,7 @@ const Mypage = () => {
               {/* <p className={styles.points}>あと、500pt</p> */}
               <Progressbar  remaining={500} target={2000} />
             </div>
+            <Popup/>
           </div>
         </div>
 
@@ -39,11 +60,15 @@ const Mypage = () => {
           <div id="cards" className={`${styles.tab_content} ${tabs === 0 ? ` ${styles.active}` : ''}`}>
             
             <div className={styles.bottom}>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
-              <Card text="それ" point={6} click="/mypage"/>
+              <div className={styles.rewardContainer}>
+                {RewardData.map((reward, index) => (
+                  <RewardComponent
+                    key={index}
+                    rewardInfo={reward.rewardInfo}
+                    point={reward.point}
+                  />
+                ))}
+              </div>
             </div>
           </div>):""}
         
@@ -53,7 +78,7 @@ const Mypage = () => {
               <li className={styles.history_item}>チョコたっぷり: 美味しいと思います</li>
               <li className={styles.history_item}>FIFA: ボール持ったフランスのが持ってない日本より速いです</li>
               <li className={styles.history_item}>きのこ派: 手が汚れにくいですよね???</li>
-              <li className={styles.history_item}>タスク:ランクの表示画像、残りのポイントプログレスバー</li>
+              <li className={styles.history_item}>発言履歴で評価の数(kanさんの作ってくれたやつの顔の奴、)過去ランク</li>
             </ul>
           </div>):""}
 

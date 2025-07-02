@@ -11,6 +11,9 @@ import styles from "./Dashboard.module.css";
 // context
 import { usePost } from "../../context/PostContext";
 
+// utils
+import { getCurrentUser } from "../../utils/auth";
+
 const DRAG_MARGIN = 0;
 const GRID_GAP = 30;
 const NOTE_WIDTH = 200;
@@ -24,17 +27,28 @@ const StickyNote = ({
   onMoveEnd,
   isSidebarHovered,
 }: {
-  post: { id: number; text: string; color: string };
+  post: {
+    id: number;
+    text: string;
+    color: string;
+    x_axis?: number;
+    y_axis?: number;
+  };
   idx: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
   maxPerRow: number;
   isLastMoved: boolean;
-  onMoveEnd: (id: number) => void;
+  onMoveEnd: (id: number, x: number, y: number) => void;
   isSidebarHovered: boolean;
 }) => {
   // ドラッグ状態
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
-    null
+    // 位置情報がデータベースにあり、(0,0)でない場合は、データベースの位置を使用する
+    post.x_axis !== undefined &&
+      post.y_axis !== undefined &&
+      (post.x_axis !== 0 || post.y_axis !== 0)
+      ? { x: post.x_axis, y: post.y_axis }
+      : null
   );
   const [dragging, setDragging] = useState(false);
   const offset = useRef({ x: 0, y: 0 });
@@ -77,7 +91,10 @@ const StickyNote = ({
     const handleMouseUp = () => {
       if (dragging) {
         setDragging(false);
-        onMoveEnd(post.id);
+        // 新しい位置がある場合、データベースに保存
+        if (position) {
+          onMoveEnd(post.id, position.x, position.y);
+        }
       }
       document.body.style.userSelect = "auto";
     };
@@ -89,7 +106,7 @@ const StickyNote = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragging, gridRef, post.id, onMoveEnd]);
+  }, [dragging, gridRef, post.id, onMoveEnd, position]);
 
   // 初期位置：idxに基づく
   const defaultStyle: { left: number; top: number } =
@@ -103,7 +120,6 @@ const StickyNote = ({
   // z-index の計算 - sidebarがhoverされている場合は低く設定
   const getZIndex = () => {
     if (dragging) {
-      console.log("Dragging, isSidebarHovered:", isSidebarHovered);
       return undefined; // CSSでz-indexを制御
     }
     if (isLastMoved) return 10;
@@ -147,15 +163,25 @@ const StickyNote = ({
 };
 
 const Dashboard = () => {
-  const { posts } = usePost();
+  const { posts, loadPosts, updatePost } = usePost();
   const gridRef = useRef<HTMLDivElement>(null);
   const [maxPerRow, setMaxPerRow] = useState(1);
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
-  const handleNoteMove = (id: number) => {
+  const handleNoteMove = (id: number, x: number, y: number) => {
     setLastMovedNoteId(id);
+    // 位置情報をデータベースに保存
+    updatePost(id, { x_axis: x, y_axis: y });
   };
+
+  // コンポーネント装着時に支柱に荷重をかける
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      loadPosts(currentUser.id);
+    }
+  }, [loadPosts]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -178,20 +204,16 @@ const Dashboard = () => {
   useEffect(() => {
     const checkSidebarHover = () => {
       const sidebarElements = document.querySelectorAll('[class*="sidebar"]');
-      console.log("Found sidebar elements:", sidebarElements.length);
 
-      sidebarElements.forEach((element, index) => {
-        console.log(`Sidebar element ${index}:`, element.className);
+      sidebarElements.forEach((element) => {
         if (
           element.className.includes("sidebar") &&
           !element.className.includes("Container")
         ) {
           const handleMouseEnter = () => {
-            console.log("Sidebar mouse enter");
             setIsSidebarHovered(true);
           };
           const handleMouseLeave = () => {
-            console.log("Sidebar mouse leave");
             setIsSidebarHovered(false);
           };
 
