@@ -62,43 +62,6 @@ def init_db():
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
     
-    # 新しい列が存在しない場合は追加する
-    try:
-        # 各新列を個別に追加する（列が既に存在する場合はエラーが発生するが、無視する）
-        c.execute('ALTER TABLE sticky ADD COLUMN ai_summary_content TEXT')
-    except sqlite3.OperationalError:
-        pass  # 列が既に存在する場合
-    
-    try:
-        c.execute('ALTER TABLE sticky ADD COLUMN ai_teammate_avg_prediction REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        pass
-    
-    try:
-        c.execute('ALTER TABLE sticky ADD COLUMN ai_enemy_avg_prediction REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        pass
-    
-    try:
-        c.execute('ALTER TABLE sticky ADD COLUMN ai_overall_avg_prediction REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        pass
-    
-    try:
-        c.execute('ALTER TABLE sticky ADD COLUMN teammate_avg_score REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        pass
-    
-    try:
-        c.execute('ALTER TABLE sticky ADD COLUMN enemy_avg_score REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        pass
-    
-    try:
-        c.execute('ALTER TABLE sticky ADD COLUMN overall_avg_score REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        pass
-    
     # message tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS message(
         message_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -451,58 +414,60 @@ def create_sticky():
     if not request.json:
         return jsonify({'error': 'リクエストボディが必要です'}), 400
     
+    # 調試信息：檢查接收到的數據
+    print(f"DEBUG: Received request data: {request.json}")
+    
     required_fields = ['student_id', 'sticky_content', 'sticky_color']
     for field in required_fields:
         if field not in request.json:
+            print(f"DEBUG: Missing field: {field}")
             return jsonify({'error': f'{field}が必要です'}), 400
     
     try:
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        # この接続の外部キーを有効にする
+        # この接続を外部キーを有効にする
         c.execute('PRAGMA foreign_keys = ON')
         
-        # 学生が存在するか確認
-        c.execute('SELECT student_id FROM students WHERE student_id = ?', (request.json['student_id'],))
+        # 生徒が存在しているかどうかを確認する
+        student_id = request.json['student_id']
+        print(f"DEBUG: Looking for student_id: {student_id} (type: {type(student_id)})")
+        
+        c.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
         student = c.fetchone()
+        print(f"DEBUG: Student found: {student}")
+        
+        # 生徒全員を同時にチェックする
+        c.execute('SELECT student_id, name, number FROM students')
+        all_students = c.fetchall()
+        print(f"DEBUG: All students in database: {all_students}")
+        
         if not student:
             conn.close()
+            print(f"DEBUG: Student {student_id} not found in database")
             return jsonify({'error': '指定された学生が見つかりません'}), 400
         
-        # 新しい構造を使用して付箋を挿入
-        try:
-            c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, feedback_A, feedback_B, feedback_C,
-                                             ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
-                                             teammate_avg_score, enemy_avg_score, overall_avg_score) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                     (request.json['student_id'], 
-                      request.json['sticky_content'],
-                      request.json['sticky_color'],
-                      request.json.get('x_axis', 0),
-                      request.json.get('y_axis', 0),
-                      request.json.get('feedback_A', 0),
-                      request.json.get('feedback_B', 0),
-                      request.json.get('feedback_C', 0),
-                      request.json.get('ai_summary_content'),
-                      request.json.get('ai_teammate_avg_prediction', 0),
-                      request.json.get('ai_enemy_avg_prediction', 0),
-                      request.json.get('ai_overall_avg_prediction', 0),
-                      request.json.get('teammate_avg_score', 0),
-                      request.json.get('enemy_avg_score', 0),
-                      request.json.get('overall_avg_score', 0)))
-        except sqlite3.OperationalError as e:
-            # 新しい列が存在しない場合は、元の構造を使用する
-            c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, feedback_A, feedback_B, feedback_C) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                     (request.json['student_id'], 
-                      request.json['sticky_content'],
-                      request.json['sticky_color'],
-                      request.json.get('x_axis', 0),
-                      request.json.get('y_axis', 0),
-                      request.json.get('feedback_A', 0),
-                      request.json.get('feedback_B', 0),
-                      request.json.get('feedback_C', 0)))
+        # 付箋插入
+        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, feedback_A, feedback_B, feedback_C,
+                                         ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
+                                         teammate_avg_score, enemy_avg_score, overall_avg_score) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                 (request.json['student_id'], 
+                  request.json['sticky_content'],
+                  request.json['sticky_color'],
+                  request.json.get('x_axis', 0),
+                  request.json.get('y_axis', 0),
+                  request.json.get('feedback_A', 0),
+                  request.json.get('feedback_B', 0),
+                  request.json.get('feedback_C', 0),
+                  request.json.get('ai_summary_content'),
+                  request.json.get('ai_teammate_avg_prediction', 0),
+                  request.json.get('ai_enemy_avg_prediction', 0),
+                  request.json.get('ai_overall_avg_prediction', 0),
+                  request.json.get('teammate_avg_score', 0),
+                  request.json.get('enemy_avg_score', 0),
+                  request.json.get('overall_avg_score', 0)))
         
         sticky_id = c.lastrowid
         conn.commit()
@@ -523,79 +488,43 @@ def get_sticky_notes():
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        # この接続の外部キーを有効にする
-        c.execute('PRAGMA foreign_keys = ON')
-        
         student_id = request.args.get('student_id')
         
-        # 新しい構造を使用して付箋を取得
-        try:
-            if student_id:
-                c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
-                                    feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
-                                    ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
-                                    overall_avg_score, created_at 
-                             FROM sticky WHERE student_id = ? ORDER BY created_at DESC''', (student_id,))
-            else:
-                c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
-                                    feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
-                                    ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
-                                    overall_avg_score, created_at 
-                             FROM sticky ORDER BY created_at DESC''')
-            
-            sticky_notes = []
-            for row in c.fetchall():
-                sticky_notes.append({
-                    'sticky_id': row[0],
-                    'student_id': row[1],
-                    'sticky_content': row[2],
-                    'sticky_color': row[3],
-                    'x_axis': row[4],
-                    'y_axis': row[5],
-                    'feedback_A': row[6],
-                    'feedback_B': row[7],
-                    'feedback_C': row[8],
-                    'ai_summary_content': row[9],
-                    'ai_teammate_avg_prediction': row[10],
-                    'ai_enemy_avg_prediction': row[11],
-                    'ai_overall_avg_prediction': row[12],
-                    'teammate_avg_score': row[13],
-                    'enemy_avg_score': row[14],
-                    'overall_avg_score': row[15],
-                    'created_at': row[16]
-                })
-        except sqlite3.OperationalError as e:
-            # 新しいカラムが存在しない場合は、元の構造を使用する
-            if student_id:
-                c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
-                                    feedback_A, feedback_B, feedback_C, created_at 
-                             FROM sticky WHERE student_id = ? ORDER BY created_at DESC''', (student_id,))
-            else:
-                c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
-                                    feedback_A, feedback_B, feedback_C, created_at 
-                             FROM sticky ORDER BY created_at DESC''')
-            
-            sticky_notes = []
-            for row in c.fetchall():
-                sticky_notes.append({
-                    'sticky_id': row[0],
-                    'student_id': row[1],
-                    'sticky_content': row[2],
-                    'sticky_color': row[3],
-                    'x_axis': row[4],
-                    'y_axis': row[5],
-                    'feedback_A': row[6],
-                    'feedback_B': row[7],
-                    'feedback_C': row[8],
-                    'ai_summary_content': None,
-                    'ai_teammate_avg_prediction': 0,
-                    'ai_enemy_avg_prediction': 0,
-                    'ai_overall_avg_prediction': 0,
-                    'teammate_avg_score': 0,
-                    'enemy_avg_score': 0,
-                    'overall_avg_score': 0,
-                    'created_at': row[9]
-                })
+        # 付箋取得
+        if student_id:
+            c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
+                                feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
+                                ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
+                                overall_avg_score, created_at 
+                         FROM sticky WHERE student_id = ? ORDER BY created_at DESC''', (student_id,))
+        else:
+            c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
+                                feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
+                                ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
+                                overall_avg_score, created_at 
+                         FROM sticky ORDER BY created_at DESC''')
+        
+        sticky_notes = []
+        for row in c.fetchall():
+            sticky_notes.append({
+                'sticky_id': row[0],
+                'student_id': row[1],
+                'sticky_content': row[2],
+                'sticky_color': row[3],
+                'x_axis': row[4],
+                'y_axis': row[5],
+                'feedback_A': row[6],
+                'feedback_B': row[7],
+                'feedback_C': row[8],
+                'ai_summary_content': row[9],
+                'ai_teammate_avg_prediction': row[10],
+                'ai_enemy_avg_prediction': row[11],
+                'ai_overall_avg_prediction': row[12],
+                'teammate_avg_score': row[13],
+                'enemy_avg_score': row[14],
+                'overall_avg_score': row[15],
+                'created_at': row[16]
+            })
         
         conn.close()
         return jsonify(sticky_notes)
