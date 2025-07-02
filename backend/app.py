@@ -87,6 +87,7 @@ def init_db():
         UNIQUE(group_number, camp_type)
     )''')
     
+    # teachers tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS teachers(
         teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
         school_id TEXT NOT NULL,
@@ -96,6 +97,7 @@ def init_db():
         UNIQUE(school_id,name,class_number)
     )''')
     
+    # reward tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS reward(
         reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
         reward_content TEXT NOT NULL UNIQUE,
@@ -105,6 +107,7 @@ def init_db():
         FOREIGN KEY(creater) REFERENCES teachers(teacher_id)
     )''')
     
+    # post tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS post(
         post_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id INTEGER NOT NULL,
@@ -125,6 +128,17 @@ def init_db():
         whole_evaluation INTEGER,
         FOREIGN KEY(student_id) REFERENCES students(id),
         UNIQUE(student_id,text)
+    )''')
+    
+    # holdReward tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS holdReward(
+        hold_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        reward_id INTEGER NOT NULL,
+        is_holding BOOLEAN NOT NULL,
+        used_at TIMESTAMP NULL,
+        FOREIGN KEY(student_id) REFERENCES students(id),
+        FOREIGN KEY(reward_id) REFERENCES reward(reward_id)
     )''')
     
     # colorsetsデータの挿入
