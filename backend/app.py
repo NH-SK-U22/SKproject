@@ -45,9 +45,42 @@ def init_db():
     
     c.execute('''CREATE TABLE IF NOT EXISTS teachers(
         teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school_id TEXT NOT NULL,
         name CHAR(50) NOT NULL,
         class_number CHAR(5) NOT NULL,
-        UNIQUE(name,class_number)
+        password TEXT NOT NULL,
+        UNIQUE(school_id,name,class_number)
+    )''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS reward(
+        reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reward_content TEXT NOT NULL UNIQUE,
+        need_point INTEGER NOT NULL,
+        need_rank INTEGER NOT NULL,
+        creater INTEGER NOT NULL,
+        FOREIGN KEY(creater) REFERENCES teachers(teacher_id)
+    )''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS post(
+        post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        text TEXT NOT NULL,
+        ai_summary TEXT NOT NULL,
+        sum_evaluation_a INTEGER,
+        sum_evaluation_b INTEGER,
+        sum_evaluation_c INTEGER,
+        stickynote_color TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        x_coordinate INTEGER,
+        y_coordinate INTEGER,
+        ally_ai_evaluation INTEGER,
+        enemy_ai_evaluation INTEGER,
+        whole_ai_evaluation INTEGER,
+        ally_evaluation INTEGER,
+        enemy_evaluation INTEGER,
+        whole_evaluation INTEGER,
+        FOREIGN KEY(student_id) REFERENCES students(id),
+        UNIQUE(student_id,text)
     )''')
     
     # colorsetsデータの挿入
