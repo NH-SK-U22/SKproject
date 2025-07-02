@@ -9,15 +9,13 @@ CORS(app) # CORSをアプリケーション全体に適用
 def init_db():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS test(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        content TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )''')
     
-    # students tableを作成（図片の内容に基づく）
+    # 外部キー制約を有効にする
+    c.execute('PRAGMA foreign_keys = ON')
+    
+    # students tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS students(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER PRIMARY KEY AUTOINCREMENT,
         school_id TEXT NOT NULL,
         name TEXT,
         number TEXT NOT NULL,
@@ -34,6 +32,89 @@ def init_db():
         UNIQUE(school_id, class_id, number, user_type)
     )''')
     
+    # teachers tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS teachers(
+        teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name CHAR(50) NOT NULL,
+        class_number CHAR(5) NOT NULL,
+        UNIQUE(name,class_number)
+    )''')
+    
+    # sticky tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS sticky(
+        sticky_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        sticky_content TEXT NOT NULL,
+        sticky_color TEXT NOT NULL,
+        x_axis INTEGER DEFAULT 0,
+        y_axis INTEGER DEFAULT 0,
+        feedback_A INTEGER DEFAULT 0,
+        feedback_B INTEGER DEFAULT 0,
+        feedback_C INTEGER DEFAULT 0,
+        ai_summary_content TEXT,
+        ai_teammate_avg_prediction REAL DEFAULT 0,
+        ai_enemy_avg_prediction REAL DEFAULT 0,
+        ai_overall_avg_prediction REAL DEFAULT 0,
+        teammate_avg_score REAL DEFAULT 0,
+        enemy_avg_score REAL DEFAULT 0,
+        overall_avg_score REAL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES students(id)
+        )''')
+    
+    # 新しい列が存在しない場合は追加する
+    try:
+        # 各新列を個別に追加する（列が既に存在する場合はエラーが発生するが、無視する）
+        c.execute('ALTER TABLE sticky ADD COLUMN ai_summary_content TEXT')
+    except sqlite3.OperationalError:
+        pass  # 列が既に存在する場合
+    
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN ai_teammate_avg_prediction REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN ai_enemy_avg_prediction REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN ai_overall_avg_prediction REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN teammate_avg_score REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN enemy_avg_score REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN overall_avg_score REAL DEFAULT 0')
+    except sqlite3.OperationalError:
+        pass
+    
+    # message tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS message(
+        message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        message_content TEXT NOT NULL,
+        camp_id INTEGER NOT NULL,
+        sticky_id INTEGER NOT NULL,
+        feedback_A INTEGER DEFAULT 0,
+        feedback_B INTEGER DEFAULT 0,
+        feedback_C INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES students(id),
+        FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id)
+        )''')
+    
+    
     # colorsets tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS colorsets(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,13 +122,6 @@ def init_db():
         camp_type INTEGER NOT NULL,
         colors TEXT NOT NULL,
         UNIQUE(group_number, camp_type)
-    )''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS teachers(
-        teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name CHAR(50) NOT NULL,
-        class_number CHAR(5) NOT NULL,
-        UNIQUE(name,class_number)
     )''')
     
     # colorsetsデータの挿入
@@ -89,31 +163,7 @@ init_db()
 def health():
     return jsonify({'status': 'ok'})
 
-@app.route('/api/messages', methods=['POST'])
-def add_message():
-    if not request.json or 'content' not in request.json:
-        return jsonify({'error': 'Content is required'}), 400
-    
-    content = request.json['content']
-    
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute('INSERT INTO test (content) VALUES (?)', (content,))
-    conn.commit()
-    conn.close()
-    
-    return jsonify({'status': 'success'}), 201
-
-@app.route('/api/messages', methods=['GET'])
-def get_messages():
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM test ORDER BY created_at DESC')
-    messages = [{'id': row[0], 'content': row[1], 'created_at': row[2]} for row in c.fetchall()]
-    conn.close()
-    
-    return jsonify(messages)
-
+# colorset
 @app.route('/api/colorsets/<camp>', methods=['GET'])
 def get_colorsets(camp):
     try:
@@ -141,22 +191,22 @@ def get_colorsets(camp):
 @app.route('/api/signup', methods=['POST'])
 def signup():
     if not request.json:
-        return jsonify({'error': 'Request body is required'}), 400
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
     
     required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
     for field in required_fields:
         if field not in request.json:
-            return jsonify({'error': f'{field} is required'}), 400
+            return jsonify({'error': f'{field}が必要です'}), 400
     
     school_id = request.json['schoolID']
     class_id = request.json['classID']
-    number = request.json['userId']  # userId in frontend corresponds to number (出席番号)
+    number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
     password = request.json['password']
     user_type = request.json['userType']
-    name = request.json.get('name', '')  # Optional name field
+    name = request.json.get('name', '')  # オプションの名前フィールド
     
     if user_type not in ['student', 'teacher']:
-        return jsonify({'error': 'Invalid user type'}), 400
+        return jsonify({'error': '無効なユーザータイプです'}), 400
     
     try:
         conn = sqlite3.connect('database.db')
@@ -169,7 +219,7 @@ def signup():
         
         if existing_user:
             conn.close()
-            return jsonify({'error': 'User already exists'}), 409
+            return jsonify({'error': 'ユーザーがすでに存在します'}), 409
         
         # 新しいユーザーを挿入
         c.execute('''INSERT INTO students (school_id, class_id, number, password, user_type, name) 
@@ -182,28 +232,28 @@ def signup():
         
         return jsonify({
             'status': 'success',
-            'message': 'User created successfully',
+            'message': 'ユーザーが作成されました',
             'user_id': user_id_db
         }), 201
         
     except sqlite3.IntegrityError as e:
-        return jsonify({'error': 'User already exists'}), 409
+        return jsonify({'error': 'ユーザーがすでに存在します'}), 409
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
     if not request.json:
-        return jsonify({'error': 'Request body is required'}), 400
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
     
     required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
     for field in required_fields:
         if field not in request.json:
-            return jsonify({'error': f'{field} is required'}), 400
+            return jsonify({'error': f'{field}が必要です'}), 400
     
     school_id = request.json['schoolID']
     class_id = request.json['classID']
-    number = request.json['userId']  # userId in frontend corresponds to number (出席番号)
+    number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
     password = request.json['password']
     user_type = request.json['userType']
     
@@ -280,7 +330,7 @@ def get_students():
 @app.route('/api/students/<int:student_id>/points', methods=['PATCH'])
 def update_student_points(student_id):
     if not request.json:
-        return jsonify({'error': 'Request body is required'}), 400
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
     
     try:
         conn = sqlite3.connect('database.db')
@@ -302,7 +352,7 @@ def update_student_points(student_id):
             values.append(request.json['blacklist_point'])
         
         if not update_fields:
-            return jsonify({'error': 'No valid fields to update'}), 400
+            return jsonify({'error': '更新するフィールドがありません'}), 400
         
         values.append(student_id)
         query = f"UPDATE students SET {', '.join(update_fields)} WHERE id = ?"
@@ -312,10 +362,10 @@ def update_student_points(student_id):
         
         if c.rowcount == 0:
             conn.close()
-            return jsonify({'error': 'Student not found'}), 404
+            return jsonify({'error': 'ユーザーが見つかりません'}), 404
             
         conn.close()
-        return jsonify({'status': 'success', 'message': 'Points updated successfully'})
+        return jsonify({'status': 'success', 'message': 'ポイントが更新されました'})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -323,7 +373,7 @@ def update_student_points(student_id):
 @app.route('/api/students/<int:student_id>/camp', methods=['PATCH'])
 def update_student_camp(student_id):
     if not request.json:
-        return jsonify({'error': 'Request body is required'}), 400
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
     
     try:
         conn = sqlite3.connect('database.db')
@@ -345,7 +395,7 @@ def update_student_camp(student_id):
             values.append(request.json['user_color'])
         
         if not update_fields:
-            return jsonify({'error': 'No valid fields to update'}), 400
+            return jsonify({'error': '更新するフィールドがありません'}), 400
         
         values.append(student_id)
         query = f"UPDATE students SET {', '.join(update_fields)} WHERE id = ?"
@@ -358,7 +408,7 @@ def update_student_camp(student_id):
             return jsonify({'error': 'Student not found'}), 404
             
         conn.close()
-        return jsonify({'status': 'success', 'message': 'Camp settings updated successfully'})
+        return jsonify({'status': 'success', 'message': '陣営設定が更新されました'})
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -391,6 +441,247 @@ def get_students_by_class(class_id):
         conn.close()
         
         return jsonify(students)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Sticky Notes API endpoints
+@app.route('/api/sticky', methods=['POST'])
+def create_sticky():
+    
+    if not request.json:
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
+    
+    required_fields = ['student_id', 'sticky_content', 'sticky_color']
+    for field in required_fields:
+        if field not in request.json:
+            return jsonify({'error': f'{field}が必要です'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # Enable foreign keys for this connection
+        c.execute('PRAGMA foreign_keys = ON')
+        
+        # Check if student exists
+        c.execute('SELECT id FROM students WHERE id = ?', (request.json['student_id'],))
+        if not c.fetchone():
+            conn.close()
+            print(f"Error: Student ID {request.json['student_id']} not found")  # Debug log
+            return jsonify({'error': '指定された学生が見つかりません'}), 400
+        
+        print(f"Creating sticky with data: student_id={request.json['student_id']}, content={request.json['sticky_content'][:50] if len(request.json['sticky_content']) > 50 else request.json['sticky_content']}...")  # Debug log
+        
+        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, feedback_A, feedback_B, feedback_C,
+                                         ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
+                                         teammate_avg_score, enemy_avg_score, overall_avg_score) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                 (request.json['student_id'], 
+                  request.json['sticky_content'],
+                  request.json['sticky_color'],
+                  request.json.get('x_axis', 0),
+                  request.json.get('y_axis', 0),
+                  request.json.get('feedback_A', 0),
+                  request.json.get('feedback_B', 0),
+                  request.json.get('feedback_C', 0),
+                  request.json.get('ai_summary_content'),
+                  request.json.get('ai_teammate_avg_prediction', 0),
+                  request.json.get('ai_enemy_avg_prediction', 0),
+                  request.json.get('ai_overall_avg_prediction', 0),
+                  request.json.get('teammate_avg_score', 0),
+                  request.json.get('enemy_avg_score', 0),
+                  request.json.get('overall_avg_score', 0)))
+        
+        sticky_id = c.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'message': '付箋が作成されました',
+            'sticky_id': sticky_id
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sticky', methods=['GET'])
+def get_sticky_notes():
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # この接続の外部キーを有効にする
+        c.execute('PRAGMA foreign_keys = ON')
+        
+        student_id = request.args.get('student_id')
+        if student_id:
+            c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
+                                feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
+                                ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
+                                overall_avg_score, created_at 
+                         FROM sticky WHERE student_id = ? ORDER BY created_at DESC''', (student_id,))
+        else:
+            c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
+                                feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
+                                ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
+                                overall_avg_score, created_at 
+                         FROM sticky ORDER BY created_at DESC''')
+        
+        sticky_notes = []
+        for row in c.fetchall():
+            sticky_notes.append({
+                'sticky_id': row[0],
+                'student_id': row[1],
+                'sticky_content': row[2],
+                'sticky_color': row[3],
+                'x_axis': row[4],
+                'y_axis': row[5],
+                'feedback_A': row[6],
+                'feedback_B': row[7],
+                'feedback_C': row[8],
+                'ai_summary_content': row[9],
+                'ai_teammate_avg_prediction': row[10],
+                'ai_enemy_avg_prediction': row[11],
+                'ai_overall_avg_prediction': row[12],
+                'teammate_avg_score': row[13],
+                'enemy_avg_score': row[14],
+                'overall_avg_score': row[15],
+                'created_at': row[16]
+            })
+        
+        conn.close()
+        return jsonify(sticky_notes)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sticky/<int:sticky_id>', methods=['PATCH'])
+def update_sticky(sticky_id):
+    if not request.json:
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        update_fields = []
+        values = []
+        
+        allowed_fields = ['sticky_content', 'sticky_color', 'x_axis', 'y_axis', 'feedback_A', 'feedback_B', 'feedback_C',
+                         'ai_summary_content', 'ai_teammate_avg_prediction', 'ai_enemy_avg_prediction', 'ai_overall_avg_prediction',
+                         'teammate_avg_score', 'enemy_avg_score', 'overall_avg_score']
+        for field in allowed_fields:
+            if field in request.json:
+                update_fields.append(f'{field} = ?')
+                values.append(request.json[field])
+        
+        if not update_fields:
+            return jsonify({'error': '更新するフィールドがありません'}), 400
+        
+        values.append(sticky_id)
+        query = f"UPDATE sticky SET {', '.join(update_fields)} WHERE sticky_id = ?"
+        
+        c.execute(query, values)
+        conn.commit()
+        
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({'error': '付箋が見つかりません'}), 404
+            
+        conn.close()
+        return jsonify({'status': 'success', 'message': '付箋が更新されました'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sticky/<int:sticky_id>', methods=['DELETE'])
+def delete_sticky(sticky_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        c.execute('DELETE FROM sticky WHERE sticky_id = ?', (sticky_id,))
+        conn.commit()
+        
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({'error': '付箋が見つかりません'}), 404
+            
+        conn.close()
+        return jsonify({'status': 'success', 'message': '付箋が削除されました'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Message API endpoints
+@app.route('/api/message', methods=['POST'])
+def create_message():
+    if not request.json:
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
+    
+    required_fields = ['student_id', 'message_content', 'camp_id', 'sticky_id']
+    for field in required_fields:
+        if field not in request.json:
+            return jsonify({'error': f'{field}が必要です'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        c.execute('''INSERT INTO message (student_id, message_content, camp_id, sticky_id, feedback_A, feedback_B, feedback_C) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                 (request.json['student_id'], 
+                  request.json['message_content'],
+                  request.json['camp_id'],
+                  request.json['sticky_id'],
+                  request.json.get('feedback_A', 0),
+                  request.json.get('feedback_B', 0),
+                  request.json.get('feedback_C', 0)))
+        
+        message_id = c.lastrowid
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'メッセージが作成されました',
+            'message_id': message_id
+        }), 201
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/message/sticky/<int:sticky_id>', methods=['GET'])
+def get_messages_by_sticky(sticky_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
+                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name
+                     FROM message m
+                     JOIN students s ON m.student_id = s.id
+                     WHERE m.sticky_id = ? ORDER BY m.created_at ASC''', (sticky_id,))
+        
+        messages = []
+        for row in c.fetchall():
+            messages.append({
+                'message_id': row[0],
+                'student_id': row[1],
+                'message_content': row[2],
+                'camp_id': row[3],
+                'sticky_id': row[4],
+                'feedback_A': row[5],
+                'feedback_B': row[6],
+                'feedback_C': row[7],
+                'created_at': row[8],
+                'student_name': row[9]
+            })
+        
+        conn.close()
+        return jsonify(messages)
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

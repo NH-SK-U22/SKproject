@@ -7,6 +7,9 @@ import { usePost } from "../../context/PostContext";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Loading from "../../components/Loading/Loading";
 
+// utils
+import { getCurrentUser } from "../../utils/auth";
+
 // css
 import styles from "./Create.module.css";
 
@@ -49,12 +52,12 @@ const Create = () => {
             setColors(colorSetsArray[randomIndex]);
           }
         } else {
-          console.error("Failed to fetch colorsets");
+          console.error("カラーセットのフェッチに失敗");
           // デフォルトのカラーにフォールバック
           setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
         }
       } catch (error) {
-        console.error("Error fetching colorsets:", error);
+        console.error("カラーセットの取得エラー:", error);
         // デフォルトのカラーにフォールバック
         setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
       } finally {
@@ -70,13 +73,21 @@ const Create = () => {
     };
   }, [camp]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (post.trim() === "" || colors.length === 0) return;
 
-    addPost({
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      console.error("ログインしているユーザーがいない");
+      navigate("/login");
+      return;
+    }
+
+    await addPost({
       text: post,
       color: colors[selectColor],
+      student_id: currentUser.id,
     });
 
     setPost("");

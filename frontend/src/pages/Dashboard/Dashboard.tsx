@@ -11,6 +11,9 @@ import styles from "./Dashboard.module.css";
 // context
 import { usePost } from "../../context/PostContext";
 
+// utils
+import { getCurrentUser } from "../../utils/auth";
+
 const DRAG_MARGIN = 0;
 const GRID_GAP = 30;
 const NOTE_WIDTH = 200;
@@ -147,7 +150,7 @@ const StickyNote = ({
 };
 
 const Dashboard = () => {
-  const { posts } = usePost();
+  const { posts, loadPosts } = usePost();
   const gridRef = useRef<HTMLDivElement>(null);
   const [maxPerRow, setMaxPerRow] = useState(1);
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
@@ -156,6 +159,14 @@ const Dashboard = () => {
   const handleNoteMove = (id: number) => {
     setLastMovedNoteId(id);
   };
+
+  // コンポーネント装着時に支柱に荷重をかける
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      loadPosts(currentUser.id);
+    }
+  }, [loadPosts]);
 
   useEffect(() => {
     const handleResize = () => {
