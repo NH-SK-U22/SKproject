@@ -87,7 +87,6 @@ def init_db():
         UNIQUE(group_number, camp_type)
     )''')
     
-<<<<<<< HEAD
     c.execute('''CREATE TABLE IF NOT EXISTS teachers(
         teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
         school_id TEXT NOT NULL,
@@ -128,8 +127,6 @@ def init_db():
         UNIQUE(student_id,text)
     )''')
     
-=======
->>>>>>> main
     # colorsetsデータの挿入
     colorsets_data = [
         (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1
