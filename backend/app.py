@@ -87,6 +87,60 @@ def init_db():
         UNIQUE(group_number, camp_type)
     )''')
     
+    # teachers tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS teachers(
+        teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school_id TEXT NOT NULL,
+        name CHAR(50) NOT NULL,
+        class_number CHAR(5) NOT NULL,
+        password TEXT NOT NULL,
+        UNIQUE(school_id,name,class_number)
+    )''')
+    
+    # reward tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS reward(
+        reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        reward_content TEXT NOT NULL UNIQUE,
+        need_point INTEGER NOT NULL,
+        need_rank INTEGER NOT NULL,
+        creater INTEGER NOT NULL,
+        FOREIGN KEY(creater) REFERENCES teachers(teacher_id)
+    )''')
+    
+    # post tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS post(
+        post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        text TEXT NOT NULL,
+        ai_summary TEXT NOT NULL,
+        sum_evaluation_a INTEGER,
+        sum_evaluation_b INTEGER,
+        sum_evaluation_c INTEGER,
+        stickynote_color TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        x_coordinate INTEGER,
+        y_coordinate INTEGER,
+        ally_ai_evaluation INTEGER,
+        enemy_ai_evaluation INTEGER,
+        whole_ai_evaluation INTEGER,
+        ally_evaluation INTEGER,
+        enemy_evaluation INTEGER,
+        whole_evaluation INTEGER,
+        FOREIGN KEY(student_id) REFERENCES students(id),
+        UNIQUE(student_id,text)
+    )''')
+    
+    # holdReward tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS holdReward(
+        hold_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        reward_id INTEGER NOT NULL,
+        is_holding BOOLEAN NOT NULL,
+        used_at TIMESTAMP NULL,
+        FOREIGN KEY(student_id) REFERENCES students(id),
+        FOREIGN KEY(reward_id) REFERENCES reward(reward_id)
+    )''')
+    
     # colorsetsデータの挿入
     colorsets_data = [
         (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1
