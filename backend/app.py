@@ -87,7 +87,7 @@ def init_db():
         UNIQUE(group_number, camp_type)
     )''')
     
-    # teachers tableを作成
+    # teachers tableを作成(重複してない?)
     c.execute('''CREATE TABLE IF NOT EXISTS teachers(
         teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
         school_id TEXT NOT NULL,
@@ -140,6 +140,8 @@ def init_db():
         FOREIGN KEY(student_id) REFERENCES students(id),
         FOREIGN KEY(reward_id) REFERENCES reward(reward_id)
     )''')
+    
+    # ランク履歴(各シーズン終わりのランクを記録)
     
     # colorsetsデータの挿入
     colorsets_data = [
