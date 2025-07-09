@@ -177,7 +177,13 @@ const StickyNote = ({
 };
 
 const Dashboard = () => {
-  const { posts, loadSchoolPosts, updatePost } = usePost();
+  const {
+    posts,
+    loadSchoolPosts,
+    updatePost,
+    connectSocket,
+    disconnectSocket,
+  } = usePost();
   const gridRef = useRef<HTMLDivElement>(null);
   const [maxPerRow, setMaxPerRow] = useState(1);
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
@@ -190,15 +196,22 @@ const Dashboard = () => {
     updatePost(id, { x_axis: x, y_axis: y });
   };
 
-  // コンポーネント装着時に同校の付箋を読み込む
+  // コンポーネント装着時に同校の付箋を読み込み、Socket接続を開始
   useEffect(() => {
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
       // 同校の付箋を読み込む
       loadSchoolPosts(user.school_id);
+      // Socket接続を開始
+      connectSocket(user.school_id);
     }
-  }, [loadSchoolPosts]);
+
+    // コンポーネントのアンマウント時にSocket接続を切断
+    return () => {
+      disconnectSocket();
+    };
+  }, [loadSchoolPosts, connectSocket, disconnectSocket]);
 
   useEffect(() => {
     const handleResize = () => {

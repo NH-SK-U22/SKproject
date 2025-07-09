@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
+import { io, Socket } from "socket.io-client";
 
 interface Post {
   id: number;
@@ -43,6 +51,8 @@ interface PostContextType {
   loadSchoolPosts: (school_id: string) => Promise<void>;
   updatePost: (sticky_id: number, updates: Partial<Post>) => Promise<void>;
   deletePost: (sticky_id: number) => Promise<void>;
+  connectSocket: (school_id: string) => void;
+  disconnectSocket: () => void;
 }
 
 const PostContext = createContext<PostContextType | undefined>(undefined);
@@ -51,6 +61,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [posts, setPosts] = useState<Post[]>([]);
+  const socketRef = useRef<Socket | null>(null);
+  const [currentSchoolId, setCurrentSchoolId] = useState<string | null>(null);
 
   const loadPosts = useCallback(async (student_id?: number) => {
     try {
@@ -118,17 +130,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         });
 
         if (response.ok) {
-          const result = await response.json();
-          const newPost: Post = {
-            id: result.sticky_id,
-            text: post.text,
-            color: post.color,
-            createdAt: new Date().toISOString(),
-            student_id: post.student_id,
-            x_axis: 0,
-            y_axis: 0,
-          };
-          setPosts((prev) => [...prev, newPost]);
+          // Socket事件が新しい付箋を自動的に追加するため、ここでは何もしない
+          console.log("付箋が正常に作成されました");
         } else {
           console.error("付箋の作成に失敗しました");
         }
@@ -162,11 +165,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         );
 
         if (response.ok) {
-          setPosts((prev) =>
-            prev.map((post) =>
-              post.id === sticky_id ? { ...post, ...updates } : post
-            )
-          );
+          // Socket事件が更新された付箋を自動的に同期するため、ここでは何もしない
+          console.log("付箋が正常に更新されました");
         } else {
           console.error("付箋の更新に失敗しました");
         }
@@ -187,7 +187,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       if (response.ok) {
-        setPosts((prev) => prev.filter((post) => post.id !== sticky_id));
+        // Socket事件が削除された付箋を自動的に同期するため、ここでは何もしない
+        console.log("付箋が正常に削除されました");
       } else {
         console.error("付箋の削除に失敗しました");
       }
@@ -195,6 +196,81 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("付箋の削除に失敗しました:", error);
     }
   }, []);
+
+  // Socket.IO関連の関数
+  const connectSocket = useCallback((school_id: string) => {
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+
+    socketRef.current = io("http://localhost:5000");
+    setCurrentSchoolId(school_id);
+
+    socketRef.current.on("connect", () => {
+      console.log("Socket connected");
+      // 学校のルームに参加
+      socketRef.current?.emit("join_school", { school_id });
+    });
+
+    socketRef.current.on("disconnect", () => {
+      console.log("Socket disconnected");
+    });
+
+    // 新しい付箋が作成された時
+    socketRef.current.on("sticky_created", (data: StickyResponse) => {
+      const newPost: Post = {
+        id: data.sticky_id,
+        text: data.sticky_content,
+        color: data.sticky_color,
+        createdAt: data.created_at,
+        student_id: data.student_id,
+        x_axis: data.x_axis,
+        y_axis: data.y_axis,
+        student_name: data.student_name,
+      };
+      setPosts((prev) => [...prev, newPost]);
+    });
+
+    // 付箋が更新された時
+    socketRef.current.on("sticky_updated", (data: StickyResponse) => {
+      const updatedPost: Post = {
+        id: data.sticky_id,
+        text: data.sticky_content,
+        color: data.sticky_color,
+        createdAt: data.created_at,
+        student_id: data.student_id,
+        x_axis: data.x_axis,
+        y_axis: data.y_axis,
+        student_name: data.student_name,
+      };
+      setPosts((prev) =>
+        prev.map((post) => (post.id === data.sticky_id ? updatedPost : post))
+      );
+    });
+
+    // 付箋が削除された時
+    socketRef.current.on("sticky_deleted", (data: { sticky_id: number }) => {
+      setPosts((prev) => prev.filter((post) => post.id !== data.sticky_id));
+    });
+  }, []);
+
+  const disconnectSocket = useCallback(() => {
+    if (socketRef.current) {
+      if (currentSchoolId) {
+        socketRef.current.emit("leave_school", { school_id: currentSchoolId });
+      }
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+    setCurrentSchoolId(null);
+  }, [currentSchoolId]);
+
+  // コンポーネントのアンマウント時にSocket接続を切断
+  useEffect(() => {
+    return () => {
+      disconnectSocket();
+    };
+  }, [disconnectSocket]);
 
   return (
     <PostContext.Provider
@@ -205,6 +281,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         loadSchoolPosts,
         updatePost,
         deletePost,
+        connectSocket,
+        disconnectSocket,
       }}
     >
       {children}

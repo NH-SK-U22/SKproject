@@ -2,9 +2,13 @@ from flask import Flask, jsonify, request
 import sqlite3
 import json
 from flask_cors import CORS # Flask-CORSをインポート
+from flask_socketio import SocketIO, emit # SocketIOをインポート
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
+
+# SocketIOを初期化
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -445,7 +449,7 @@ def create_sticky():
     if not request.json:
         return jsonify({'error': 'リクエストボディが必要です'}), 400
     
-    # 調試信息：檢查接收到的數據
+    # デバッグ情報：受信データのチェック
     print(f"DEBUG: Received request data: {request.json}")
     
     required_fields = ['student_id', 'sticky_content', 'sticky_color']
@@ -501,8 +505,46 @@ def create_sticky():
                   request.json.get('overall_avg_score', 0)))
         
         sticky_id = c.lastrowid
+        
+        # 作成された付箋の完全な情報を取得してSocketで送信
+        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+                            s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+                            s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+                            s.overall_avg_score, s.created_at, st.name, st.school_id
+                     FROM sticky s
+                     JOIN students st ON s.student_id = st.student_id
+                     WHERE s.sticky_id = ?''', (sticky_id,))
+        
+        sticky_data = c.fetchone()
         conn.commit()
         conn.close()
+        
+        if sticky_data:
+            # 新しい付箋のデータを全クライアントに送信
+            sticky_info = {
+                'sticky_id': sticky_data[0],
+                'student_id': sticky_data[1],
+                'sticky_content': sticky_data[2],
+                'sticky_color': sticky_data[3],
+                'x_axis': sticky_data[4],
+                'y_axis': sticky_data[5],
+                'feedback_A': sticky_data[6],
+                'feedback_B': sticky_data[7],
+                'feedback_C': sticky_data[8],
+                'ai_summary_content': sticky_data[9],
+                'ai_teammate_avg_prediction': sticky_data[10],
+                'ai_enemy_avg_prediction': sticky_data[11],
+                'ai_overall_avg_prediction': sticky_data[12],
+                'teammate_avg_score': sticky_data[13],
+                'enemy_avg_score': sticky_data[14],
+                'overall_avg_score': sticky_data[15],
+                'created_at': sticky_data[16],
+                'student_name': sticky_data[17],
+                'school_id': sticky_data[18]
+            }
+            
+            # 同校の全ユーザーに新しい付箋を送信
+            socketio.emit('sticky_created', sticky_info, to=f"school_{sticky_data[18]}")
         
         return jsonify({
             'status': 'success',
@@ -610,8 +652,46 @@ def update_sticky(sticky_id):
         if c.rowcount == 0:
             conn.close()
             return jsonify({'error': '付箋が見つかりません'}), 404
-            
+        
+        # 更新後の付箋情報を取得してSocketで送信
+        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+                            s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+                            s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+                            s.overall_avg_score, s.created_at, st.name, st.school_id
+                     FROM sticky s
+                     JOIN students st ON s.student_id = st.student_id
+                     WHERE s.sticky_id = ?''', (sticky_id,))
+        
+        sticky_data = c.fetchone()
         conn.close()
+        
+        if sticky_data:
+            # 更新された付箋のデータを全クライアントに送信
+            sticky_info = {
+                'sticky_id': sticky_data[0],
+                'student_id': sticky_data[1],
+                'sticky_content': sticky_data[2],
+                'sticky_color': sticky_data[3],
+                'x_axis': sticky_data[4],
+                'y_axis': sticky_data[5],
+                'feedback_A': sticky_data[6],
+                'feedback_B': sticky_data[7],
+                'feedback_C': sticky_data[8],
+                'ai_summary_content': sticky_data[9],
+                'ai_teammate_avg_prediction': sticky_data[10],
+                'ai_enemy_avg_prediction': sticky_data[11],
+                'ai_overall_avg_prediction': sticky_data[12],
+                'teammate_avg_score': sticky_data[13],
+                'enemy_avg_score': sticky_data[14],
+                'overall_avg_score': sticky_data[15],
+                'created_at': sticky_data[16],
+                'student_name': sticky_data[17],
+                'school_id': sticky_data[18]
+            }
+            
+            # 同校の全ユーザーに更新された付箋を送信
+            socketio.emit('sticky_updated', sticky_info, to=f"school_{sticky_data[18]}")
+        
         return jsonify({'status': 'success', 'message': '付箋が更新されました'})
         
     except Exception as e:
@@ -623,13 +703,35 @@ def delete_sticky(sticky_id):
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
+        # 削除前に付箋情報を取得
+        c.execute('''SELECT s.sticky_id, s.student_id, st.school_id
+                     FROM sticky s
+                     JOIN students st ON s.student_id = st.student_id
+                     WHERE s.sticky_id = ?''', (sticky_id,))
+        
+        sticky_data = c.fetchone()
+        
+        if not sticky_data:
+            conn.close()
+            return jsonify({'error': '付箋が見つかりません'}), 404
+        
         c.execute('DELETE FROM sticky WHERE sticky_id = ?', (sticky_id,))
         conn.commit()
         
         if c.rowcount == 0:
             conn.close()
             return jsonify({'error': '付箋が見つかりません'}), 404
-            
+        
+        # 削除された付箋のIDを全クライアントに送信
+        delete_info = {
+            'sticky_id': sticky_data[0],
+            'student_id': sticky_data[1],
+            'school_id': sticky_data[2]
+        }
+        
+        # 同校の全ユーザーに削除された付箋を送信
+        socketio.emit('sticky_deleted', delete_info, to=f"school_{sticky_data[2]}")
+        
         conn.close()
         return jsonify({'status': 'success', 'message': '付箋が削除されました'})
         
@@ -707,5 +809,32 @@ def get_messages_by_sticky(sticky_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Socket.IO イベントハンドラー
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+@socketio.on('join_school')
+def handle_join_school(data):
+    """学校のルームに参加"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import join_room
+        join_room(f"school_{school_id}")
+        print(f"Client joined school room: school_{school_id}")
+
+@socketio.on('leave_school')
+def handle_leave_school(data):
+    """学校のルームから退出"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import leave_room
+        leave_room(f"school_{school_id}")
+        print(f"Client left school room: school_{school_id}")
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
