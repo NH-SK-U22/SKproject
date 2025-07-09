@@ -67,7 +67,7 @@ def init_db():
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
     
-    # display_index字段のマイグレーション（既存のテーブルに字段を追加）
+    # display_indexのマイグレーション
     try:
         c.execute('ALTER TABLE sticky ADD COLUMN display_index INTEGER DEFAULT 0')
         print("Added display_index column to sticky table")
@@ -789,8 +789,38 @@ def create_message():
                   request.json.get('feedback_C', 0)))
         
         message_id = c.lastrowid
+        
+        # 作成されたメッセージの完全な情報を取得
+        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
+                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.number
+                     FROM message m
+                     JOIN students s ON m.student_id = s.student_id
+                     WHERE m.message_id = ?''', (message_id,))
+        
+        message_data = c.fetchone()
         conn.commit()
         conn.close()
+        
+        if message_data:
+            # 新しいメッセージのデータを同じ付箋チャットの全クライアントに送信
+            message_info = {
+                'message_id': message_data[0],
+                'student_id': message_data[1],
+                'message_content': message_data[2],
+                'camp_id': message_data[3],
+                'sticky_id': message_data[4],
+                'feedback_A': message_data[5],
+                'feedback_B': message_data[6],
+                'feedback_C': message_data[7],
+                'created_at': message_data[8],
+                'student_name': message_data[9],
+                'student_number': message_data[10]
+            }
+            
+            # 同じ付箋チャットの全ユーザーに新しいメッセージを送信
+            sticky_room = f"sticky_{request.json['sticky_id']}"
+            print(f"DEBUG: Sending message_sent event to room: {sticky_room}")
+            socketio.emit('message_sent', message_info, to=sticky_room)
         
         return jsonify({
             'status': 'success',
@@ -866,6 +896,91 @@ def handle_leave_school(data):
         print(f"DEBUG: Client left school room: {room_name}")
     else:
         print(f"DEBUG: leave_school called without school_id: {data}")
+
+@socketio.on('join_sticky_chat')
+def handle_join_sticky_chat(data):
+    """付箋チャットに参加"""
+    sticky_id = data.get('sticky_id')
+    if sticky_id:
+        from flask_socketio import join_room
+        room_name = f"sticky_{sticky_id}"
+        join_room(room_name)
+        print(f"DEBUG: Client joined sticky chat room: {room_name}")
+    else:
+        print(f"DEBUG: join_sticky_chat called without sticky_id: {data}")
+
+@socketio.on('leave_sticky_chat')
+def handle_leave_sticky_chat(data):
+    """付箋チャットから退出"""
+    sticky_id = data.get('sticky_id')
+    if sticky_id:
+        from flask_socketio import leave_room
+        room_name = f"sticky_{sticky_id}"
+        leave_room(room_name)
+        print(f"DEBUG: Client left sticky chat room: {room_name}")
+    else:
+        print(f"DEBUG: leave_sticky_chat called without sticky_id: {data}")
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    """メッセージ送信を処理"""
+    required_fields = ['student_id', 'message_content', 'camp_id', 'sticky_id']
+    for field in required_fields:
+        if field not in data:
+            print(f"DEBUG: send_message missing field: {field}")
+            return
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # メッセージをデータベースに保存
+        c.execute('''INSERT INTO message (student_id, message_content, camp_id, sticky_id, feedback_A, feedback_B, feedback_C) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                 (data['student_id'], 
+                  data['message_content'],
+                  data['camp_id'],
+                  data['sticky_id'],
+                  data.get('feedback_A', 0),
+                  data.get('feedback_B', 0),
+                  data.get('feedback_C', 0)))
+        
+        message_id = c.lastrowid
+        
+        # 作成されたメッセージの完全な情報を取得
+        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
+                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.number
+                     FROM message m
+                     JOIN students s ON m.student_id = s.student_id
+                     WHERE m.message_id = ?''', (message_id,))
+        
+        message_data = c.fetchone()
+        conn.commit()
+        conn.close()
+        
+        if message_data:
+            # メッセージデータの構築
+            message_info = {
+                'message_id': message_data[0],
+                'student_id': message_data[1],
+                'message_content': message_data[2],
+                'camp_id': message_data[3],
+                'sticky_id': message_data[4],
+                'feedback_A': message_data[5],
+                'feedback_B': message_data[6],
+                'feedback_C': message_data[7],
+                'created_at': message_data[8],
+                'student_name': message_data[9],
+                'student_number': message_data[10]
+            }
+            
+            # 同じ付箋チャットの全ユーザーに新しいメッセージを送信
+            sticky_room = f"sticky_{data['sticky_id']}"
+            print(f"DEBUG: Broadcasting message to room: {sticky_room}")
+            socketio.emit('message_sent', message_info, to=sticky_room)
+            
+    except Exception as e:
+        print(f"DEBUG: Error sending message: {str(e)}")
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)

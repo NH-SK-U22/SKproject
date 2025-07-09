@@ -88,7 +88,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           display_index: item.display_index,
           student_name: item.student_name,
         }));
-        // display_index順でソート（バックエンドでソートされているが、念のため）
+        // display_index順でソート
         formattedPosts.sort(
           (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
         );
@@ -117,7 +117,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           display_index: item.display_index,
           student_name: item.student_name,
         }));
-        // display_index順でソート（バックエンドでソートされているが、念のため）
+        // display_index順でソート
         formattedPosts.sort(
           (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
         );

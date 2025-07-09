@@ -56,7 +56,7 @@ const MessageModal = ({ post }: MessageModalProps) => {
                     </div>
                   </div>
                   <div className={styles.chatArea}>
-                    <ChatRoom />
+                    <ChatRoom stickyId={post.id} />
                   </div>
                 </div>
               </div>
