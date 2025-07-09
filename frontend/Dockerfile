@@ -2,11 +2,16 @@
 FROM node:18-alpine
 
 WORKDIR /app
-COPY package.json yarn.lock* pnpm-lock.yaml* ./
 
-# 依存インストール
+# パッケージファイルのみ先にコピー
+COPY package.json package-lock.json* ./
+
+# キャッシュをクリアして新しくインストール
+RUN npm cache clean --force
+RUN rm -rf node_modules package-lock.json
 RUN npm install
 
+# ソースコードをコピー
 COPY . .
 
 EXPOSE 3000
