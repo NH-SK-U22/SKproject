@@ -12,7 +12,7 @@ import styles from "./Dashboard.module.css";
 import { usePost } from "../../context/PostContext";
 
 // utils
-import { getCurrentUser } from "../../utils/auth";
+import { getCurrentUser, type User } from "../../utils/auth";
 
 const DRAG_MARGIN = 0;
 const GRID_GAP = 30;
@@ -26,6 +26,7 @@ const StickyNote = ({
   isLastMoved,
   onMoveEnd,
   isSidebarHovered,
+  currentUserId,
 }: {
   post: {
     id: number;
@@ -33,6 +34,7 @@ const StickyNote = ({
     color: string;
     x_axis?: number;
     y_axis?: number;
+    student_id?: number;
   };
   idx: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
@@ -40,6 +42,7 @@ const StickyNote = ({
   isLastMoved: boolean;
   onMoveEnd: (id: number, x: number, y: number) => void;
   isSidebarHovered: boolean;
+  currentUserId: number;
 }) => {
   // ドラッグ状態
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
@@ -56,6 +59,11 @@ const StickyNote = ({
 
   // ellipsis上でのドラッグのみを許可
   const handleMouseDown = (e: React.MouseEvent) => {
+    // 自分の付箋のみ移動可能
+    if (post.student_id !== currentUserId) {
+      return;
+    }
+
     setDragging(true);
     const rect = noteRef.current?.getBoundingClientRect();
     if (rect) {
@@ -150,7 +158,13 @@ const StickyNote = ({
         cursor: dragging ? "grabbing" : "default",
       }}
     >
-      <div className={styles.ellipsis} onMouseDown={handleMouseDown}>
+      <div
+        className={styles.ellipsis}
+        onMouseDown={handleMouseDown}
+        style={{
+          cursor: post.student_id === currentUserId ? "grab" : "default",
+        }}
+      >
         <span></span>
         <span></span>
         <span></span>
@@ -163,11 +177,12 @@ const StickyNote = ({
 };
 
 const Dashboard = () => {
-  const { posts, loadPosts, updatePost } = usePost();
+  const { posts, loadSchoolPosts, updatePost } = usePost();
   const gridRef = useRef<HTMLDivElement>(null);
   const [maxPerRow, setMaxPerRow] = useState(1);
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const handleNoteMove = (id: number, x: number, y: number) => {
     setLastMovedNoteId(id);
@@ -175,13 +190,15 @@ const Dashboard = () => {
     updatePost(id, { x_axis: x, y_axis: y });
   };
 
-  // コンポーネント装着時に支柱に荷重をかける
+  // コンポーネント装着時に同校の付箋を読み込む
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      loadPosts(currentUser.id);
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      // 同校の付箋を読み込む
+      loadSchoolPosts(user.school_id);
     }
-  }, [loadPosts]);
+  }, [loadSchoolPosts]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -249,6 +266,7 @@ const Dashboard = () => {
                 isLastMoved={post.id === lastMovedNoteId}
                 onMoveEnd={handleNoteMove}
                 isSidebarHovered={isSidebarHovered}
+                currentUserId={currentUser?.id || 0}
               />
             ))}
           </div>

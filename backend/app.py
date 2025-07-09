@@ -520,20 +520,34 @@ def get_sticky_notes():
         c = conn.cursor()
         
         student_id = request.args.get('student_id')
+        school_id = request.args.get('school_id')
         
         # 付箋取得
         if student_id:
-            c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
-                                feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
-                                ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
-                                overall_avg_score, created_at 
-                         FROM sticky WHERE student_id = ? ORDER BY created_at DESC''', (student_id,))
+            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+                                s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+                                s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+                                s.overall_avg_score, s.created_at, st.name
+                         FROM sticky s
+                         JOIN students st ON s.student_id = st.student_id
+                         WHERE s.student_id = ? ORDER BY s.created_at DESC''', (student_id,))
+        elif school_id:
+            # 同校の全学生の付箋を取得
+            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+                                s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+                                s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+                                s.overall_avg_score, s.created_at, st.name
+                         FROM sticky s
+                         JOIN students st ON s.student_id = st.student_id
+                         WHERE st.school_id = ? ORDER BY s.created_at DESC''', (school_id,))
         else:
-            c.execute('''SELECT sticky_id, student_id, sticky_content, sticky_color, x_axis, y_axis, 
-                                feedback_A, feedback_B, feedback_C, ai_summary_content, ai_teammate_avg_prediction,
-                                ai_enemy_avg_prediction, ai_overall_avg_prediction, teammate_avg_score, enemy_avg_score,
-                                overall_avg_score, created_at 
-                         FROM sticky ORDER BY created_at DESC''')
+            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+                                s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+                                s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+                                s.overall_avg_score, s.created_at, st.name
+                         FROM sticky s
+                         JOIN students st ON s.student_id = st.student_id
+                         ORDER BY s.created_at DESC''')
         
         sticky_notes = []
         for row in c.fetchall():
@@ -554,7 +568,8 @@ def get_sticky_notes():
                 'teammate_avg_score': row[13],
                 'enemy_avg_score': row[14],
                 'overall_avg_score': row[15],
-                'created_at': row[16]
+                'created_at': row[16],
+                'student_name': row[17]
             })
         
         conn.close()

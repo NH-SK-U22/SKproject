@@ -8,6 +8,7 @@ interface Post {
   student_id?: number;
   x_axis?: number;
   y_axis?: number;
+  student_name?: string;
 }
 
 interface StickyResponse {
@@ -21,6 +22,7 @@ interface StickyResponse {
   feedback_B: number;
   feedback_C: number;
   created_at: string;
+  student_name: string;
 }
 
 interface UpdateData {
@@ -38,6 +40,7 @@ interface PostContextType {
     student_id: number;
   }) => Promise<void>;
   loadPosts: (student_id?: number) => Promise<void>;
+  loadSchoolPosts: (school_id: string) => Promise<void>;
   updatePost: (sticky_id: number, updates: Partial<Post>) => Promise<void>;
   deletePost: (sticky_id: number) => Promise<void>;
 }
@@ -66,11 +69,36 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           student_id: item.student_id,
           x_axis: item.x_axis,
           y_axis: item.y_axis,
+          student_name: item.student_name,
         }));
         setPosts(formattedPosts);
       }
     } catch (error) {
       console.error("Failed to load posts:", error);
+    }
+  }, []);
+
+  const loadSchoolPosts = useCallback(async (school_id: string) => {
+    try {
+      const url = `http://localhost:5000/api/sticky?school_id=${school_id}`;
+
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedPosts = data.map((item: StickyResponse) => ({
+          id: item.sticky_id,
+          text: item.sticky_content,
+          color: item.sticky_color,
+          createdAt: item.created_at,
+          student_id: item.student_id,
+          x_axis: item.x_axis,
+          y_axis: item.y_axis,
+          student_name: item.student_name,
+        }));
+        setPosts(formattedPosts);
+      }
+    } catch (error) {
+      console.error("Failed to load school posts:", error);
     }
   }, []);
 
@@ -170,7 +198,14 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <PostContext.Provider
-      value={{ posts, addPost, loadPosts, updatePost, deletePost }}
+      value={{
+        posts,
+        addPost,
+        loadPosts,
+        loadSchoolPosts,
+        updatePost,
+        deletePost,
+      }}
     >
       {children}
     </PostContext.Provider>
