@@ -166,7 +166,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (response.ok) {
           // Socket事件が更新された付箋を自動的に同期するため、ここでは何もしない
-          console.log("付箋が正常に更新されました");
+          // console.log("付箋が正常に更新されました");
         } else {
           console.error("付箋の更新に失敗しました");
         }

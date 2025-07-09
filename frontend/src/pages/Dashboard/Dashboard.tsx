@@ -1,5 +1,5 @@
 // react
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
@@ -27,6 +27,7 @@ const StickyNote = ({
   onMoveEnd,
   isSidebarHovered,
   currentUserId,
+  localPosition,
 }: {
   post: {
     id: number;
@@ -43,17 +44,53 @@ const StickyNote = ({
   onMoveEnd: (id: number, x: number, y: number) => void;
   isSidebarHovered: boolean;
   currentUserId: number;
+  localPosition?: { x: number; y: number };
 }) => {
   // ドラッグ状態
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(
-    // 位置情報がデータベースにあり、(0,0)でない場合は、データベースの位置を使用する
-    post.x_axis !== undefined &&
+  const [dragging, setDragging] = useState(false);
+
+  // 位置が優先順位を決める：localPosition > database position > null
+  const getInitialPosition = () => {
+    if (localPosition) {
+      return localPosition;
+    }
+    if (
+      post.x_axis !== undefined &&
       post.y_axis !== undefined &&
       (post.x_axis !== 0 || post.y_axis !== 0)
-      ? { x: post.x_axis, y: post.y_axis }
-      : null
+    ) {
+      return { x: post.x_axis, y: post.y_axis };
+    }
+    return null;
+  };
+
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(
+    getInitialPosition()
   );
-  const [dragging, setDragging] = useState(false);
+
+  // localPositionの変更をリッスンし、すぐに更新する
+  useEffect(() => {
+    if (localPosition && !dragging) {
+      setPosition(localPosition);
+    }
+  }, [localPosition, dragging]);
+
+  // 他のユーザーからの位置更新を受信した时にローカル位置を同期
+  useEffect(() => {
+    // ローカルロケーションのオーバーライドがなく、ドラッグ＆ドロップの状態でない場合のみ同期させる
+    if (
+      !localPosition &&
+      !dragging &&
+      post.x_axis !== undefined &&
+      post.y_axis !== undefined &&
+      (post.x_axis !== 0 || post.y_axis !== 0) &&
+      (position === null ||
+        position.x !== post.x_axis ||
+        position.y !== post.y_axis)
+    ) {
+      setPosition({ x: post.x_axis, y: post.y_axis });
+    }
+  }, [post.x_axis, post.y_axis, dragging, position, localPosition]);
   const offset = useRef({ x: 0, y: 0 });
   const noteRef = useRef<HTMLDivElement>(null);
 
@@ -76,24 +113,33 @@ const StickyNote = ({
   };
 
   React.useEffect(() => {
+    let animationId: number;
+
     const handleMouseMove = (e: MouseEvent) => {
       if (dragging) {
-        // notesGridに基づく
-        const grid = gridRef.current;
-        if (grid) {
-          const noteWidth = noteRef.current?.offsetWidth || 0;
-          const noteHeight = noteRef.current?.offsetHeight || 0;
-          let x =
-            e.clientX - grid.getBoundingClientRect().left - offset.current.x;
-          let y =
-            e.clientY - grid.getBoundingClientRect().top - offset.current.y;
-          // 4面すべてDRAG_MARGINを使用
-          const maxX = grid.clientWidth - noteWidth - DRAG_MARGIN;
-          const maxY = grid.clientHeight - noteHeight - DRAG_MARGIN;
-          x = Math.max(DRAG_MARGIN, Math.min(x, maxX));
-          y = Math.max(DRAG_MARGIN, Math.min(y, maxY));
-          setPosition({ x, y });
+        // requestAnimationFrameを使用して60FPSを確保
+        if (animationId) {
+          cancelAnimationFrame(animationId);
         }
+
+        animationId = requestAnimationFrame(() => {
+          // notesGridに基づく
+          const grid = gridRef.current;
+          if (grid) {
+            const noteWidth = noteRef.current?.offsetWidth || 0;
+            const noteHeight = noteRef.current?.offsetHeight || 0;
+            let x =
+              e.clientX - grid.getBoundingClientRect().left - offset.current.x;
+            let y =
+              e.clientY - grid.getBoundingClientRect().top - offset.current.y;
+            // 4面すべてDRAG_MARGINを使用
+            const maxX = grid.clientWidth - noteWidth - DRAG_MARGIN;
+            const maxY = grid.clientHeight - noteHeight - DRAG_MARGIN;
+            x = Math.max(DRAG_MARGIN, Math.min(x, maxX));
+            y = Math.max(DRAG_MARGIN, Math.min(y, maxY));
+            setPosition({ x, y });
+          }
+        });
       }
     };
     const handleMouseUp = () => {
@@ -113,17 +159,21 @@ const StickyNote = ({
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
     };
   }, [dragging, gridRef, post.id, onMoveEnd, position]);
 
   // 初期位置：idxに基づく
-  const defaultStyle: { left: number; top: number } =
-    position === null
-      ? {
-          left: (idx % maxPerRow) * (NOTE_WIDTH + GRID_GAP),
-          top: Math.floor(idx / maxPerRow) * (NOTE_WIDTH + GRID_GAP),
-        }
-      : { left: position.x, top: position.y };
+  const getTransform = () => {
+    if (position === null) {
+      const x = (idx % maxPerRow) * (NOTE_WIDTH + GRID_GAP);
+      const y = Math.floor(idx / maxPerRow) * (NOTE_WIDTH + GRID_GAP);
+      return `translate3d(${x}px, ${y}px, 0)`;
+    }
+    return `translate3d(${position.x}px, ${position.y}px, 0)`;
+  };
 
   // z-index の計算 - sidebarがhoverされている場合は低く設定
   const getZIndex = () => {
@@ -152,10 +202,11 @@ const StickyNote = ({
       className={getClassName()}
       style={{
         backgroundColor: post.color,
-        left: defaultStyle.left,
-        top: defaultStyle.top,
+        position: "absolute",
+        transform: getTransform(),
         zIndex: getZIndex(),
         cursor: dragging ? "grabbing" : "default",
+        transition: dragging ? "none" : "transform 0.2s ease-out",
       }}
     >
       <div
@@ -189,12 +240,43 @@ const Dashboard = () => {
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // ローカル・ロケーション・オーバーライド・ステータス（即時フィードバック用）
+  const [localPositions, setLocalPositions] = useState<{
+    [key: number]: { x: number; y: number };
+  }>({});
 
-  const handleNoteMove = (id: number, x: number, y: number) => {
-    setLastMovedNoteId(id);
-    // 位置情報をデータベースに保存
-    updatePost(id, { x_axis: x, y_axis: y });
-  };
+  const moveTimeoutRef = useRef<number | null>(null);
+
+  const handleNoteMove = useCallback(
+    (id: number, x: number, y: number) => {
+      setLastMovedNoteId(id);
+
+      // 即時ローカル位置更新
+      setLocalPositions((prev) => ({
+        ...prev,
+        [id]: { x, y },
+      }));
+
+      if (moveTimeoutRef.current) {
+        clearTimeout(moveTimeoutRef.current);
+      }
+
+      // バックグラウンド・シンク・サーバー（最小遅延）
+      moveTimeoutRef.current = setTimeout(() => {
+        updatePost(id, { x_axis: x, y_axis: y });
+        moveTimeoutRef.current = null;
+        // 同期が完了したら、ローカル位置オーバーライドをクリア
+        setTimeout(() => {
+          setLocalPositions((prev) => {
+            const newPositions = { ...prev };
+            delete newPositions[id];
+            return newPositions;
+          });
+        }, 200); // Socket同期の待ち時間を短縮
+      }, 50); // 50ms遅延
+    },
+    [updatePost]
+  );
 
   // コンポーネント装着時に同校の付箋を読み込み、Socket接続を開始
   useEffect(() => {
@@ -280,6 +362,7 @@ const Dashboard = () => {
                 onMoveEnd={handleNoteMove}
                 isSidebarHovered={isSidebarHovered}
                 currentUserId={currentUser?.id || 0}
+                localPosition={localPositions[post.id]}
               />
             ))}
           </div>
