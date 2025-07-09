@@ -46,7 +46,6 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
     joinStickyChat,
     leaveStickyChat,
     connectChatSocket,
-    disconnectChatSocket,
   } = useChat();
 
   // チャットルームの初期化
@@ -64,19 +63,11 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
 
     initializeChat();
 
-    // クリーンアップ：チャットルームから退出し、接続を切断
+    // クリーンアップ：チャットルームから退出
     return () => {
       leaveStickyChat(stickyId);
-      disconnectChatSocket();
     };
-  }, [
-    stickyId,
-    connectChatSocket,
-    loadMessages,
-    joinStickyChat,
-    leaveStickyChat,
-    disconnectChatSocket,
-  ]);
+  }, [stickyId]); // stickyIdが変更された時のみ実行
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,7 +126,7 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
                     </div>
                     {!isUser && (
                       <div className={styles.emojiFeedbackContainer}>
-                        <EmojiFeedback />
+                        <EmojiFeedback messageAuthorCampId={message.camp_id} />
                       </div>
                     )}
                   </div>

@@ -18,6 +18,11 @@ interface MessageModalProps {
     id: number;
     text: string;
     color: string;
+    student_id?: number;
+    feedback_A?: number;
+    feedback_B?: number;
+    feedback_C?: number;
+    author_camp_id?: number;
   };
 }
 
@@ -50,7 +55,21 @@ const MessageModal = ({ post }: MessageModalProps) => {
                       <StickyNote post={post} size="large" />
                       <div className={styles.emojiFeedbackWrapper}>
                         <EmojiFeedbackWithStats
-                          stats={{ happy: 10, neutral: 3, sad: 1 }}
+                          stats={{
+                            happy: post.feedback_A || 0,
+                            neutral: post.feedback_B || 0,
+                            sad: post.feedback_C || 0,
+                          }}
+                          stickyId={post.id}
+                          stickyAuthorId={post.student_id || 0}
+                          stickyAuthorCampId={post.author_camp_id || null}
+                          onStatsUpdate={(newStats) => {
+                            // フィードバック更新時の処理（オプション）
+                            console.log(
+                              "フィードバックが更新されました:",
+                              newStats
+                            );
+                          }}
                         />
                       </div>
                     </div>

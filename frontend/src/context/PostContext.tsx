@@ -18,6 +18,9 @@ interface Post {
   y_axis?: number;
   display_index?: number;
   student_name?: string;
+  feedback_A?: number;
+  feedback_B?: number;
+  feedback_C?: number;
 }
 
 interface StickyResponse {
@@ -87,6 +90,9 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           y_axis: item.y_axis,
           display_index: item.display_index,
           student_name: item.student_name,
+          feedback_A: item.feedback_A,
+          feedback_B: item.feedback_B,
+          feedback_C: item.feedback_C,
         }));
         // display_index順でソート
         formattedPosts.sort(
@@ -116,6 +122,9 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           y_axis: item.y_axis,
           display_index: item.display_index,
           student_name: item.student_name,
+          feedback_A: item.feedback_A,
+          feedback_B: item.feedback_B,
+          feedback_C: item.feedback_C,
         }));
         // display_index順でソート
         formattedPosts.sort(
@@ -269,6 +278,9 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         y_axis: data.y_axis,
         display_index: data.display_index,
         student_name: data.student_name,
+        feedback_A: data.feedback_A,
+        feedback_B: data.feedback_B,
+        feedback_C: data.feedback_C,
       };
       setPosts((prev) => {
         console.log(
@@ -294,6 +306,9 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         y_axis: data.y_axis,
         display_index: data.display_index,
         student_name: data.student_name,
+        feedback_A: data.feedback_A,
+        feedback_B: data.feedback_B,
+        feedback_C: data.feedback_C,
       };
       setPosts((prev) =>
         prev.map((post) => (post.id === data.sticky_id ? updatedPost : post))
@@ -305,6 +320,31 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       console.log("Socket: 付箋削除を受信しました", data);
       setPosts((prev) => prev.filter((post) => post.id !== data.sticky_id));
     });
+
+    // フィードバックが更新された時
+    socketRef.current.on(
+      "feedback_updated",
+      (data: {
+        sticky_id: number;
+        feedback_A: number;
+        feedback_B: number;
+        feedback_C: number;
+      }) => {
+        console.log("Socket: フィードバック更新を受信しました", data);
+        setPosts((prev) =>
+          prev.map((post) =>
+            post.id === data.sticky_id
+              ? {
+                  ...post,
+                  feedback_A: data.feedback_A,
+                  feedback_B: data.feedback_B,
+                  feedback_C: data.feedback_C,
+                }
+              : post
+          )
+        );
+      }
+    );
   }, []);
 
   const disconnectSocket = useCallback(() => {

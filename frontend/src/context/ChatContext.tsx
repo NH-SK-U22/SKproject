@@ -122,7 +122,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   // チャットSocket接続
   const connectChatSocket = useCallback(() => {
     if (chatSocketRef.current) {
-      chatSocketRef.current.disconnect();
+      return; // 既に接続されている場合は何もしない
     }
 
     chatSocketRef.current = io("http://localhost:5000", {
@@ -146,17 +146,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     // 新しいメッセージを受信
     chatSocketRef.current.on("message_sent", (data: Message) => {
       console.log("Socket: 新しいメッセージを受信しました", data);
-      // 現在のチャットルームのメッセージのみを状態に追加
-      if (data.sticky_id === currentStickyId) {
-        setMessages((prev) => {
-          // メッセージが既に存在するかどうかを確認（重複を防ぐ）
-          const exists = prev.some((msg) => msg.message_id === data.message_id);
-          if (exists) return prev;
-          return [...prev, data];
-        });
-      }
+      // 現在表示しているメッセージと同じsticky_idの場合のみ追加
+      setMessages((prev) => {
+        // 現在のメッセージリストが空でない場合、最初のメッセージのsticky_idと比較
+        if (prev.length > 0 && prev[0].sticky_id !== data.sticky_id) {
+          return prev; // 異なるsticky_idの場合は追加しない
+        }
+
+        // メッセージが既に存在するかどうかを確認（重複を防ぐ）
+        const exists = prev.some((msg) => msg.message_id === data.message_id);
+        if (exists) return prev;
+        return [...prev, data];
+      });
     });
-  }, [currentStickyId]);
+  }, []); // 依存項を空にする
 
   // チャットSocket接続を切断
   const disconnectChatSocket = useCallback(() => {
@@ -178,30 +181,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       disconnectChatSocket();
     };
   }, [disconnectChatSocket]);
-
-  // currentStickyIdが変化した時にメッセージの監視を再設定
-  useEffect(() => {
-    if (chatSocketRef.current) {
-      // 前の監視器を削除
-      chatSocketRef.current.off("message_sent");
-
-      // 新しい監視器を追加
-      chatSocketRef.current.on("message_sent", (data: Message) => {
-        console.log("Socket: 新しいメッセージを受信しました", data);
-        // 現在のチャットルームのメッセージのみを状態に追加
-        if (data.sticky_id === currentStickyId) {
-          setMessages((prev) => {
-            // メッセージが既に存在するかどうかを確認（重複を防ぐ）
-            const exists = prev.some(
-              (msg) => msg.message_id === data.message_id
-            );
-            if (exists) return prev;
-            return [...prev, data];
-          });
-        }
-      });
-    }
-  }, [currentStickyId]);
 
   return (
     <ChatContext.Provider
