@@ -54,11 +54,8 @@ const StickyNote = ({
     if (localPosition) {
       return localPosition;
     }
-    if (
-      post.x_axis !== undefined &&
-      post.y_axis !== undefined &&
-      (post.x_axis !== 0 || post.y_axis !== 0)
-    ) {
+    if (post.x_axis !== undefined && post.y_axis !== undefined) {
+      // (0, 0)位置も有効な位置として扱う
       return { x: post.x_axis, y: post.y_axis };
     }
     return null;
@@ -75,7 +72,7 @@ const StickyNote = ({
     }
   }, [localPosition, dragging]);
 
-  // 他のユーザーからの位置更新を受信した时にローカル位置を同期
+  // 他のユーザーからの位置更新を受信した時にローカル位置を同期
   useEffect(() => {
     // ローカルロケーションのオーバーライドがなく、ドラッグ＆ドロップの状態でない場合のみ同期させる
     if (
@@ -83,7 +80,6 @@ const StickyNote = ({
       !dragging &&
       post.x_axis !== undefined &&
       post.y_axis !== undefined &&
-      (post.x_axis !== 0 || post.y_axis !== 0) &&
       (position === null ||
         position.x !== post.x_axis ||
         position.y !== post.y_axis)
@@ -351,11 +347,11 @@ const Dashboard = () => {
       <main className={styles.mainContent}>
         {posts.length > 0 && (
           <div className={styles.notesGrid} ref={gridRef}>
-            {posts.map((post, idx) => (
+            {posts.map((post) => (
               <StickyNote
                 key={post.id}
                 post={post}
-                idx={idx}
+                idx={post.display_index || 0}
                 gridRef={gridRef}
                 maxPerRow={maxPerRow}
                 isLastMoved={post.id === lastMovedNoteId}
