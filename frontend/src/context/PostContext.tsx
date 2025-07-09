@@ -16,6 +16,7 @@ interface Post {
   student_id?: number;
   x_axis?: number;
   y_axis?: number;
+  display_index?: number;
   student_name?: string;
 }
 
@@ -26,6 +27,7 @@ interface StickyResponse {
   sticky_color: string;
   x_axis: number;
   y_axis: number;
+  display_index: number;
   feedback_A: number;
   feedback_B: number;
   feedback_C: number;
@@ -46,6 +48,8 @@ interface PostContextType {
     text: string;
     color: string;
     student_id: number;
+    x_axis?: number;
+    y_axis?: number;
   }) => Promise<void>;
   loadPosts: (student_id?: number) => Promise<void>;
   loadSchoolPosts: (school_id: string) => Promise<void>;
@@ -81,8 +85,13 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           student_id: item.student_id,
           x_axis: item.x_axis,
           y_axis: item.y_axis,
+          display_index: item.display_index,
           student_name: item.student_name,
         }));
+        // display_index順でソート（バックエンドでソートされているが、念のため）
+        formattedPosts.sort(
+          (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
+        );
         setPosts(formattedPosts);
       }
     } catch (error) {
@@ -105,8 +114,13 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           student_id: item.student_id,
           x_axis: item.x_axis,
           y_axis: item.y_axis,
+          display_index: item.display_index,
           student_name: item.student_name,
         }));
+        // display_index順でソート（バックエンドでソートされているが、念のため）
+        formattedPosts.sort(
+          (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
+        );
         setPosts(formattedPosts);
       }
     } catch (error) {
@@ -115,23 +129,40 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const addPost = useCallback(
-    async (post: { text: string; color: string; student_id: number }) => {
+    async (post: {
+      text: string;
+      color: string;
+      student_id: number;
+      x_axis?: number;
+      y_axis?: number;
+    }) => {
       try {
+        const requestBody = {
+          student_id: post.student_id,
+          sticky_content: post.text,
+          sticky_color: post.color,
+          x_axis: post.x_axis || 0,
+          y_axis: post.y_axis || 0,
+        };
+
         const response = await fetch("http://localhost:5000/api/sticky", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            student_id: post.student_id,
-            sticky_content: post.text,
-            sticky_color: post.color,
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (response.ok) {
-          // Socket事件が新しい付箋を自動的に追加するため、ここでは何もしない
           console.log("付箋が正常に作成されました");
+
+          // Socket事件が新しい付箋を自動的に追加するのを待つ
+          // failsafeとして1秒後にSocket更新がない場合は手動でデータを再読み込み
+          setTimeout(() => {
+            if (currentSchoolId) {
+              loadSchoolPosts(currentSchoolId);
+            }
+          }, 1000);
         } else {
           console.error("付箋の作成に失敗しました");
         }
@@ -139,7 +170,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("付箋の作成に失敗しました:", error);
       }
     },
-    []
+    [currentSchoolId, loadSchoolPosts]
   );
 
   const updatePost = useCallback(
@@ -165,7 +196,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         );
 
         if (response.ok) {
-          // Socket事件が更新された付箋を自動的に同期するため、ここでは何もしない
+          // Socket事件が更新された付箋を自動的に同期する
           // console.log("付箋が正常に更新されました");
         } else {
           console.error("付箋の更新に失敗しました");
@@ -187,7 +218,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       if (response.ok) {
-        // Socket事件が削除された付箋を自動的に同期するため、ここでは何もしない
+        // Socket事件が削除された付箋を自動的に同期する
         console.log("付箋が正常に削除されました");
       } else {
         console.error("付箋の削除に失敗しました");
@@ -203,21 +234,31 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       socketRef.current.disconnect();
     }
 
-    socketRef.current = io("http://localhost:5000");
+    socketRef.current = io("http://localhost:5000", {
+      transports: ["polling"], // WebSocketを無効にし、HTTPロングポーリングのみを使用する
+      upgrade: false, // WebSocketへのアップグレードなし
+      rememberUpgrade: false,
+    });
     setCurrentSchoolId(school_id);
 
     socketRef.current.on("connect", () => {
       console.log("Socket connected");
       // 学校のルームに参加
       socketRef.current?.emit("join_school", { school_id });
+      console.log(`学校ルームに参加しました: school_${school_id}`);
     });
 
     socketRef.current.on("disconnect", () => {
       console.log("Socket disconnected");
     });
 
+    socketRef.current.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+    });
+
     // 新しい付箋が作成された時
     socketRef.current.on("sticky_created", (data: StickyResponse) => {
+      console.log("Socket: 新しい付箋を受信しました", data);
       const newPost: Post = {
         id: data.sticky_id,
         text: data.sticky_content,
@@ -226,13 +267,23 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         student_id: data.student_id,
         x_axis: data.x_axis,
         y_axis: data.y_axis,
+        display_index: data.display_index,
         student_name: data.student_name,
       };
-      setPosts((prev) => [...prev, newPost]);
+      setPosts((prev) => {
+        console.log(
+          "現在の付箋数:",
+          prev.length,
+          "新しい付箋追加後:",
+          prev.length + 1
+        );
+        return [...prev, newPost];
+      });
     });
 
     // 付箋が更新された時
     socketRef.current.on("sticky_updated", (data: StickyResponse) => {
+      console.log("Socket: 付箋更新を受信しました", data);
       const updatedPost: Post = {
         id: data.sticky_id,
         text: data.sticky_content,
@@ -241,6 +292,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         student_id: data.student_id,
         x_axis: data.x_axis,
         y_axis: data.y_axis,
+        display_index: data.display_index,
         student_name: data.student_name,
       };
       setPosts((prev) =>
@@ -250,6 +302,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // 付箋が削除された時
     socketRef.current.on("sticky_deleted", (data: { sticky_id: number }) => {
+      console.log("Socket: 付箋削除を受信しました", data);
       setPosts((prev) => prev.filter((post) => post.id !== data.sticky_id));
     });
   }, []);

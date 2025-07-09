@@ -52,6 +52,7 @@ def init_db():
         sticky_color TEXT NOT NULL,
         x_axis INTEGER DEFAULT 0,
         y_axis INTEGER DEFAULT 0,
+        display_index INTEGER DEFAULT 0,
         feedback_A INTEGER DEFAULT 0,
         feedback_B INTEGER DEFAULT 0,
         feedback_C INTEGER DEFAULT 0,
@@ -65,6 +66,14 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
+    
+    # display_index字段のマイグレーション（既存のテーブルに字段を追加）
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN display_index INTEGER DEFAULT 0')
+        print("Added display_index column to sticky table")
+    except sqlite3.OperationalError:
+        # カラムが既に存在する場合はスキップする
+        pass
     
     # message tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS message(
@@ -483,16 +492,25 @@ def create_sticky():
             print(f"DEBUG: Student {student_id} not found in database")
             return jsonify({'error': '指定された学生が見つかりません'}), 400
         
+        # 新しい付箋のdisplay_indexを取得（同じ学校の最大index + 1）
+        c.execute('''SELECT MAX(s.display_index) FROM sticky s 
+                     JOIN students st ON s.student_id = st.student_id 
+                     WHERE st.school_id = (SELECT school_id FROM students WHERE student_id = ?)''', 
+                  (student_id,))
+        max_index_result = c.fetchone()
+        new_display_index = (max_index_result[0] or 0) + 1
+        
         # 付箋插入
-        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, feedback_A, feedback_B, feedback_C,
+        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, feedback_A, feedback_B, feedback_C,
                                          ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
                                          teammate_avg_score, enemy_avg_score, overall_avg_score) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                  (request.json['student_id'], 
                   request.json['sticky_content'],
                   request.json['sticky_color'],
                   request.json.get('x_axis', 0),
                   request.json.get('y_axis', 0),
+                  new_display_index,
                   request.json.get('feedback_A', 0),
                   request.json.get('feedback_B', 0),
                   request.json.get('feedback_C', 0),
@@ -507,7 +525,7 @@ def create_sticky():
         sticky_id = c.lastrowid
         
         # 作成された付箋の完全な情報を取得してSocketで送信
-        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                             s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                             s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
                             s.overall_avg_score, s.created_at, st.name, st.school_id
@@ -528,23 +546,28 @@ def create_sticky():
                 'sticky_color': sticky_data[3],
                 'x_axis': sticky_data[4],
                 'y_axis': sticky_data[5],
-                'feedback_A': sticky_data[6],
-                'feedback_B': sticky_data[7],
-                'feedback_C': sticky_data[8],
-                'ai_summary_content': sticky_data[9],
-                'ai_teammate_avg_prediction': sticky_data[10],
-                'ai_enemy_avg_prediction': sticky_data[11],
-                'ai_overall_avg_prediction': sticky_data[12],
-                'teammate_avg_score': sticky_data[13],
-                'enemy_avg_score': sticky_data[14],
-                'overall_avg_score': sticky_data[15],
-                'created_at': sticky_data[16],
-                'student_name': sticky_data[17],
-                'school_id': sticky_data[18]
+                'display_index': sticky_data[6],
+                'feedback_A': sticky_data[7],
+                'feedback_B': sticky_data[8],
+                'feedback_C': sticky_data[9],
+                'ai_summary_content': sticky_data[10],
+                'ai_teammate_avg_prediction': sticky_data[11],
+                'ai_enemy_avg_prediction': sticky_data[12],
+                'ai_overall_avg_prediction': sticky_data[13],
+                'teammate_avg_score': sticky_data[14],
+                'enemy_avg_score': sticky_data[15],
+                'overall_avg_score': sticky_data[16],
+                'created_at': sticky_data[17],
+                'student_name': sticky_data[18],
+                'school_id': sticky_data[19]
             }
             
             # 同校の全ユーザーに新しい付箋を送信
-            socketio.emit('sticky_created', sticky_info, to=f"school_{sticky_data[18]}")
+            room_name = f"school_{sticky_data[19]}"
+            print(f"DEBUG: Sending sticky_created event to room: {room_name}")
+            print(f"DEBUG: Sticky data: {sticky_info}")
+            socketio.emit('sticky_created', sticky_info, to=room_name)
+            print(f"DEBUG: sticky_created event sent successfully")
         
         return jsonify({
             'status': 'success',
@@ -566,30 +589,30 @@ def get_sticky_notes():
         
         # 付箋取得
         if student_id:
-            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
                                 s.overall_avg_score, s.created_at, st.name
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
-                         WHERE s.student_id = ? ORDER BY s.created_at DESC''', (student_id,))
+                         WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
         elif school_id:
             # 同校の全学生の付箋を取得
-            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
                                 s.overall_avg_score, s.created_at, st.name
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
-                         WHERE st.school_id = ? ORDER BY s.created_at DESC''', (school_id,))
+                         WHERE st.school_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id,))
         else:
-            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
                                 s.overall_avg_score, s.created_at, st.name
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
-                         ORDER BY s.created_at DESC''')
+                         ORDER BY s.display_index, s.created_at DESC''')
         
         sticky_notes = []
         for row in c.fetchall():
@@ -600,18 +623,19 @@ def get_sticky_notes():
                 'sticky_color': row[3],
                 'x_axis': row[4],
                 'y_axis': row[5],
-                'feedback_A': row[6],
-                'feedback_B': row[7],
-                'feedback_C': row[8],
-                'ai_summary_content': row[9],
-                'ai_teammate_avg_prediction': row[10],
-                'ai_enemy_avg_prediction': row[11],
-                'ai_overall_avg_prediction': row[12],
-                'teammate_avg_score': row[13],
-                'enemy_avg_score': row[14],
-                'overall_avg_score': row[15],
-                'created_at': row[16],
-                'student_name': row[17]
+                'display_index': row[6],
+                'feedback_A': row[7],
+                'feedback_B': row[8],
+                'feedback_C': row[9],
+                'ai_summary_content': row[10],
+                'ai_teammate_avg_prediction': row[11],
+                'ai_enemy_avg_prediction': row[12],
+                'ai_overall_avg_prediction': row[13],
+                'teammate_avg_score': row[14],
+                'enemy_avg_score': row[15],
+                'overall_avg_score': row[16],
+                'created_at': row[17],
+                'student_name': row[18]
             })
         
         conn.close()
@@ -632,7 +656,7 @@ def update_sticky(sticky_id):
         update_fields = []
         values = []
         
-        allowed_fields = ['sticky_content', 'sticky_color', 'x_axis', 'y_axis', 'feedback_A', 'feedback_B', 'feedback_C',
+        allowed_fields = ['sticky_content', 'sticky_color', 'x_axis', 'y_axis', 'display_index', 'feedback_A', 'feedback_B', 'feedback_C',
                          'ai_summary_content', 'ai_teammate_avg_prediction', 'ai_enemy_avg_prediction', 'ai_overall_avg_prediction',
                          'teammate_avg_score', 'enemy_avg_score', 'overall_avg_score']
         for field in allowed_fields:
@@ -654,7 +678,7 @@ def update_sticky(sticky_id):
             return jsonify({'error': '付箋が見つかりません'}), 404
         
         # 更新後の付箋情報を取得してSocketで送信
-        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, 
+        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                             s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                             s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
                             s.overall_avg_score, s.created_at, st.name, st.school_id
@@ -674,23 +698,24 @@ def update_sticky(sticky_id):
                 'sticky_color': sticky_data[3],
                 'x_axis': sticky_data[4],
                 'y_axis': sticky_data[5],
-                'feedback_A': sticky_data[6],
-                'feedback_B': sticky_data[7],
-                'feedback_C': sticky_data[8],
-                'ai_summary_content': sticky_data[9],
-                'ai_teammate_avg_prediction': sticky_data[10],
-                'ai_enemy_avg_prediction': sticky_data[11],
-                'ai_overall_avg_prediction': sticky_data[12],
-                'teammate_avg_score': sticky_data[13],
-                'enemy_avg_score': sticky_data[14],
-                'overall_avg_score': sticky_data[15],
-                'created_at': sticky_data[16],
-                'student_name': sticky_data[17],
-                'school_id': sticky_data[18]
+                'display_index': sticky_data[6],
+                'feedback_A': sticky_data[7],
+                'feedback_B': sticky_data[8],
+                'feedback_C': sticky_data[9],
+                'ai_summary_content': sticky_data[10],
+                'ai_teammate_avg_prediction': sticky_data[11],
+                'ai_enemy_avg_prediction': sticky_data[12],
+                'ai_overall_avg_prediction': sticky_data[13],
+                'teammate_avg_score': sticky_data[14],
+                'enemy_avg_score': sticky_data[15],
+                'overall_avg_score': sticky_data[16],
+                'created_at': sticky_data[17],
+                'student_name': sticky_data[18],
+                'school_id': sticky_data[19]
             }
             
             # 同校の全ユーザーに更新された付箋を送信
-            socketio.emit('sticky_updated', sticky_info, to=f"school_{sticky_data[18]}")
+            socketio.emit('sticky_updated', sticky_info, to=f"school_{sticky_data[19]}")
         
         return jsonify({'status': 'success', 'message': '付箋が更新されました'})
         
@@ -812,11 +837,11 @@ def get_messages_by_sticky(sticky_id):
 # Socket.IO イベントハンドラー
 @socketio.on('connect')
 def handle_connect():
-    print('Client connected')
+    print('DEBUG: Client connected')
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    print('Client disconnected')
+    print('DEBUG: Client disconnected')
 
 @socketio.on('join_school')
 def handle_join_school(data):
@@ -824,8 +849,11 @@ def handle_join_school(data):
     school_id = data.get('school_id')
     if school_id:
         from flask_socketio import join_room
-        join_room(f"school_{school_id}")
-        print(f"Client joined school room: school_{school_id}")
+        room_name = f"school_{school_id}"
+        join_room(room_name)
+        print(f"DEBUG: Client joined school room: {room_name}")
+    else:
+        print(f"DEBUG: join_school called without school_id: {data}")
 
 @socketio.on('leave_school')
 def handle_leave_school(data):
@@ -833,8 +861,11 @@ def handle_leave_school(data):
     school_id = data.get('school_id')
     if school_id:
         from flask_socketio import leave_room
-        leave_room(f"school_{school_id}")
-        print(f"Client left school room: school_{school_id}")
+        room_name = f"school_{school_id}"
+        leave_room(room_name)
+        print(f"DEBUG: Client left school room: {room_name}")
+    else:
+        print(f"DEBUG: leave_school called without school_id: {data}")
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
