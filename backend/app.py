@@ -32,7 +32,7 @@ def init_db():
         theme_color TEXT,
         user_color TEXT,
         blacklist_point INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         UNIQUE(school_id, class_id, number, user_type)
     )''')
     
@@ -63,7 +63,7 @@ def init_db():
         teammate_avg_score REAL DEFAULT 0,
         enemy_avg_score REAL DEFAULT 0,
         overall_avg_score REAL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
     
@@ -85,7 +85,7 @@ def init_db():
         feedback_A INTEGER DEFAULT 0,
         feedback_B INTEGER DEFAULT 0,
         feedback_C INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY (student_id) REFERENCES students(student_id),
         FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id)
         )''')
