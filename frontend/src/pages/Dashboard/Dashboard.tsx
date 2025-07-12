@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect } from "react";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
+import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import MessageModal from "../../components/MessageModal/MessageModal";
 
 // css
@@ -168,6 +169,7 @@ const Dashboard = () => {
   const [maxPerRow, setMaxPerRow] = useState(1);
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [currentUser,setCurrentUser] = useState<any>(null);
 
   const handleNoteMove = (id: number, x: number, y: number) => {
     setLastMovedNoteId(id);
@@ -175,11 +177,28 @@ const Dashboard = () => {
     updatePost(id, { x_axis: x, y_axis: y });
   };
 
+  // ユーザータイプに応じて適切なサイドバーを返す関数
+  const renderSidebar = () => {
+    if (!currentUser) {
+      return <Sidebar />;
+    }
+
+    switch (currentUser.user_type) {
+      case 'student':
+        return <Sidebar />;
+      case 'teacher':
+        return <TeacherSidebar />;
+      default:
+        return <Sidebar />;
+    }
+  };
+
   // コンポーネント装着時に支柱に荷重をかける
   useEffect(() => {
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      loadPosts(currentUser.id);
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      loadPosts(user.id);
     }
   }, [loadPosts]);
 
@@ -235,7 +254,7 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <Sidebar />
+      {renderSidebar()}
       <main className={styles.mainContent}>
         {posts.length > 0 && (
           <div className={styles.notesGrid} ref={gridRef}>
