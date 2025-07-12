@@ -48,8 +48,13 @@ const Login = () => {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("isLoggedIn", "true");
 
-        // ログイン成功後、陣営選択ページに移動
-        navigate("/campselect");
+        if (userType == "student") {
+          // ログイン成功後、陣営選択ページに移動
+          navigate("/campselect");
+        }
+        else {
+          navigate("/dashboard");
+        }
       } else {
         setError(data.error || "ログイン失敗");
       }

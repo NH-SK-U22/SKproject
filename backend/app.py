@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 import sqlite3
 import json
 from flask_cors import CORS # Flask-CORSをインポート
+import os
 from flask_socketio import SocketIO, emit # SocketIOをインポート
 
 app = Flask(__name__)
@@ -34,14 +35,6 @@ def init_db():
         blacklist_point INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         UNIQUE(school_id, class_id, number, user_type)
-    )''')
-    
-    # teachers tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS teachers(
-        teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name CHAR(50) NOT NULL,
-        class_number CHAR(5) NOT NULL,
-        UNIQUE(name,class_number)
     )''')
     
     # sticky tableを作成
@@ -101,13 +94,15 @@ def init_db():
     )''')
     
     # teachers tableを作成
+    # numberは教員番号
     c.execute('''CREATE TABLE IF NOT EXISTS teachers(
         teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
         school_id TEXT NOT NULL,
-        name CHAR(50) NOT NULL,
-        class_number CHAR(5) NOT NULL,
+        class_id TEXT NOT NULL,
         password TEXT NOT NULL,
-        UNIQUE(school_id,name,class_number)
+        number TEXT NOT NULL,
+        user_type TEXT NOT NULL CHECK(user_type IN ('student', 'teacher')),
+        UNIQUE(school_id,class_id,number,user_type)
     )''')
     
     # reward tableを作成
@@ -130,6 +125,29 @@ def init_db():
         FOREIGN KEY(student_id) REFERENCES students(id),
         FOREIGN KEY(reward_id) REFERENCES reward(reward_id)
     )''')
+    
+    # post tableを作成
+    # c.execute('''CREATE TABLE IF NOT EXISTS post(
+    #     post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #     student_id INTEGER NOT NULL,
+    #     text TEXT NOT NULL,
+    #     ai_summary TEXT NOT NULL,
+    #     sum_evaluation_a INTEGER,
+    #     sum_evaluation_b INTEGER,
+    #     sum_evaluation_c INTEGER,
+    #     stickynote_color TEXT NOT NULL,
+    #     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    #     x_coordinate INTEGER,
+    #     y_coordinate INTEGER,
+    #     ally_ai_evaluation INTEGER,
+    #     enemy_ai_evaluation INTEGER,
+    #     whole_ai_evaluation INTEGER,
+    #     ally_evaluation INTEGER,
+    #     enemy_evaluation INTEGER,
+    #     whole_evaluation INTEGER,
+    #     FOREIGN KEY(student_id) REFERENCES students(id),
+    #     UNIQUE(student_id,text)
+    # )''')
     
     # colorsetsデータの挿入
     colorsets_data = [
@@ -200,108 +218,201 @@ def signup():
     if not request.json:
         return jsonify({'error': 'リクエストボディが必要です'}), 400
     
-    required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
-    for field in required_fields:
-        if field not in request.json:
-            return jsonify({'error': f'{field}が必要です'}), 400
-    
-    school_id = request.json['schoolID']
-    class_id = request.json['classID']
-    number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
-    password = request.json['password']
-    user_type = request.json['userType']
-    name = request.json.get('name', '')  # オプションの名前フィールド
-    
-    if user_type not in ['student', 'teacher']:
-        return jsonify({'error': '無効なユーザータイプです'}), 400
-    
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+    if request.json['userType'] == "student":
+        #生徒の登録
+        required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
+        for field in required_fields:
+            if field not in request.json:
+                return jsonify({'error': f'{field}が必要です'}), 400
         
-        # ユーザーがすでに存在するか確認
-        c.execute('SELECT student_id FROM students WHERE school_id = ? AND class_id = ? AND number = ? AND user_type = ?',
-                 (school_id, class_id, number, user_type))
-        existing_user = c.fetchone()
+        school_id = request.json['schoolID']
+        class_id = request.json['classID']
+        number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
+        password = request.json['password']
+        user_type = request.json['userType']
+        name = request.json.get('name', '')  # オプションの名前フィールド
         
-        if existing_user:
+        if user_type not in ['student', 'teacher']:
+            return jsonify({'error': '無効なユーザータイプです'}), 400
+        
+        try:
+            conn = sqlite3.connect('database.db')
+            c = conn.cursor()
+            
+            # ユーザーがすでに存在するか確認
+            c.execute('SELECT student_id FROM students WHERE school_id = ? AND class_id = ? AND number = ? AND user_type = ?',
+                     (school_id, class_id, number, user_type))
+            existing_user = c.fetchone()
+            
+            if existing_user:
+                conn.close()
+                return jsonify({'error': 'ユーザーがすでに存在します'}), 409
+            
+            # 新しいユーザーを挿入
+            c.execute('''INSERT INTO students (school_id, class_id, number, password, user_type, name) 
+                         VALUES (?, ?, ?, ?, ?, ?)''',
+                     (school_id, class_id, number, password, user_type, name))
+            
+            user_id_db = c.lastrowid
+            conn.commit()
             conn.close()
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'ユーザーが作成されました',
+                'user_id': user_id_db
+            }), 201
+            
+        except sqlite3.IntegrityError as e:
             return jsonify({'error': 'ユーザーがすでに存在します'}), 409
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        #教師の登録
+        required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
+        for field in required_fields:
+            if field not in request.json:
+                return jsonify({'error': f'{field}が必要です'}), 400
         
-        # 新しいユーザーを挿入
-        c.execute('''INSERT INTO students (school_id, class_id, number, password, user_type, name) 
-                     VALUES (?, ?, ?, ?, ?, ?)''',
-                 (school_id, class_id, number, password, user_type, name))
+        school_id = request.json['schoolID']
+        class_id = request.json['classID']
+        number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
+        password = request.json['password']
+        user_type = request.json['userType']
         
-        user_id_db = c.lastrowid
-        conn.commit()
-        conn.close()
+        if user_type not in ['student', 'teacher']:
+            return jsonify({'error': '無効なユーザータイプです'}), 400
         
-        return jsonify({
-            'status': 'success',
-            'message': 'ユーザーが作成されました',
-            'user_id': user_id_db
-        }), 201
-        
-    except sqlite3.IntegrityError as e:
-        return jsonify({'error': 'ユーザーがすでに存在します'}), 409
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        try:
+            conn = sqlite3.connect('database.db')
+            c = conn.cursor()
+            
+            # ユーザーがすでに存在するか確認
+            c.execute('SELECT teacher_id FROM teachers WHERE school_id = ? AND class_id = ? AND number = ? AND user_type = ?',
+                     (school_id, class_id, number, user_type))
+            existing_user = c.fetchone()
+            
+            if existing_user:
+                conn.close()
+                return jsonify({'error': 'ユーザーがすでに存在します'}), 409
+            
+            # 新しいユーザーを挿入
+            c.execute('''INSERT INTO teachers (school_id, class_id, number, password, user_type) 
+                         VALUES (?, ?, ?, ?, ?)''',
+                     (school_id, class_id, number, password, user_type))
+            
+            user_id_db = c.lastrowid
+            conn.commit()
+            conn.close()
+            
+            return jsonify({
+                'status': 'success',
+                'message': 'ユーザーが作成されました',
+                'user_id': user_id_db
+            }), 201
+            
+        except sqlite3.IntegrityError as e:
+            return jsonify({'error': 'ユーザーがすでに存在します'}), 409
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
     if not request.json:
         return jsonify({'error': 'リクエストボディが必要です'}), 400
-    
-    required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
-    for field in required_fields:
-        if field not in request.json:
-            return jsonify({'error': f'{field}が必要です'}), 400
-    
-    school_id = request.json['schoolID']
-    class_id = request.json['classID']
-    number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
-    password = request.json['password']
-    user_type = request.json['userType']
-    
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
         
-        # ユーザーを調べる
-        c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point, 
-                            camp_id, theme_color, user_color, blacklist_point, created_at 
-                     FROM students 
-                     WHERE school_id = ? AND class_id = ? AND number = ? AND password = ? AND user_type = ?''',
-                 (school_id, class_id, number, password, user_type))
-        user = c.fetchone()
-        conn.close()
+    if request.json['userType'] == "student":
+        required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
+        for field in required_fields:
+            if field not in request.json:
+                return jsonify({'error': f'{field}が必要です'}), 400
+
+        school_id = request.json['schoolID']
+        class_id = request.json['classID']
+        number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
+        password = request.json['password']
+        user_type = request.json['userType']
+
+        try:
+            conn = sqlite3.connect('database.db')
+            c = conn.cursor()
+
+            # ユーザーを調べる
+            c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point, 
+                                camp_id, theme_color, user_color, blacklist_point, created_at 
+                         FROM students 
+                         WHERE school_id = ? AND class_id = ? AND number = ? AND password = ? AND user_type = ?''',
+                     (school_id, class_id, number, password, user_type))
+            user = c.fetchone()
+            conn.close()
+
+            if user:
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Login successful',
+                    'user': {
+                        'id': user[0],
+                        'school_id': user[1],
+                        'class_id': user[2],
+                        'number': user[3],
+                        'name': user[4],
+                        'user_type': user[5],
+                        'sum_point': user[6],
+                        'have_point': user[7],
+                        'camp_id': user[8],
+                        'theme_color': user[9],
+                        'user_color': user[10],
+                        'blacklist_point': user[11],
+                        'created_at': user[12]
+                    }
+                }), 200
+            else:
+                return jsonify({'error': '無効な認証情報'}), 401
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
+        for field in required_fields:
+            if field not in request.json:
+                return jsonify({'error': f'{field}が必要です'}), 400
+
+        school_id = request.json['schoolID']
+        class_id = request.json['classID']
+        number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
+        password = request.json['password']
+        user_type = request.json['userType']
+
+        try:
+            conn = sqlite3.connect('database.db')
+            c = conn.cursor()
+
+            # ユーザーを調べる
+            c.execute('''SELECT teacher_id, school_id, class_id, number, user_type 
+                         FROM teachers 
+                         WHERE school_id = ? AND class_id = ? AND number = ? AND password = ? AND user_type = ?''',
+                     (school_id, class_id, number, password, user_type))
+            user = c.fetchone()
+            conn.close()
+
+            if user:
+                return jsonify({
+                    'status': 'success',
+                    'message': 'Login successful',
+                    'user': {
+                        'id': user[0],
+                        'school_id': user[1],
+                        'class_id': user[2],
+                        'number': user[3],
+                        'user_type': user[4],
+                    }
+                }), 200
+            else:
+                return jsonify({'error': '無効な認証情報'}), 401
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
         
-        if user:
-            return jsonify({
-                'status': 'success',
-                'message': 'Login successful',
-                'user': {
-                    'id': user[0],
-                    'school_id': user[1],
-                    'class_id': user[2],
-                    'number': user[3],
-                    'name': user[4],
-                    'user_type': user[5],
-                    'sum_point': user[6],
-                    'have_point': user[7],
-                    'camp_id': user[8],
-                    'theme_color': user[9],
-                    'user_color': user[10],
-                    'blacklist_point': user[11],
-                    'created_at': user[12]
-                }
-            }), 200
-        else:
-            return jsonify({'error': '無効な認証情報'}), 401
-            
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/students', methods=['GET'])
 def get_students():
@@ -868,4 +979,156 @@ def handle_leave_school(data):
         print(f"DEBUG: leave_school called without school_id: {data}")
 
 if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
+
+
+# # データベース接続関数を追加
+# def get_db_connection():
+#     """データベース接続を取得"""
+#     print("🗄️ データベース接続関数呼び出し")
+    
+#     # データベースファイルのパスを設定
+#     db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
+    
+#     if not os.path.exists(db_path):
+#         print(f"❌ データベースファイルが見つかりません: {db_path}")
+#         raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
+    
+#     try:
+#         conn = sqlite3.connect(db_path)
+#         print("✅ データベース接続成功")
+#         return conn
+#     except sqlite3.Error as e:
+#         print(f"❌ データベース接続エラー: {e}")
+#         raise
+
+# # 基本的なヘルスチェック用エンドポイント
+# @app.route('/health', methods=['GET'])
+# def health_check():
+#     print("💗 ヘルスチェック呼び出し")
+#     return jsonify({'status': 'ok', 'message': 'サーバーは正常に動作しています'}), 200
+
+# # 報酬を追加するAPI
+# @app.route('/api/rewards', methods=['POST', 'OPTIONS'])
+# def add_reward():
+#     print(f"📨 リクエスト受信 - メソッド: {request.method}")
+#     print(f"📨 リクエスト元IP: {request.remote_addr}")
+#     print(f"📨 リクエストヘッダー: {dict(request.headers)}")
+    
+#     # OPTIONSリクエストへの対応
+#     if request.method == 'OPTIONS':
+#         print("🔄 OPTIONSリクエスト処理中...")
+#         response = jsonify({'status': 'ok'})
+#         response.headers.add('Access-Control-Allow-Origin', '*')
+#         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+#         response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+#         print("✅ OPTIONSレスポンス送信完了")
+#         return response, 200
+    
+#     print("📦 POSTリクエスト処理開始")
+    
+#     try:
+#         # リクエストからJSONデータを取得
+#         print("📋 JSONデータ取得試行...")
+#         print(f"📋 Content-Type: {request.content_type}")
+#         print(f"📋 Raw data: {request.data}")
+        
+#         # Content-Typeが設定されていない場合でもJSONとして扱う
+#         if request.content_type == 'application/json':
+#             data = request.get_json()
+#         else:
+#             # Content-Typeがない場合、手動でJSONパース
+#             try:
+#                 import json
+#                 data = json.loads(request.data.decode('utf-8'))
+#             except (json.JSONDecodeError, UnicodeDecodeError) as e:
+#                 print(f"❌ JSONパースエラー: {e}")
+#                 return jsonify({'error': 'JSONデータの解析に失敗しました'}), 400
+        
+#         print(f"📋 受信データ: {data}")
+        
+#         # 必要なフィールドが存在するかチェック
+#         if not data:
+#             print("❌ データが送信されませんでした")
+#             return jsonify({'error': 'データが送信されませんでした'}), 400
+        
+#         print("✅ データ存在確認完了")
+        
+#         required_fields = ['reward_content', 'need_point', 'need_rank', 'creater']
+#         for field in required_fields:
+#             if field not in data:
+#                 print(f"❌ 必須フィールド不足: {field}")
+#                 return jsonify({'error': f'{field}が不足しています'}), 400
+        
+#         print("✅ 必須フィールドチェック完了")
+        
+#         # データの型チェック
+#         if not isinstance(data['need_point'], int) or data['need_point'] <= 0:
+#             print(f"❌ need_pointの型エラー: {data['need_point']} (type: {type(data['need_point'])})")
+#             return jsonify({'error': '必要ポイントは正の整数である必要があります'}), 400
+        
+#         if not isinstance(data['need_rank'], int) or data['need_rank'] < 0:
+#             print(f"❌ need_rankの型エラー: {data['need_rank']} (type: {type(data['need_rank'])})")
+#             return jsonify({'error': '必要ランクは0以上の整数である必要があります'}), 400
+        
+#         if not data['reward_content'].strip():
+#             print("❌ reward_contentが空")
+#             return jsonify({'error': '報酬の内容を入力してください'}), 400
+        
+#         print("✅ データ型チェック完了")
+        
+#         # データベースに挿入
+#         print("🗄️ データベース接続試行...")
+#         conn = get_db_connection()
+#         cursor = conn.cursor()
+#         print("✅ データベース接続成功")
+        
+#         try:
+#             print("💾 データベースINSERT実行...")
+#             cursor.execute('''
+#                 INSERT INTO reward (reward_content, need_point, need_rank, creater)
+#                 VALUES (?, ?, ?, ?)
+#             ''', (
+#                 data['reward_content'].strip(),
+#                 data['need_point'],
+#                 data['need_rank'],
+#                 data['creater']
+#             ))
+            
+#             conn.commit()
+#             reward_id = cursor.lastrowid
+#             print(f"✅ データベースINSERT成功 - ID: {reward_id}")
+            
+#             # 成功レスポンス
+#             response_data = {
+#                 'message': '報酬が正常に追加されました',
+#                 'reward_id': reward_id,
+#                 'data': {
+#                     'reward_content': data['reward_content'].strip(),
+#                     'need_point': data['need_point'],
+#                     'need_rank': data['need_rank'],
+#                     'creater': data['creater']
+#                 }
+#             }
+#             print(f"📤 成功レスポンス送信: {response_data}")
+#             return jsonify(response_data), 201
+            
+#         except sqlite3.IntegrityError as e:
+#             print(f"❌ データベース整合性エラー: {str(e)}")
+#             # 重複エラー（UNIQUE制約違反）
+#             if 'UNIQUE constraint failed' in str(e):
+#                 return jsonify({'error': 'この報酬は既に存在します'}), 409
+#             else:
+#                 return jsonify({'error': 'データベースエラーが発生しました'}), 500
+        
+#         finally:
+#             conn.close()
+#             print("🗄️ データベース接続終了")
+    
+#     except Exception as e:
+#         print(f"🚨 予期しないエラー発生: {str(e)}")
+#         print(f"🚨 エラータイプ: {type(e)}")
+#         import traceback
+#         print(f"🚨 スタックトレース: {traceback.format_exc()}")
+#         return jsonify({'error': 'サーバーエラーが発生しました'}), 500
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
