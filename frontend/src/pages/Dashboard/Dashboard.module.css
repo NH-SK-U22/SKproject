@@ -29,14 +29,18 @@
   display: flex;
   flex-direction: column;
   overflow: visible;
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition: box-shadow 0.2s;
   z-index: 40;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .stickyNote.dragging {
-  transform: scale(1);
   box-shadow: 0 12px 32px 0 rgba(0, 0, 0, 0.2);
   z-index: 50;
+  transition: none;
+  will-change: transform;
+  pointer-events: none;
 }
 
 .stickyNote.dragging.belowSidebar {
@@ -54,7 +58,7 @@
   word-wrap: break-word;
 }
 
-/* 付箋の右下隅の折り目効果 */
+/* 付箋的右下隅の折り目効果 */
 .cornerFold {
   position: absolute;
   bottom: 0;
@@ -72,7 +76,6 @@
   justify-content: center;
   align-items: center;
   gap: 6px;
-  cursor: grab;
 }
 
 .ellipsis span {
