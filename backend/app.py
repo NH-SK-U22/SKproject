@@ -3,13 +3,9 @@ import sqlite3
 import json
 from flask_cors import CORS # Flask-CORSをインポート
 import os
-from flask_socketio import SocketIO, emit # SocketIOをインポート
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
-
-# SocketIOを初期化
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -33,7 +29,7 @@ def init_db():
         theme_color TEXT,
         user_color TEXT,
         blacklist_point INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(school_id, class_id, number, user_type)
     )''')
     
@@ -45,7 +41,6 @@ def init_db():
         sticky_color TEXT NOT NULL,
         x_axis INTEGER DEFAULT 0,
         y_axis INTEGER DEFAULT 0,
-        display_index INTEGER DEFAULT 0,
         feedback_A INTEGER DEFAULT 0,
         feedback_B INTEGER DEFAULT 0,
         feedback_C INTEGER DEFAULT 0,
@@ -56,7 +51,7 @@ def init_db():
         teammate_avg_score REAL DEFAULT 0,
         enemy_avg_score REAL DEFAULT 0,
         overall_avg_score REAL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
     
@@ -78,7 +73,7 @@ def init_db():
         feedback_A INTEGER DEFAULT 0,
         feedback_B INTEGER DEFAULT 0,
         feedback_C INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES students(student_id),
         FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id)
         )''')
@@ -457,7 +452,7 @@ def create_sticky():
     if not request.json:
         return jsonify({'error': 'リクエストボディが必要です'}), 400
     
-    # デバッグ情報：受信データのチェック
+    # 調試信息：檢查接收到的數據
     print(f"DEBUG: Received request data: {request.json}")
     
     required_fields = ['student_id', 'sticky_content', 'sticky_color']
@@ -491,25 +486,16 @@ def create_sticky():
             print(f"DEBUG: Student {student_id} not found in database")
             return jsonify({'error': '指定された学生が見つかりません'}), 400
         
-        # 新しい付箋のdisplay_indexを取得（同じ学校の最大index + 1）
-        c.execute('''SELECT MAX(s.display_index) FROM sticky s 
-                     JOIN students st ON s.student_id = st.student_id 
-                     WHERE st.school_id = (SELECT school_id FROM students WHERE student_id = ?)''', 
-                  (student_id,))
-        max_index_result = c.fetchone()
-        new_display_index = (max_index_result[0] or 0) + 1
-        
         # 付箋插入
-        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, feedback_A, feedback_B, feedback_C,
+        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, feedback_A, feedback_B, feedback_C,
                                          ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
                                          teammate_avg_score, enemy_avg_score, overall_avg_score) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                  (request.json['student_id'], 
                   request.json['sticky_content'],
                   request.json['sticky_color'],
                   request.json.get('x_axis', 0),
                   request.json.get('y_axis', 0),
-                  new_display_index,
                   request.json.get('feedback_A', 0),
                   request.json.get('feedback_B', 0),
                   request.json.get('feedback_C', 0),
@@ -522,51 +508,8 @@ def create_sticky():
                   request.json.get('overall_avg_score', 0)))
         
         sticky_id = c.lastrowid
-        
-        # 作成された付箋の完全な情報を取得してSocketで送信
-        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
-                            s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
-                            s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                            s.overall_avg_score, s.created_at, st.name, st.school_id
-                     FROM sticky s
-                     JOIN students st ON s.student_id = st.student_id
-                     WHERE s.sticky_id = ?''', (sticky_id,))
-        
-        sticky_data = c.fetchone()
         conn.commit()
         conn.close()
-        
-        if sticky_data:
-            # 新しい付箋のデータを全クライアントに送信
-            sticky_info = {
-                'sticky_id': sticky_data[0],
-                'student_id': sticky_data[1],
-                'sticky_content': sticky_data[2],
-                'sticky_color': sticky_data[3],
-                'x_axis': sticky_data[4],
-                'y_axis': sticky_data[5],
-                'display_index': sticky_data[6],
-                'feedback_A': sticky_data[7],
-                'feedback_B': sticky_data[8],
-                'feedback_C': sticky_data[9],
-                'ai_summary_content': sticky_data[10],
-                'ai_teammate_avg_prediction': sticky_data[11],
-                'ai_enemy_avg_prediction': sticky_data[12],
-                'ai_overall_avg_prediction': sticky_data[13],
-                'teammate_avg_score': sticky_data[14],
-                'enemy_avg_score': sticky_data[15],
-                'overall_avg_score': sticky_data[16],
-                'created_at': sticky_data[17],
-                'student_name': sticky_data[18],
-                'school_id': sticky_data[19]
-            }
-            
-            # 同校の全ユーザーに新しい付箋を送信
-            room_name = f"school_{sticky_data[19]}"
-            print(f"DEBUG: Sending sticky_created event to room: {room_name}")
-            print(f"DEBUG: Sticky data: {sticky_info}")
-            socketio.emit('sticky_created', sticky_info, to=room_name)
-            print(f"DEBUG: sticky_created event sent successfully")
         
         return jsonify({
             'status': 'success',
@@ -584,7 +527,6 @@ def get_sticky_notes():
         c = conn.cursor()
         
         student_id = request.args.get('student_id')
-        school_id = request.args.get('school_id')
         
         # 付箋取得
         if student_id:
@@ -656,7 +598,7 @@ def update_sticky(sticky_id):
         update_fields = []
         values = []
         
-        allowed_fields = ['sticky_content', 'sticky_color', 'x_axis', 'y_axis', 'display_index', 'feedback_A', 'feedback_B', 'feedback_C',
+        allowed_fields = ['sticky_content', 'sticky_color', 'x_axis', 'y_axis', 'feedback_A', 'feedback_B', 'feedback_C',
                          'ai_summary_content', 'ai_teammate_avg_prediction', 'ai_enemy_avg_prediction', 'ai_overall_avg_prediction',
                          'teammate_avg_score', 'enemy_avg_score', 'overall_avg_score']
         for field in allowed_fields:
@@ -676,47 +618,8 @@ def update_sticky(sticky_id):
         if c.rowcount == 0:
             conn.close()
             return jsonify({'error': '付箋が見つかりません'}), 404
-        
-        # 更新後の付箋情報を取得してSocketで送信
-        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
-                            s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
-                            s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                            s.overall_avg_score, s.created_at, st.name, st.school_id
-                     FROM sticky s
-                     JOIN students st ON s.student_id = st.student_id
-                     WHERE s.sticky_id = ?''', (sticky_id,))
-        
-        sticky_data = c.fetchone()
-        conn.close()
-        
-        if sticky_data:
-            # 更新された付箋のデータを全クライアントに送信
-            sticky_info = {
-                'sticky_id': sticky_data[0],
-                'student_id': sticky_data[1],
-                'sticky_content': sticky_data[2],
-                'sticky_color': sticky_data[3],
-                'x_axis': sticky_data[4],
-                'y_axis': sticky_data[5],
-                'display_index': sticky_data[6],
-                'feedback_A': sticky_data[7],
-                'feedback_B': sticky_data[8],
-                'feedback_C': sticky_data[9],
-                'ai_summary_content': sticky_data[10],
-                'ai_teammate_avg_prediction': sticky_data[11],
-                'ai_enemy_avg_prediction': sticky_data[12],
-                'ai_overall_avg_prediction': sticky_data[13],
-                'teammate_avg_score': sticky_data[14],
-                'enemy_avg_score': sticky_data[15],
-                'overall_avg_score': sticky_data[16],
-                'created_at': sticky_data[17],
-                'student_name': sticky_data[18],
-                'school_id': sticky_data[19]
-            }
             
-            # 同校の全ユーザーに更新された付箋を送信
-            socketio.emit('sticky_updated', sticky_info, to=f"school_{sticky_data[19]}")
-        
+        conn.close()
         return jsonify({'status': 'success', 'message': '付箋が更新されました'})
         
     except Exception as e:
@@ -922,35 +825,13 @@ def delete_sticky(sticky_id):
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        # 削除前に付箋情報を取得
-        c.execute('''SELECT s.sticky_id, s.student_id, st.school_id
-                     FROM sticky s
-                     JOIN students st ON s.student_id = st.student_id
-                     WHERE s.sticky_id = ?''', (sticky_id,))
-        
-        sticky_data = c.fetchone()
-        
-        if not sticky_data:
-            conn.close()
-            return jsonify({'error': '付箋が見つかりません'}), 404
-        
         c.execute('DELETE FROM sticky WHERE sticky_id = ?', (sticky_id,))
         conn.commit()
         
         if c.rowcount == 0:
             conn.close()
             return jsonify({'error': '付箋が見つかりません'}), 404
-        
-        # 削除された付箋のIDを全クライアントに送信
-        delete_info = {
-            'sticky_id': sticky_data[0],
-            'student_id': sticky_data[1],
-            'school_id': sticky_data[2]
-        }
-        
-        # 同校の全ユーザーに削除された付箋を送信
-        socketio.emit('sticky_deleted', delete_info, to=f"school_{sticky_data[2]}")
-        
+            
         conn.close()
         return jsonify({'status': 'success', 'message': '付箋が削除されました'})
         
@@ -1058,38 +939,113 @@ def get_messages_by_sticky(sticky_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Socket.IO イベントハンドラー
-@socketio.on('connect')
-def handle_connect():
-    print('DEBUG: Client connected')
+#データベース接続関数を追加
+def get_db_connection():
+    # データベースファイルのパスを設定
+    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
+    
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        return conn
+    except sqlite3.Error as e:
+        raise
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('DEBUG: Client disconnected')
+# 基本的なヘルスチェック用エンドポイント
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'ok', 'message': 'サーバーは正常に動作しています'}), 200
 
-@socketio.on('join_school')
-def handle_join_school(data):
-    """学校のルームに参加"""
-    school_id = data.get('school_id')
-    if school_id:
-        from flask_socketio import join_room
-        room_name = f"school_{school_id}"
-        join_room(room_name)
-        print(f"DEBUG: Client joined school room: {room_name}")
-    else:
-        print(f"DEBUG: join_school called without school_id: {data}")
+# 報酬を追加するAPI
+@app.route('/api/rewards', methods=['POST', 'OPTIONS'])
+def add_reward():
+    # OPTIONSリクエストへの対応
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        return response, 200
+    
+    try:
+        # リクエストからJSONデータを取得        
+        # Content-Typeが設定されていない場合でもJSONとして扱う
+        if request.content_type == 'application/json':
+            data = request.get_json()
+        else:
+            # Content-Typeがない場合、手動でJSONパース
+            try:
+                import json
+                data = json.loads(request.data.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                return jsonify({'error': 'JSONデータの解析に失敗しました'}), 400
+        
+        # 必要なフィールドが存在するかチェック
+        if not data:
+            return jsonify({'error': 'データが送信されませんでした'}), 400
+        
+        required_fields = ['reward_content', 'need_point', 'need_rank', 'creater']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'{field}が不足しています'}), 400
+        
+        # データの型チェック
+        if not isinstance(data['need_point'], int) or data['need_point'] <= 0:
+            return jsonify({'error': '必要ポイントは正の整数である必要があります'}), 400
+        
+        if not isinstance(data['need_rank'], int) or data['need_rank'] < 0:
+            return jsonify({'error': '必要ランクは0以上の整数である必要があります'}), 400
+        
+        if not data['reward_content'].strip():
+            return jsonify({'error': '報酬の内容を入力してください'}), 400
+        
+        # データベースに挿入
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                INSERT INTO reward (reward_content, need_point, need_rank, creater)
+                VALUES (?, ?, ?, ?)
+            ''', (
+                data['reward_content'].strip(),
+                data['need_point'],
+                data['need_rank'],
+                data['creater']
+            ))
+            
+            conn.commit()
+            reward_id = cursor.lastrowid
+            
+            # 成功レスポンス
+            response_data = {
+                'message': '報酬が正常に追加されました',
+                'reward_id': reward_id,
+                'data': {
+                    'reward_content': data['reward_content'].strip(),
+                    'need_point': data['need_point'],
+                    'need_rank': data['need_rank'],
+                    'creater': data['creater']
+                }
+            }
+            return jsonify(response_data), 201
+            
+        except sqlite3.IntegrityError as e:
+            # 重複エラー（UNIQUE制約違反）
+            if 'UNIQUE constraint failed' in str(e):
+                return jsonify({'error': 'この報酬は既に存在します'}), 409
+            else:
+                return jsonify({'error': 'データベースエラーが発生しました'}), 500
+        
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        import traceback
+        return jsonify({'error': 'サーバーエラーが発生しました'}), 500
 
-@socketio.on('leave_school')
-def handle_leave_school(data):
-    """学校のルームから退出"""
-    school_id = data.get('school_id')
-    if school_id:
-        from flask_socketio import leave_room
-        room_name = f"school_{school_id}"
-        leave_room(room_name)
-        print(f"DEBUG: Client left school room: {room_name}")
-    else:
-        print(f"DEBUG: leave_school called without school_id: {data}")
 
 @socketio.on('join_sticky_chat')
 def handle_join_sticky_chat(data):
@@ -1178,155 +1134,3 @@ def handle_send_message(data):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
-
-# # データベース接続関数を追加
-# def get_db_connection():
-#     """データベース接続を取得"""
-#     print("🗄️ データベース接続関数呼び出し")
-    
-#     # データベースファイルのパスを設定
-#     db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
-    
-#     if not os.path.exists(db_path):
-#         print(f"❌ データベースファイルが見つかりません: {db_path}")
-#         raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
-    
-#     try:
-#         conn = sqlite3.connect(db_path)
-#         print("✅ データベース接続成功")
-#         return conn
-#     except sqlite3.Error as e:
-#         print(f"❌ データベース接続エラー: {e}")
-#         raise
-
-# # 基本的なヘルスチェック用エンドポイント
-# @app.route('/health', methods=['GET'])
-# def health_check():
-#     print("💗 ヘルスチェック呼び出し")
-#     return jsonify({'status': 'ok', 'message': 'サーバーは正常に動作しています'}), 200
-
-# # 報酬を追加するAPI
-# @app.route('/api/rewards', methods=['POST', 'OPTIONS'])
-# def add_reward():
-#     print(f"📨 リクエスト受信 - メソッド: {request.method}")
-#     print(f"📨 リクエスト元IP: {request.remote_addr}")
-#     print(f"📨 リクエストヘッダー: {dict(request.headers)}")
-    
-#     # OPTIONSリクエストへの対応
-#     if request.method == 'OPTIONS':
-#         print("🔄 OPTIONSリクエスト処理中...")
-#         response = jsonify({'status': 'ok'})
-#         response.headers.add('Access-Control-Allow-Origin', '*')
-#         response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-#         response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-#         print("✅ OPTIONSレスポンス送信完了")
-#         return response, 200
-    
-#     print("📦 POSTリクエスト処理開始")
-    
-#     try:
-#         # リクエストからJSONデータを取得
-#         print("📋 JSONデータ取得試行...")
-#         print(f"📋 Content-Type: {request.content_type}")
-#         print(f"📋 Raw data: {request.data}")
-        
-#         # Content-Typeが設定されていない場合でもJSONとして扱う
-#         if request.content_type == 'application/json':
-#             data = request.get_json()
-#         else:
-#             # Content-Typeがない場合、手動でJSONパース
-#             try:
-#                 import json
-#                 data = json.loads(request.data.decode('utf-8'))
-#             except (json.JSONDecodeError, UnicodeDecodeError) as e:
-#                 print(f"❌ JSONパースエラー: {e}")
-#                 return jsonify({'error': 'JSONデータの解析に失敗しました'}), 400
-        
-#         print(f"📋 受信データ: {data}")
-        
-#         # 必要なフィールドが存在するかチェック
-#         if not data:
-#             print("❌ データが送信されませんでした")
-#             return jsonify({'error': 'データが送信されませんでした'}), 400
-        
-#         print("✅ データ存在確認完了")
-        
-#         required_fields = ['reward_content', 'need_point', 'need_rank', 'creater']
-#         for field in required_fields:
-#             if field not in data:
-#                 print(f"❌ 必須フィールド不足: {field}")
-#                 return jsonify({'error': f'{field}が不足しています'}), 400
-        
-#         print("✅ 必須フィールドチェック完了")
-        
-#         # データの型チェック
-#         if not isinstance(data['need_point'], int) or data['need_point'] <= 0:
-#             print(f"❌ need_pointの型エラー: {data['need_point']} (type: {type(data['need_point'])})")
-#             return jsonify({'error': '必要ポイントは正の整数である必要があります'}), 400
-        
-#         if not isinstance(data['need_rank'], int) or data['need_rank'] < 0:
-#             print(f"❌ need_rankの型エラー: {data['need_rank']} (type: {type(data['need_rank'])})")
-#             return jsonify({'error': '必要ランクは0以上の整数である必要があります'}), 400
-        
-#         if not data['reward_content'].strip():
-#             print("❌ reward_contentが空")
-#             return jsonify({'error': '報酬の内容を入力してください'}), 400
-        
-#         print("✅ データ型チェック完了")
-        
-#         # データベースに挿入
-#         print("🗄️ データベース接続試行...")
-#         conn = get_db_connection()
-#         cursor = conn.cursor()
-#         print("✅ データベース接続成功")
-        
-#         try:
-#             print("💾 データベースINSERT実行...")
-#             cursor.execute('''
-#                 INSERT INTO reward (reward_content, need_point, need_rank, creater)
-#                 VALUES (?, ?, ?, ?)
-#             ''', (
-#                 data['reward_content'].strip(),
-#                 data['need_point'],
-#                 data['need_rank'],
-#                 data['creater']
-#             ))
-            
-#             conn.commit()
-#             reward_id = cursor.lastrowid
-#             print(f"✅ データベースINSERT成功 - ID: {reward_id}")
-            
-#             # 成功レスポンス
-#             response_data = {
-#                 'message': '報酬が正常に追加されました',
-#                 'reward_id': reward_id,
-#                 'data': {
-#                     'reward_content': data['reward_content'].strip(),
-#                     'need_point': data['need_point'],
-#                     'need_rank': data['need_rank'],
-#                     'creater': data['creater']
-#                 }
-#             }
-#             print(f"📤 成功レスポンス送信: {response_data}")
-#             return jsonify(response_data), 201
-            
-#         except sqlite3.IntegrityError as e:
-#             print(f"❌ データベース整合性エラー: {str(e)}")
-#             # 重複エラー（UNIQUE制約違反）
-#             if 'UNIQUE constraint failed' in str(e):
-#                 return jsonify({'error': 'この報酬は既に存在します'}), 409
-#             else:
-#                 return jsonify({'error': 'データベースエラーが発生しました'}), 500
-        
-#         finally:
-#             conn.close()
-#             print("🗄️ データベース接続終了")
-    
-#     except Exception as e:
-#         print(f"🚨 予期しないエラー発生: {str(e)}")
-#         print(f"🚨 エラータイプ: {type(e)}")
-#         import traceback
-#         print(f"🚨 スタックトレース: {traceback.format_exc()}")
-#         return jsonify({'error': 'サーバーエラーが発生しました'}), 500
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
