@@ -3,7 +3,7 @@ import sqlite3
 import json
 from flask_cors import CORS # Flask-CORSをインポート
 import os
-from flask_socketio import SocketIO, emit # SocketIOをインポート
+from flask_socketio import SocketIO, emit
 
 from component.init import init_db
 from component.signup import signup_o
@@ -271,38 +271,113 @@ def get_messages_by_sticky(sticky_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Socket.IO イベントハンドラー
-@socketio.on('connect')
-def handle_connect():
-    print('DEBUG: Client connected')
+#データベース接続関数を追加
+def get_db_connection():
+    # データベースファイルのパスを設定
+    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
+    
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        return conn
+    except sqlite3.Error as e:
+        raise
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('DEBUG: Client disconnected')
+# 基本的なヘルスチェック用エンドポイント
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'ok', 'message': 'サーバーは正常に動作しています'}), 200
 
-@socketio.on('join_school')
-def handle_join_school(data):
-    """学校のルームに参加"""
-    school_id = data.get('school_id')
-    if school_id:
-        from flask_socketio import join_room
-        room_name = f"school_{school_id}"
-        join_room(room_name)
-        print(f"DEBUG: Client joined school room: {room_name}")
-    else:
-        print(f"DEBUG: join_school called without school_id: {data}")
+# 報酬を追加するAPI
+@app.route('/api/rewards', methods=['POST', 'OPTIONS'])
+def add_reward():
+    # OPTIONSリクエストへの対応
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        return response, 200
+    
+    try:
+        # リクエストからJSONデータを取得        
+        # Content-Typeが設定されていない場合でもJSONとして扱う
+        if request.content_type == 'application/json':
+            data = request.get_json()
+        else:
+            # Content-Typeがない場合、手動でJSONパース
+            try:
+                import json
+                data = json.loads(request.data.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                return jsonify({'error': 'JSONデータの解析に失敗しました'}), 400
+        
+        # 必要なフィールドが存在するかチェック
+        if not data:
+            return jsonify({'error': 'データが送信されませんでした'}), 400
+        
+        required_fields = ['reward_content', 'need_point', 'need_rank', 'creater']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'{field}が不足しています'}), 400
+        
+        # データの型チェック
+        if not isinstance(data['need_point'], int) or data['need_point'] <= 0:
+            return jsonify({'error': '必要ポイントは正の整数である必要があります'}), 400
+        
+        if not isinstance(data['need_rank'], int) or data['need_rank'] < 0:
+            return jsonify({'error': '必要ランクは0以上の整数である必要があります'}), 400
+        
+        if not data['reward_content'].strip():
+            return jsonify({'error': '報酬の内容を入力してください'}), 400
+        
+        # データベースに挿入
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                INSERT INTO reward (reward_content, need_point, need_rank, creater)
+                VALUES (?, ?, ?, ?)
+            ''', (
+                data['reward_content'].strip(),
+                data['need_point'],
+                data['need_rank'],
+                data['creater']
+            ))
+            
+            conn.commit()
+            reward_id = cursor.lastrowid
+            
+            # 成功レスポンス
+            response_data = {
+                'message': '報酬が正常に追加されました',
+                'reward_id': reward_id,
+                'data': {
+                    'reward_content': data['reward_content'].strip(),
+                    'need_point': data['need_point'],
+                    'need_rank': data['need_rank'],
+                    'creater': data['creater']
+                }
+            }
+            return jsonify(response_data), 201
+            
+        except sqlite3.IntegrityError as e:
+            # 重複エラー（UNIQUE制約違反）
+            if 'UNIQUE constraint failed' in str(e):
+                return jsonify({'error': 'この報酬は既に存在します'}), 409
+            else:
+                return jsonify({'error': 'データベースエラーが発生しました'}), 500
+        
+        finally:
+            conn.close()
+    
+    except Exception as e:
+        import traceback
+        return jsonify({'error': 'サーバーエラーが発生しました'}), 500
 
-@socketio.on('leave_school')
-def handle_leave_school(data):
-    """学校のルームから退出"""
-    school_id = data.get('school_id')
-    if school_id:
-        from flask_socketio import leave_room
-        room_name = f"school_{school_id}"
-        leave_room(room_name)
-        print(f"DEBUG: Client left school room: {room_name}")
-    else:
-        print(f"DEBUG: leave_school called without school_id: {data}")
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
