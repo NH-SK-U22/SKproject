@@ -3,6 +3,7 @@ import React, { useRef, useState, useEffect, useCallback } from "react";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
+import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import MessageModal from "../../components/MessageModal/MessageModal";
 
 // css
@@ -343,7 +344,7 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <Sidebar />
+      {renderSidebar()}
       <main className={styles.mainContent}>
         {posts.length > 0 && (
           <div className={styles.notesGrid} ref={gridRef}>

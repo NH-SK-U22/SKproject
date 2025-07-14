@@ -4,7 +4,7 @@ import styles from "./TeacherRewardComponent.module.css";
 interface RewardForm {
   content: string;
   points: string;
-  rank: "normal" | "bronze" | "silver" | "gold";
+  rank: "ブロンズ" | "シルバー" | "ゴールド" | "ダイヤモンド";
 }
 
 const TeacherRewardComponent = () => {
@@ -12,8 +12,10 @@ const TeacherRewardComponent = () => {
   const [formData, setFormData] = useState<RewardForm>({
     content: "",
     points: "",
-    rank: "normal",
+    rank: "ブロンズ",
   });
+
+  const [isSubmitting,setIsSubmitting] = useState(false);
 
   const handleClick = () => {
     setShowPopup(true);
@@ -24,7 +26,7 @@ const TeacherRewardComponent = () => {
     setFormData({
       content: "",
       points: "",
-      rank: "normal",
+      rank: "ブロンズ",
     });
   };
 
@@ -38,10 +40,45 @@ const TeacherRewardComponent = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    // ここで報酬データを処理
-    handleClose();
+  const rankToNumber = (rank:string): number => {
+    switch (rank) {
+      case "ブロンズ":return 0;
+      case "シルバー":return 1;
+      case "ゴールド":return 2;
+      case "ダイヤモンド":return 3;
+      default: return 0;
+    }
   };
+
+  const handleSubmit = async () => {
+    
+    // バリデーション
+    if (!formData.content.trim()) {
+      console.log("❌ バリデーションエラー: 報酬の内容が空");
+      alert("報酬の内容を入力してください");
+      return;
+    }
+    if (!formData.points || parseInt(formData.points) <= 0) {
+      console.log("❌ バリデーションエラー: ポイントが無効");
+      alert("有効なポイント数を入力してください");
+      return;
+    }
+  
+    console.log("✅ バリデーション完了");
+    console.log("📋 送信データ:", formData);
+  
+    setIsSubmitting(true);
+  
+    // try {
+    //   const requestData = {
+    //     reward_content: formData.content,
+    //     need_point: parseInt(formData.points),
+    //     need_rank: rankToNumber(formData.rank),
+    //     creater: 1,
+    //   };
+    // }
+  };
+
 
   return (
     <>
@@ -66,6 +103,7 @@ const TeacherRewardComponent = () => {
                 value={formData.content}
                 onChange={handleInputChange}
                 placeholder="報酬の内容を入力してください"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -79,6 +117,7 @@ const TeacherRewardComponent = () => {
                 onChange={handleInputChange}
                 placeholder="必要なポイントを入力してください"
                 min="0"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -89,16 +128,17 @@ const TeacherRewardComponent = () => {
                 name="rank"
                 value={formData.rank}
                 onChange={handleInputChange}
+                disabled={isSubmitting}
               >
-                <option value="normal">normal</option>
-                <option value="bronze">bronze</option>
-                <option value="silver">silver</option>
-                <option value="gold">gold</option>
+                <option value="ブロンズ">ブロンズ</option>
+                <option value="シルバー">シルバー</option>
+                <option value="ゴールド">ゴールド</option>
+                <option value="ダイヤモンド">ダイヤモンド</option>
               </select>
             </div>
 
-            <button className={styles.submitButton} onClick={handleSubmit}>
-              追加
+            <button className={styles.submitButton} onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "追加中..." : "追加"}
             </button>
           </div>
         </div>
