@@ -33,12 +33,12 @@ def init_db():
     )''')
     
     # teachers tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS teachers(
-        teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name CHAR(50) NOT NULL,
-        class_number CHAR(5) NOT NULL,
-        UNIQUE(name,class_number)
-    )''')
+    # c.execute('''CREATE TABLE IF NOT EXISTS teachers(
+    #     teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #     name CHAR(50) NOT NULL,
+    #     class_number CHAR(5) NOT NULL,
+    #     UNIQUE(name,class_number)
+    # )''')
     
     # sticky tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS sticky(
@@ -105,29 +105,6 @@ def init_db():
         need_rank INTEGER NOT NULL,
         creater INTEGER NOT NULL,
         FOREIGN KEY(creater) REFERENCES teachers(teacher_id)
-    )''')
-    
-    # post tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS post(
-        post_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER NOT NULL,
-        text TEXT NOT NULL,
-        ai_summary TEXT NOT NULL,
-        sum_evaluation_a INTEGER,
-        sum_evaluation_b INTEGER,
-        sum_evaluation_c INTEGER,
-        stickynote_color TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        x_coordinate INTEGER,
-        y_coordinate INTEGER,
-        ally_ai_evaluation INTEGER,
-        enemy_ai_evaluation INTEGER,
-        whole_ai_evaluation INTEGER,
-        ally_evaluation INTEGER,
-        enemy_evaluation INTEGER,
-        whole_evaluation INTEGER,
-        FOREIGN KEY(student_id) REFERENCES students(id),
-        UNIQUE(student_id,text)
     )''')
     
     # holdReward tableを作成

@@ -47,6 +47,7 @@ const Mypage = () => {
               {/* <p className={styles.points}>あと、500pt</p> */}
               <Progressbar  remaining={500} target={2000} />
             </div>
+            {/* 過去ランクの上にログアウトbtn */}
             <Popup/>
           </div>
         </div>
@@ -79,6 +80,7 @@ const Mypage = () => {
               <li className={styles.history_item}>FIFA: ボール持ったフランスのが持ってない日本より速いです</li>
               <li className={styles.history_item}>きのこ派: 手が汚れにくいですよね???</li>
               <li className={styles.history_item}>発言履歴で評価の数(kanさんの作ってくれたやつの顔の奴、)過去ランク</li>
+              <li className={styles.history_item}>過去ランクの上評価の数</li>
             </ul>
           </div>):""}
 
