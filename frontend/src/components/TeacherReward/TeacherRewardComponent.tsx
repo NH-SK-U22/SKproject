@@ -51,32 +51,60 @@ const TeacherRewardComponent = () => {
   };
 
   const handleSubmit = async () => {
-    
     // バリデーション
     if (!formData.content.trim()) {
-      console.log("❌ バリデーションエラー: 報酬の内容が空");
       alert("報酬の内容を入力してください");
       return;
     }
     if (!formData.points || parseInt(formData.points) <= 0) {
-      console.log("❌ バリデーションエラー: ポイントが無効");
       alert("有効なポイント数を入力してください");
       return;
     }
-  
-    console.log("✅ バリデーション完了");
-    console.log("📋 送信データ:", formData);
-  
     setIsSubmitting(true);
   
-    // try {
-    //   const requestData = {
-    //     reward_content: formData.content,
-    //     need_point: parseInt(formData.points),
-    //     need_rank: rankToNumber(formData.rank),
-    //     creater: 1,
-    //   };
-    // }
+    try {
+      const requestData = {
+        reward_content: formData.content,
+        need_point: parseInt(formData.points),
+        need_rank: rankToNumber(formData.rank),
+        creater: 1,
+      };
+  
+      // handleSubmit関数のfetchリクエストを修正
+      const response = await fetch("http://localhost:5000/api/rewards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ 成功レスポンス:", result);
+        alert("報酬が正常に追加されました！");
+        handleClose();
+      } else {
+        console.log("❌ エラーレスポンス (status:", response.status, ")");
+        
+        // レスポンスの内容を詳しく確認
+        const responseText = await response.text();
+        console.log("📝 エラーレスポンス内容 (text):", responseText);
+        
+        try {
+          const errorData = JSON.parse(responseText);
+          console.log("📝 エラーレスポンス内容 (JSON):", errorData);
+          alert(`エラーが発生しました: ${errorData.error}`);
+        } catch (parseError) {
+          console.log("❌ JSONパースエラー:", parseError);
+          alert(`エラーが発生しました (status: ${response.status})`);
+        }
+      }
+    } catch (error) {
+      alert("通信エラーが発生しました。再度お試しください。");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -139,6 +167,7 @@ const TeacherRewardComponent = () => {
 
             <button className={styles.submitButton} onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? "追加中..." : "追加"}
+         {isSubmitting ? "追加中..." : "追加"}
             </button>
           </div>
         </div>
