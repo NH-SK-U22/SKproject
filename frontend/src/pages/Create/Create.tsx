@@ -84,10 +84,16 @@ const Create = () => {
       return;
     }
 
+    // 新しい付箋のためのランダムな初期位置を生成（重複を避けるため）
+    const randomX = Math.floor(Math.random() * 300) + 50; // 50-350px
+    const randomY = Math.floor(Math.random() * 200) + 50; // 50-250px
+
     await addPost({
       text: post,
       color: colors[selectColor],
       student_id: currentUser.id,
+      x_axis: randomX,
+      y_axis: randomY,
     });
 
     setPost("");
