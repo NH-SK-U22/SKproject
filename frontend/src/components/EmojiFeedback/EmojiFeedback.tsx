@@ -1,5 +1,5 @@
 // react
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 
 // react-icons
 import {
@@ -11,20 +11,85 @@ import {
 // css
 import styles from "./EmojiFeedback.module.css";
 
+// utils
+import { getCurrentUser } from "../../utils/auth";
+
 interface EmojiOption {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   color: string;
+  feedbackType: string;
 }
 
-const EmojiFeedback: React.FC = () => {
+interface EmojiFeedbackProps {
+  messageAuthorCampId?: number;
+}
+
+const EmojiFeedback: React.FC<EmojiFeedbackProps> = ({
+  messageAuthorCampId,
+}) => {
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
 
+  const currentUser = getCurrentUser();
+
+  // 同じ陣営かどうかを判断
+  const isSameTeam = useMemo(() => {
+    return (
+      currentUser &&
+      messageAuthorCampId &&
+      currentUser.camp_id === messageAuthorCampId
+    );
+  }, [currentUser, messageAuthorCampId]);
+
+  // フィードバックメッセージを取得
+  const getFeedbackMessage = (feedbackType: string) => {
+    if (isSameTeam) {
+      // 同じ陣営
+      switch (feedbackType) {
+        case "A":
+          return "めっちゃ共感！";
+        case "B":
+          return "なるほどね";
+        case "C":
+          return "それはちょっと違うんじゃない";
+        default:
+          return "";
+      }
+    } else {
+      // 敵陣営
+      switch (feedbackType) {
+        case "A":
+          return "意見が変わるくらい納得";
+        case "B":
+          return "意見は変わらんけど興味深い";
+        case "C":
+          return "そうは思わないな";
+        default:
+          return "";
+      }
+    }
+  };
+
   const emojis: EmojiOption[] = [
-    { icon: BsFillEmojiSmileFill, label: "いいね", color: "green" },
-    { icon: BsFillEmojiNeutralFill, label: "普通", color: "yellow" },
-    { icon: BsFillEmojiFrownFill, label: "不満", color: "red" },
+    {
+      icon: BsFillEmojiSmileFill,
+      label: getFeedbackMessage("A"),
+      color: "green",
+      feedbackType: "A",
+    },
+    {
+      icon: BsFillEmojiNeutralFill,
+      label: getFeedbackMessage("B"),
+      color: "yellow",
+      feedbackType: "B",
+    },
+    {
+      icon: BsFillEmojiFrownFill,
+      label: getFeedbackMessage("C"),
+      color: "red",
+      feedbackType: "C",
+    },
   ];
 
   const handleEmojiClick = (label: string) => {

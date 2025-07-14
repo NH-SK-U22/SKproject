@@ -3,7 +3,7 @@ import styles from './mypage.module.css'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Card from '../../components/Mypage/Card'
 import Progressbar from '../../components/Mypage/Progressbar'
-import itist from '../../../public/images/1st.png'
+import itist from '../../images/1st.png'
 import Popup from '../../components/Mypage/Popup'
 import RewardComponent from "../../components/Reward/RewardComponent";
 

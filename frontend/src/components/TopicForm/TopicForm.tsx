@@ -113,7 +113,7 @@ const TopicForm = ({ onAddTopic }: TopicFormProps) => {
           type="submit"
           variant="contained"
           color="primary"
-          sx={{ mt: 2 }}
+          sx={{ mt: 2, backgroundColor: '#00e6b8' }}
         >
           テーマを追加
         </Button>

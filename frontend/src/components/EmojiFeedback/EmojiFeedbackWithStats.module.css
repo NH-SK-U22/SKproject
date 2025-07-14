@@ -3,16 +3,17 @@
   justify-content: center;
   margin-top: 8px;
   width: 100%;
+  position: relative;
 }
 
 .statsContainer {
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: rgba(39, 76, 119, 0.9);
+  background-color: #274c77;
   padding: 8px 16px;
   border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px #274c7799;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -37,4 +38,31 @@
   color: white;
   min-width: 12px;
   text-align: center;
+}
+
+/* クリック可能な状態のスタイル */
+.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.clickable:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 表示のみの状態のスタイル */
+.viewOnly {
+  cursor: default;
+}
+
+/* 現在の投票のemojiのスタイル */
+.currentVote {
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+.currentVote:hover {
+  background-color: rgba(255, 255, 255, 0.35) !important;
 }

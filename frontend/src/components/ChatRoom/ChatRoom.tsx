@@ -1,5 +1,5 @@
 // react
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // react-icons
 import { IoSend } from "react-icons/io5";
@@ -11,12 +11,11 @@ import styles from "./ChatRoom.module.css";
 // components
 import EmojiFeedback from "../EmojiFeedback/EmojiFeedback";
 
-interface Message {
-  id: number;
-  text: string;
-  isUser: boolean;
-  timestamp: string;
-}
+// context
+import { useChat } from "../../context/ChatContext";
+
+// utils
+import { getCurrentUser } from "../../utils/auth";
 
 interface AvatarProps {
   isUser: boolean;
@@ -34,55 +33,112 @@ const Avatar = ({ isUser, userId }: AvatarProps) => (
   </div>
 );
 
-const ChatRoom = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
+interface ChatRoomProps {
+  stickyId: number;
+}
 
-  const handleSendMessage = (e: React.FormEvent) => {
+const ChatRoom = ({ stickyId }: ChatRoomProps) => {
+  const [newMessage, setNewMessage] = useState("");
+  const {
+    messages,
+    sendMessage,
+    loadMessages,
+    joinStickyChat,
+    leaveStickyChat,
+    connectChatSocket,
+  } = useChat();
+
+  // チャットルームの初期化
+  useEffect(() => {
+    const initializeChat = async () => {
+      // チャットSocket接続
+      connectChatSocket();
+
+      // 既存のメッセージを読み込み
+      await loadMessages(stickyId);
+
+      // 付箋チャットに参加
+      joinStickyChat(stickyId);
+    };
+
+    initializeChat();
+
+    // クリーンアップ：チャットルームから退出
+    return () => {
+      leaveStickyChat(stickyId);
+    };
+  }, [stickyId]); // stickyIdが変更された時のみ実行
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      const newMsg: Message = {
-        id: messages.length + 1,
-        text: newMessage.trim(),
-        isUser: true,
-        timestamp: new Date().toLocaleTimeString("en-US", {
-          hour12: false,
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-      setMessages([...messages, newMsg]);
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        console.error("ユーザーがログインしていません");
+        return;
+      }
+
+      await sendMessage({
+        message_content: newMessage.trim(),
+        student_id: currentUser.id,
+        camp_id: currentUser.camp_id || 1, // デフォルト陣営
+        sticky_id: stickyId,
+      });
+
       setNewMessage("");
     }
   };
 
+  const currentUser = getCurrentUser();
+
   return (
     <div className={styles.chatContainer}>
       <div className={styles.messageList}>
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`${styles.messageItem} ${
-              message.isUser ? styles.userMessage : styles.otherMessage
-            }`}
-          >
-            <div className={styles.messageBox}>
-              {!message.isUser && <Avatar isUser={false} userId="1234" />}
-              <div className={styles.messageContent}>
-                <div className={styles.messageTextContainer}>
-                  <div className={styles.messageText}>{message.text}</div>
-                  {!message.isUser && (
-                    <div className={styles.emojiFeedbackContainer}>
-                      <EmojiFeedback />
+        {messages.map((message) => {
+          const isUser = currentUser && message.student_id === currentUser.id;
+          const displayTime = new Date(message.created_at).toLocaleTimeString(
+            "ja-JP",
+            {
+              hour12: false,
+              hour: "2-digit",
+              minute: "2-digit",
+            }
+          );
+
+          return (
+            <div
+              key={message.message_id}
+              className={`${styles.messageItem} ${
+                isUser ? styles.userMessage : styles.otherMessage
+              }`}
+            >
+              <div className={styles.messageBox}>
+                {!isUser && (
+                  <Avatar
+                    isUser={false}
+                    userId={message.student_id.toString()}
+                  />
+                )}
+                <div className={styles.messageContent}>
+                  <div className={styles.messageTextContainer}>
+                    <div className={styles.messageText}>
+                      {message.message_content}
                     </div>
-                  )}
+                    {!isUser && (
+                      <div className={styles.emojiFeedbackContainer}>
+                        <EmojiFeedback messageAuthorCampId={message.camp_id} />
+                      </div>
+                    )}
+                  </div>
+                  <div className={styles.messageTime}>{displayTime}</div>
                 </div>
-                <div className={styles.messageTime}>{message.timestamp}</div>
+                {isUser && (
+                  <Avatar isUser={true} userId={currentUser.id.toString()} />
+                )}
               </div>
-              {message.isUser && <Avatar isUser={true} userId="5678" />}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <form onSubmit={handleSendMessage} className={styles.inputContainer}>

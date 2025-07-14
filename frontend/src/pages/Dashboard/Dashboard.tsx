@@ -344,7 +344,7 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboardContainer}>
-      {renderSidebar()}
+      {currentUser?.user_type === "teacher" ? <TeacherSidebar /> : <Sidebar />}
       <main className={styles.mainContent}>
         {posts.length > 0 && (
           <div className={styles.notesGrid} ref={gridRef}>
