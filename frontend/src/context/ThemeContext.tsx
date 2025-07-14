@@ -23,7 +23,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             default: darkMode ? '#121212' : '#f5f5f5',
             paper: darkMode ? '#1e1e1e' : '#ffffff',
           },
-        },
+        }
       }),
     [darkMode]
   );
