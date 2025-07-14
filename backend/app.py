@@ -60,7 +60,7 @@ def init_db():
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
     
-    # display_index字段のマイグレーション（既存のテーブルに字段を追加）
+    # display_indexのマイグレーション
     try:
         c.execute('ALTER TABLE sticky ADD COLUMN display_index INTEGER DEFAULT 0')
         print("Added display_index column to sticky table")
@@ -126,28 +126,18 @@ def init_db():
         FOREIGN KEY(reward_id) REFERENCES reward(reward_id)
     )''')
     
-    # post tableを作成
-    # c.execute('''CREATE TABLE IF NOT EXISTS post(
-    #     post_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    #     student_id INTEGER NOT NULL,
-    #     text TEXT NOT NULL,
-    #     ai_summary TEXT NOT NULL,
-    #     sum_evaluation_a INTEGER,
-    #     sum_evaluation_b INTEGER,
-    #     sum_evaluation_c INTEGER,
-    #     stickynote_color TEXT NOT NULL,
-    #     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    #     x_coordinate INTEGER,
-    #     y_coordinate INTEGER,
-    #     ally_ai_evaluation INTEGER,
-    #     enemy_ai_evaluation INTEGER,
-    #     whole_ai_evaluation INTEGER,
-    #     ally_evaluation INTEGER,
-    #     enemy_evaluation INTEGER,
-    #     whole_evaluation INTEGER,
-    #     FOREIGN KEY(student_id) REFERENCES students(id),
-    #     UNIQUE(student_id,text)
-    # )''')
+    # vote_history tableを作成 - 投票履歴を記録
+    c.execute('''CREATE TABLE IF NOT EXISTS vote_history(
+        vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        sticky_id INTEGER NOT NULL,
+        feedback_type TEXT NOT NULL CHECK(feedback_type IN ('A', 'B', 'C')),
+        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        updated_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        FOREIGN KEY (student_id) REFERENCES students(student_id),
+        FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id),
+        UNIQUE(student_id, sticky_id)
+    )''')
     
     # colorsetsデータの挿入
     colorsets_data = [
@@ -213,108 +203,6 @@ def get_colorsets(camp):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/signup', methods=['POST'])
-def signup():
-    if not request.json:
-        return jsonify({'error': 'リクエストボディが必要です'}), 400
-    
-    if request.json['userType'] == "student":
-        #生徒の登録
-        required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
-        for field in required_fields:
-            if field not in request.json:
-                return jsonify({'error': f'{field}が必要です'}), 400
-        
-        school_id = request.json['schoolID']
-        class_id = request.json['classID']
-        number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
-        password = request.json['password']
-        user_type = request.json['userType']
-        name = request.json.get('name', '')  # オプションの名前フィールド
-        
-        if user_type not in ['student', 'teacher']:
-            return jsonify({'error': '無効なユーザータイプです'}), 400
-        
-        try:
-            conn = sqlite3.connect('database.db')
-            c = conn.cursor()
-            
-            # ユーザーがすでに存在するか確認
-            c.execute('SELECT student_id FROM students WHERE school_id = ? AND class_id = ? AND number = ? AND user_type = ?',
-                     (school_id, class_id, number, user_type))
-            existing_user = c.fetchone()
-            
-            if existing_user:
-                conn.close()
-                return jsonify({'error': 'ユーザーがすでに存在します'}), 409
-            
-            # 新しいユーザーを挿入
-            c.execute('''INSERT INTO students (school_id, class_id, number, password, user_type, name) 
-                         VALUES (?, ?, ?, ?, ?, ?)''',
-                     (school_id, class_id, number, password, user_type, name))
-            
-            user_id_db = c.lastrowid
-            conn.commit()
-            conn.close()
-            
-            return jsonify({
-                'status': 'success',
-                'message': 'ユーザーが作成されました',
-                'user_id': user_id_db
-            }), 201
-            
-        except sqlite3.IntegrityError as e:
-            return jsonify({'error': 'ユーザーがすでに存在します'}), 409
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    else:
-        #教師の登録
-        required_fields = ['schoolID', 'classID', 'userId', 'password', 'userType']
-        for field in required_fields:
-            if field not in request.json:
-                return jsonify({'error': f'{field}が必要です'}), 400
-        
-        school_id = request.json['schoolID']
-        class_id = request.json['classID']
-        number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
-        password = request.json['password']
-        user_type = request.json['userType']
-        
-        if user_type not in ['student', 'teacher']:
-            return jsonify({'error': '無効なユーザータイプです'}), 400
-        
-        try:
-            conn = sqlite3.connect('database.db')
-            c = conn.cursor()
-            
-            # ユーザーがすでに存在するか確認
-            c.execute('SELECT teacher_id FROM teachers WHERE school_id = ? AND class_id = ? AND number = ? AND user_type = ?',
-                     (school_id, class_id, number, user_type))
-            existing_user = c.fetchone()
-            
-            if existing_user:
-                conn.close()
-                return jsonify({'error': 'ユーザーがすでに存在します'}), 409
-            
-            # 新しいユーザーを挿入
-            c.execute('''INSERT INTO teachers (school_id, class_id, number, password, user_type) 
-                         VALUES (?, ?, ?, ?, ?)''',
-                     (school_id, class_id, number, password, user_type))
-            
-            user_id_db = c.lastrowid
-            conn.commit()
-            conn.close()
-            
-            return jsonify({
-                'status': 'success',
-                'message': 'ユーザーが作成されました',
-                'user_id': user_id_db
-            }), 201
-            
-        except sqlite3.IntegrityError as e:
-            return jsonify({'error': 'ユーザーがすでに存在します'}), 409
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -703,7 +591,7 @@ def get_sticky_notes():
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
@@ -712,7 +600,7 @@ def get_sticky_notes():
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          WHERE st.school_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id,))
@@ -720,7 +608,7 @@ def get_sticky_notes():
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          ORDER BY s.display_index, s.created_at DESC''')
@@ -746,7 +634,8 @@ def get_sticky_notes():
                 'enemy_avg_score': row[15],
                 'overall_avg_score': row[16],
                 'created_at': row[17],
-                'student_name': row[18]
+                'student_name': row[18],
+                'author_camp_id': row[19]
             })
         
         conn.close()
@@ -833,6 +722,200 @@ def update_sticky(sticky_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/sticky/<int:sticky_id>/feedback', methods=['POST'])
+def vote_feedback(sticky_id):
+    """付箋にフィードバック投票を追加または変更"""
+    if not request.json:
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
+    
+    required_fields = ['student_id', 'feedback_type']
+    for field in required_fields:
+        if field not in request.json:
+            return jsonify({'error': f'{field}が必要です'}), 400
+    
+    feedback_type = request.json['feedback_type']
+    student_id = request.json['student_id']
+    
+    if feedback_type not in ['A', 'B', 'C']:
+        return jsonify({'error': '無効なフィードバックタイプです'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # 付箋の存在確認と所有者チェック
+        c.execute('''SELECT student_id, feedback_A, feedback_B, feedback_C FROM sticky WHERE sticky_id = ?''', (sticky_id,))
+        sticky_data = c.fetchone()
+        
+        if not sticky_data:
+            conn.close()
+            return jsonify({'error': '付箋が見つかりません'}), 404
+        
+        # 自分の付箋には投票できない
+        if sticky_data[0] == student_id:
+            conn.close()
+            return jsonify({'error': '自分の付箋には投票できません'}), 403
+        
+        # 既存の投票履歴をチェック
+        c.execute('''SELECT feedback_type FROM vote_history WHERE student_id = ? AND sticky_id = ?''', (student_id, sticky_id))
+        existing_vote = c.fetchone()
+        
+        # 現在のフィードバック数を取得
+        current_feedback_A = sticky_data[1]
+        current_feedback_B = sticky_data[2]
+        current_feedback_C = sticky_data[3]
+        
+        if existing_vote:
+            # 既存の投票がある場合、古い投票を削除して新しい投票を追加
+            old_feedback_type = existing_vote[0]
+            
+            # 同じ投票タイプの場合は何もしない
+            if old_feedback_type == feedback_type:
+                conn.close()
+                return jsonify({
+                    'status': 'success',
+                    'message': '既に同じフィードバックに投票済みです',
+                    'feedback_counts': {
+                        'feedback_A': current_feedback_A,
+                        'feedback_B': current_feedback_B,
+                        'feedback_C': current_feedback_C
+                    }
+                })
+            
+            # 古い投票の数を減らす
+            if old_feedback_type == 'A':
+                current_feedback_A = max(0, current_feedback_A - 1)
+            elif old_feedback_type == 'B':
+                current_feedback_B = max(0, current_feedback_B - 1)
+            elif old_feedback_type == 'C':
+                current_feedback_C = max(0, current_feedback_C - 1)
+            
+            # 投票履歴を更新
+            c.execute('''UPDATE vote_history SET feedback_type = ?, updated_at = datetime('now', '+9 hours') 
+                         WHERE student_id = ? AND sticky_id = ?''', (feedback_type, student_id, sticky_id))
+            
+            action_message = 'フィードバックが変更されました'
+        else:
+            # 新しい投票を記録
+            c.execute('''INSERT INTO vote_history (student_id, sticky_id, feedback_type) 
+                         VALUES (?, ?, ?)''', (student_id, sticky_id, feedback_type))
+            
+            action_message = 'フィードバックが投票されました'
+        
+        # 新しい投票の数を増やす
+        if feedback_type == 'A':
+            current_feedback_A += 1
+        elif feedback_type == 'B':
+            current_feedback_B += 1
+        elif feedback_type == 'C':
+            current_feedback_C += 1
+        
+        # 付箋のフィードバック数を更新
+        c.execute('''UPDATE sticky SET feedback_A = ?, feedback_B = ?, feedback_C = ? WHERE sticky_id = ?''', 
+                  (current_feedback_A, current_feedback_B, current_feedback_C, sticky_id))
+        
+        conn.commit()
+        
+        # 更新後の付箋情報を取得してSocketで送信
+        c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
+                            s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+                            s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+                            s.overall_avg_score, s.created_at, st.name, st.school_id
+                     FROM sticky s
+                     JOIN students st ON s.student_id = st.student_id
+                     WHERE s.sticky_id = ?''', (sticky_id,))
+        
+        updated_sticky_data = c.fetchone()
+        conn.close()
+        
+        if updated_sticky_data:
+            # 更新された付箋のデータを全クライアントに送信
+            sticky_info = {
+                'sticky_id': updated_sticky_data[0],
+                'student_id': updated_sticky_data[1],
+                'sticky_content': updated_sticky_data[2],
+                'sticky_color': updated_sticky_data[3],
+                'x_axis': updated_sticky_data[4],
+                'y_axis': updated_sticky_data[5],
+                'display_index': updated_sticky_data[6],
+                'feedback_A': updated_sticky_data[7],
+                'feedback_B': updated_sticky_data[8],
+                'feedback_C': updated_sticky_data[9],
+                'ai_summary_content': updated_sticky_data[10],
+                'ai_teammate_avg_prediction': updated_sticky_data[11],
+                'ai_enemy_avg_prediction': updated_sticky_data[12],
+                'ai_overall_avg_prediction': updated_sticky_data[13],
+                'teammate_avg_score': updated_sticky_data[14],
+                'enemy_avg_score': updated_sticky_data[15],
+                'overall_avg_score': updated_sticky_data[16],
+                'created_at': updated_sticky_data[17],
+                'student_name': updated_sticky_data[18],
+                'school_id': updated_sticky_data[19]
+            }
+            
+            # 同校の全ユーザーに更新された付箋を送信
+            socketio.emit('sticky_updated', sticky_info, to=f"school_{updated_sticky_data[19]}")
+            
+            # 特別にfeedback更新通知も送信
+            socketio.emit('feedback_updated', {
+                'sticky_id': sticky_id,
+                'feedback_A': updated_sticky_data[7],
+                'feedback_B': updated_sticky_data[8],
+                'feedback_C': updated_sticky_data[9]
+            }, to=f"school_{updated_sticky_data[19]}")
+        
+        return jsonify({
+            'status': 'success',
+            'message': action_message,
+            'feedback_counts': {
+                'feedback_A': current_feedback_A,
+                'feedback_B': current_feedback_B,
+                'feedback_C': current_feedback_C
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sticky/<int:sticky_id>/vote-status/<int:student_id>', methods=['GET'])
+def get_vote_status(sticky_id, student_id):
+    """特定生徒に対して付箋に書かれた生徒の投票状況を取得する"""
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # 付箋が存在するか確認
+        c.execute('''SELECT student_id FROM sticky WHERE sticky_id = ?''', (sticky_id,))
+        sticky_data = c.fetchone()
+        
+        if not sticky_data:
+            conn.close()
+            return jsonify({'error': '付箋が見つかりません'}), 404
+        
+        # 投票状況を取得
+        c.execute('''SELECT feedback_type FROM vote_history WHERE student_id = ? AND sticky_id = ?''', (student_id, sticky_id))
+        vote_data = c.fetchone()
+        
+        conn.close()
+        
+        if vote_data:
+            return jsonify({
+                'status': 'success',
+                'voted': True,
+                'vote_type': vote_data[0],
+                'can_vote': sticky_data[0] != student_id  # 自分の付箋には投票できない
+            })
+        else:
+            return jsonify({
+                'status': 'success',
+                'voted': False,
+                'vote_type': None,
+                'can_vote': sticky_data[0] != student_id  # 自分の付箋には投票できない
+            })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/sticky/<int:sticky_id>', methods=['DELETE'])
 def delete_sticky(sticky_id):
     try:
@@ -900,8 +983,38 @@ def create_message():
                   request.json.get('feedback_C', 0)))
         
         message_id = c.lastrowid
+        
+        # 作成されたメッセージの完全な情報を取得
+        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
+                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.number
+                     FROM message m
+                     JOIN students s ON m.student_id = s.student_id
+                     WHERE m.message_id = ?''', (message_id,))
+        
+        message_data = c.fetchone()
         conn.commit()
         conn.close()
+        
+        if message_data:
+            # 新しいメッセージのデータを同じ付箋チャットの全クライアントに送信
+            message_info = {
+                'message_id': message_data[0],
+                'student_id': message_data[1],
+                'message_content': message_data[2],
+                'camp_id': message_data[3],
+                'sticky_id': message_data[4],
+                'feedback_A': message_data[5],
+                'feedback_B': message_data[6],
+                'feedback_C': message_data[7],
+                'created_at': message_data[8],
+                'student_name': message_data[9],
+                'student_number': message_data[10]
+            }
+            
+            # 同じ付箋チャットの全ユーザーに新しいメッセージを送信
+            sticky_room = f"sticky_{request.json['sticky_id']}"
+            print(f"DEBUG: Sending message_sent event to room: {sticky_room}")
+            socketio.emit('message_sent', message_info, to=sticky_room)
         
         return jsonify({
             'status': 'success',
@@ -977,6 +1090,91 @@ def handle_leave_school(data):
         print(f"DEBUG: Client left school room: {room_name}")
     else:
         print(f"DEBUG: leave_school called without school_id: {data}")
+
+@socketio.on('join_sticky_chat')
+def handle_join_sticky_chat(data):
+    """付箋チャットに参加"""
+    sticky_id = data.get('sticky_id')
+    if sticky_id:
+        from flask_socketio import join_room
+        room_name = f"sticky_{sticky_id}"
+        join_room(room_name)
+        print(f"DEBUG: Client joined sticky chat room: {room_name}")
+    else:
+        print(f"DEBUG: join_sticky_chat called without sticky_id: {data}")
+
+@socketio.on('leave_sticky_chat')
+def handle_leave_sticky_chat(data):
+    """付箋チャットから退出"""
+    sticky_id = data.get('sticky_id')
+    if sticky_id:
+        from flask_socketio import leave_room
+        room_name = f"sticky_{sticky_id}"
+        leave_room(room_name)
+        print(f"DEBUG: Client left sticky chat room: {room_name}")
+    else:
+        print(f"DEBUG: leave_sticky_chat called without sticky_id: {data}")
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    """メッセージ送信を処理"""
+    required_fields = ['student_id', 'message_content', 'camp_id', 'sticky_id']
+    for field in required_fields:
+        if field not in data:
+            print(f"DEBUG: send_message missing field: {field}")
+            return
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # メッセージをデータベースに保存
+        c.execute('''INSERT INTO message (student_id, message_content, camp_id, sticky_id, feedback_A, feedback_B, feedback_C) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                 (data['student_id'], 
+                  data['message_content'],
+                  data['camp_id'],
+                  data['sticky_id'],
+                  data.get('feedback_A', 0),
+                  data.get('feedback_B', 0),
+                  data.get('feedback_C', 0)))
+        
+        message_id = c.lastrowid
+        
+        # 作成されたメッセージの完全な情報を取得
+        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
+                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.number
+                     FROM message m
+                     JOIN students s ON m.student_id = s.student_id
+                     WHERE m.message_id = ?''', (message_id,))
+        
+        message_data = c.fetchone()
+        conn.commit()
+        conn.close()
+        
+        if message_data:
+            # メッセージデータの構築
+            message_info = {
+                'message_id': message_data[0],
+                'student_id': message_data[1],
+                'message_content': message_data[2],
+                'camp_id': message_data[3],
+                'sticky_id': message_data[4],
+                'feedback_A': message_data[5],
+                'feedback_B': message_data[6],
+                'feedback_C': message_data[7],
+                'created_at': message_data[8],
+                'student_name': message_data[9],
+                'student_number': message_data[10]
+            }
+            
+            # 同じ付箋チャットの全ユーザーに新しいメッセージを送信
+            sticky_room = f"sticky_{data['sticky_id']}"
+            print(f"DEBUG: Broadcasting message to room: {sticky_room}")
+            socketio.emit('message_sent', message_info, to=sticky_room)
+            
+    except Exception as e:
+        print(f"DEBUG: Error sending message: {str(e)}")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

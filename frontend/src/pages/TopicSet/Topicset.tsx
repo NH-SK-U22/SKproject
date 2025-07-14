@@ -6,7 +6,7 @@ const TopicSet = () => {
   return (
     <Box sx={{ display: 'flex' }}>
       <Sidebar />
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box component="main" sx={{ flexGrow: 1, p: 3, height: '100vh', overflow: 'auto' }}>
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
             討論テーマ設定
