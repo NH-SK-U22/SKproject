@@ -1,11 +1,10 @@
-from flask import Flask, jsonify, request
+from flask import jsonify, request
 import sqlite3
-from flask_cors import CORS # Flask-CORSをインポート
+from flask import Blueprint
 
-app = Flask(__name__)
-CORS(app) # CORSをアプリケーション全体に適用
+signup_o = Blueprint('signup_o', __name__, url_prefix='/api')
 
-@app.route('/api/signup', methods=['POST'])
+@signup_o.route('/signup', methods=['POST'])
 def signup():
     if not request.json:
         return jsonify({'error': 'リクエストボディが必要です'}), 400
