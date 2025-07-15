@@ -888,5 +888,139 @@ def handle_leave_school(data):
     else:
         print(f"DEBUG: leave_school called without school_id: {data}")
 
+# 投票状態API
+@app.route('/api/sticky/<int:sticky_id>/vote-status/<int:student_id>', methods=['GET'])
+def get_vote_status(sticky_id, student_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # ユーザーが投票したかどうかを確認
+        c.execute('''SELECT vote_type FROM sticky_votes 
+                     WHERE student_id = ? AND sticky_id = ?''', 
+                  (student_id, sticky_id))
+        
+        vote_record = c.fetchone()
+        
+        # 投票できるかどうかを確認（自分のstickyではない）
+        c.execute('''SELECT student_id FROM sticky WHERE sticky_id = ?''', (sticky_id,))
+        sticky_author = c.fetchone()
+        
+        conn.close()
+        
+        if not sticky_author:
+            return jsonify({'error': 'Sticky not found'}), 404
+        
+        can_vote = sticky_author[0] != student_id
+        
+        return jsonify({
+            'voted': vote_record is not None,
+            'vote_type': vote_record[0] if vote_record else None,
+            'can_vote': can_vote
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 投票API
+@app.route('/api/sticky/<int:sticky_id>/feedback', methods=['POST'])
+def submit_feedback(sticky_id):
+    if not request.json:
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
+    
+    try:
+        student_id = request.json.get('student_id')
+        feedback_type = request.json.get('feedback_type')
+        
+        if not student_id or not feedback_type:
+            return jsonify({'error': 'student_id と feedback_type が必要です'}), 400
+        
+        if feedback_type not in ['A', 'B', 'C']:
+            return jsonify({'error': '無効な feedback_type です'}), 400
+        
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # 自分のstickyには投票できない
+        c.execute('''SELECT student_id FROM sticky WHERE sticky_id = ?''', (sticky_id,))
+        sticky_author = c.fetchone()
+        
+        if not sticky_author:
+            conn.close()
+            return jsonify({'error': 'Sticky not found'}), 404
+        
+        if sticky_author[0] == student_id:
+            conn.close()
+            return jsonify({'error': '自分の付箋には投票できません'}), 400
+        
+        # 既存の投票を確認
+        c.execute('''SELECT vote_type FROM sticky_votes 
+                     WHERE student_id = ? AND sticky_id = ?''', 
+                  (student_id, sticky_id))
+        
+        existing_vote = c.fetchone()
+        
+        if existing_vote:
+            # 既存の投票を更新
+            old_vote_type = existing_vote[0]
+            
+            # 古い投票のカウントを減らす
+            c.execute(f'''UPDATE sticky SET feedback_{old_vote_type} = feedback_{old_vote_type} - 1 
+                         WHERE sticky_id = ?''', (sticky_id,))
+            
+            # 新しい投票のカウントを増やす
+            c.execute(f'''UPDATE sticky SET feedback_{feedback_type} = feedback_{feedback_type} + 1 
+                         WHERE sticky_id = ?''', (sticky_id,))
+            
+            # 投票記録を更新
+            c.execute('''UPDATE sticky_votes SET vote_type = ?, created_at = datetime('now', '+9 hours')
+                         WHERE student_id = ? AND sticky_id = ?''', 
+                      (feedback_type, student_id, sticky_id))
+        else:
+            # 新しい投票を追加
+            c.execute(f'''UPDATE sticky SET feedback_{feedback_type} = feedback_{feedback_type} + 1 
+                         WHERE sticky_id = ?''', (sticky_id,))
+            
+            # 投票記録を追加
+            c.execute('''INSERT INTO sticky_votes (student_id, sticky_id, vote_type) 
+                         VALUES (?, ?, ?)''', (student_id, sticky_id, feedback_type))
+        
+        # 更新後のフィードバック数を取得
+        c.execute('''SELECT feedback_A, feedback_B, feedback_C FROM sticky 
+                     WHERE sticky_id = ?''', (sticky_id,))
+        
+        feedback_counts = c.fetchone()
+        
+        # 同校の全ユーザーに更新情報を送信
+        c.execute('''SELECT st.school_id FROM sticky s
+                     JOIN students st ON s.student_id = st.student_id
+                     WHERE s.sticky_id = ?''', (sticky_id,))
+        school_result = c.fetchone()
+        
+        conn.commit()
+        conn.close()
+        
+        # Socket.IOでフィードバック更新を通知
+        if school_result:
+            socketio.emit('feedback_updated', {
+                'sticky_id': sticky_id,
+                'feedback_A': feedback_counts[0],
+                'feedback_B': feedback_counts[1],
+                'feedback_C': feedback_counts[2]
+            }, to=f"school_{school_result[0]}")
+        
+        return jsonify({
+            'status': 'success',
+            'message': '投票が完了しました',
+            'feedback_counts': {
+                'feedback_A': feedback_counts[0],
+                'feedback_B': feedback_counts[1],
+                'feedback_C': feedback_counts[2]
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
