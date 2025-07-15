@@ -134,6 +134,18 @@ def init_db():
         FOREIGN KEY(theme_id) REFERENCES debate_settings(theme_id)
     )''')
     
+    # sticky_votes tableを作成（投票記録）
+    c.execute('''CREATE TABLE IF NOT EXISTS sticky_votes(
+        vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        sticky_id INTEGER NOT NULL,
+        vote_type TEXT NOT NULL CHECK(vote_type IN ('A', 'B', 'C')),
+        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        FOREIGN KEY (student_id) REFERENCES students(student_id),
+        FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id),
+        UNIQUE(student_id, sticky_id)
+    )''')
+    
     # colorsetsデータの挿入
     colorsets_data = [
         (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1
