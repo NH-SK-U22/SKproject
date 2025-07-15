@@ -67,7 +67,13 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
     return () => {
       leaveStickyChat(stickyId);
     };
-  }, [stickyId]); // stickyIdが変更された時のみ実行
+  }, [
+    stickyId,
+    connectChatSocket,
+    loadMessages,
+    joinStickyChat,
+    leaveStickyChat,
+  ]); // 使用されているすべての関数が依存関係に含まれています
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,14 +102,49 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
       <div className={styles.messageList}>
         {messages.map((message) => {
           const isUser = currentUser && message.student_id === currentUser.id;
-          const displayTime = new Date(message.created_at).toLocaleTimeString(
-            "ja-JP",
-            {
-              hour12: false,
-              hour: "2-digit",
-              minute: "2-digit",
+
+          // 時間のフォーマット処理、エラーチェックを追加
+          const formatTime = (dateString: string) => {
+            try {
+              if (!dateString) {
+                console.warn("時間文字列が空です、現在の時間を使用します");
+                return new Date().toLocaleTimeString("ja-JP", {
+                  hour12: false,
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              }
+
+              const date = new Date(dateString);
+              if (isNaN(date.getTime())) {
+                console.warn("無効な時間文字列:", dateString);
+                return new Date().toLocaleTimeString("ja-JP", {
+                  hour12: false,
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              }
+              return date.toLocaleTimeString("ja-JP", {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+            } catch (error) {
+              console.error(
+                "時間のフォーマットエラー:",
+                error,
+                "元の文字列:",
+                dateString
+              );
+              return new Date().toLocaleTimeString("ja-JP", {
+                hour12: false,
+                hour: "2-digit",
+                minute: "2-digit",
+              });
             }
-          );
+          };
+
+          const displayTime = formatTime(message.created_at);
 
           return (
             <div
