@@ -596,6 +596,297 @@ def add_reward():
     except Exception as e:
         import traceback
         return jsonify({'error': 'サーバーエラーが発生しました'}), 500
+    
+    
+# --- debate_settings エンドポイント ------------------------
+
+# 1) テーマ一覧を取得
+@app.route('/api/themes', methods=['GET'])
+def list_themes():
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+      SELECT theme_id, title, description, colorset_id, start_date, end_date
+        FROM debate_settings
+        ORDER BY start_date DESC
+    ''')
+    themes = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return jsonify(themes)
+
+
+# 2) 新しいテーマを作成
+@app.route('/api/themes', methods=['POST'])
+def create_theme():
+    data = request.get_json() or {}
+    required = ['title', 'description', 'colorset_id', 'start_date', 'end_date']
+    for f in required:
+        if f not in data:
+            return jsonify({'error': f'{f} が必要です'}), 400
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+      INSERT INTO debate_settings
+        (title, description, colorset_id, start_date, end_date)
+      VALUES (?, ?, ?, ?, ?)
+    ''', (
+      data['title'],
+      data['description'],
+      data['colorset_id'],
+      data['start_date'],
+      data['end_date'],
+    ))
+    theme_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify({'theme_id': theme_id}), 201
+
+
+# 3) テーマ詳細を取得
+@app.route('/api/themes/<int:theme_id>', methods=['GET'])
+def get_theme(theme_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+      SELECT theme_id, title, description, colorset_id, start_date, end_date
+        FROM debate_settings
+       WHERE theme_id = ?
+    ''', (theme_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'error': 'テーマが見つかりません'}), 404
+    return jsonify(dict(row))
+
+
+# 4) テーマ情報を更新
+@app.route('/api/themes/<int:theme_id>', methods=['PATCH'])
+def update_theme(theme_id):
+    data = request.get_json() or {}
+    fields = []
+    vals = []
+    for col in ('title', 'description', 'colorset_id', 'start_date', 'end_date'):
+        if col in data:
+            fields.append(f"{col} = ?")
+            vals.append(data[col])
+    if not fields:
+        return jsonify({'error': '更新フィールドがありません'}), 400
+
+    vals.append(theme_id)
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute(f'''
+      UPDATE debate_settings
+         SET {', '.join(fields)}
+       WHERE theme_id = ?
+    ''', vals)
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'updated'})
+
+
+# --- camps エンドポイント ----------------------------------
+
+# 5) あるテーマの陣営一覧を取得
+@app.route('/api/themes/<int:theme_id>/camps', methods=['GET'])
+def list_camps(theme_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+      SELECT camp_id, theme_id, camp_name, is_winner
+        FROM camps
+       WHERE theme_id = ?
+       ORDER BY camp_id
+    ''', (theme_id,))
+    camps = [dict(row) for row in c.fetchall()]
+    conn.close()
+    return jsonify(camps)
+
+
+# 6) 新しい陣営を追加
+@app.route('/api/themes/<int:theme_id>/camps', methods=['POST'])
+def create_camp(theme_id):
+    data = request.get_json() or {}
+    if 'camp_name' not in data:
+        return jsonify({'error': 'camp_name が必要です'}), 400
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+      INSERT INTO camps (theme_id, camp_name)
+      VALUES (?, ?)
+    ''', (theme_id, data['camp_name']))
+    camp_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify({'camp_id': camp_id}), 201
+
+
+# 7) 陣営の勝敗フラグを更新
+@app.route('/api/camps/<int:camp_id>', methods=['PATCH'])
+def update_camp(camp_id):
+    data = request.get_json() or {}
+    if 'is_winner' not in data:
+        return jsonify({'error': 'is_winner が必要です'}), 400
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+      UPDATE camps
+         SET is_winner = ?
+       WHERE camp_id = ?
+    ''', (1 if data['is_winner'] else 0, camp_id))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'updated'})
+
+# --- holdReward エンドポイント ----------------------
+
+# 1) すべての保持報酬（または student_id で絞り込み）を取得
+@app.route('/api/holdRewards', methods=['GET'])
+def list_hold_rewards():
+    try:
+        student_id = request.args.get('student_id', type=int)
+        conn = get_db_connection()
+        c = conn.cursor()
+        if student_id is not None:
+            c.execute('''
+              SELECT hold_id, student_id, reward_id, is_holding, used_at
+                FROM holdReward
+               WHERE student_id = ?
+            ''', (student_id,))
+        else:
+            c.execute('''
+              SELECT hold_id, student_id, reward_id, is_holding, used_at
+                FROM holdReward
+            ''')
+        rows = c.fetchall()
+        conn.close()
+
+        result = []
+        for r in rows:
+            result.append({
+                'hold_id':    r[0],
+                'student_id': r[1],
+                'reward_id':  r[2],
+                'is_holding': bool(r[3]),
+                'used_at':    r[4]
+            })
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# 2) 新しい保持報酬を作成
+@app.route('/api/holdRewards', methods=['POST'])
+def create_hold_reward():
+    data = request.get_json() or {}
+    if 'student_id' not in data or 'reward_id' not in data:
+        return jsonify({'error': 'student_id と reward_id が必要です'}), 400
+
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute('''
+          INSERT INTO holdReward (student_id, reward_id, is_holding, used_at)
+          VALUES (?, ?, ?, ?)
+        ''', (
+          data['student_id'],
+          data['reward_id'],
+          data.get('is_holding', True),
+          data.get('used_at')  # null なら自動で NULL
+        ))
+        hold_id = c.lastrowid
+        conn.commit()
+        conn.close()
+        return jsonify({'hold_id': hold_id}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# 3) 保持報酬の更新（is_holding / used_at など）
+@app.route('/api/holdRewards/<int:hold_id>', methods=['PATCH'])
+def update_hold_reward(hold_id):
+    data = request.get_json() or {}
+    allowed = []
+    vals = []
+    if 'is_holding' in data:
+        allowed.append('is_holding = ?')
+        vals.append(1 if data['is_holding'] else 0)
+    if 'used_at' in data:
+        allowed.append('used_at = ?')
+        vals.append(data['used_at'])
+    if not allowed:
+        return jsonify({'error': '更新できるフィールドがありません'}), 400
+
+    vals.append(hold_id)
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute(f'''
+          UPDATE holdReward
+             SET {', '.join(allowed)}
+           WHERE hold_id = ?
+        ''', vals)
+        conn.commit()
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({'error': 'hold_id が見つかりません'}), 404
+        conn.close()
+        return jsonify({'status': 'updated'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# 4) 保持報酬の削除
+@app.route('/api/holdRewards/<int:hold_id>', methods=['DELETE'])
+def delete_hold_reward(hold_id):
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute('DELETE FROM holdReward WHERE hold_id = ?', (hold_id,))
+        conn.commit()
+        if c.rowcount == 0:
+            conn.close()
+            return jsonify({'error': 'hold_id が見つかりません'}), 404
+        conn.close()
+        return jsonify({'status': 'deleted'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Socket.IO イベント処理
+@socketio.on('connect')
+def handle_connect():
+    print('DEBUG: Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('DEBUG: Client disconnected')
+
+@socketio.on('join_school')
+def handle_join_school(data):
+    """学校のルームに参加"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import join_room
+        room_name = f"school_{school_id}"
+        join_room(room_name)
+        print(f"DEBUG: Client joined school room: {room_name}")
+    else:
+        print(f"DEBUG: join_school called without school_id: {data}")
+
+@socketio.on('leave_school')
+def handle_leave_school(data):
+    """学校のルームから退出"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import leave_room
+        room_name = f"school_{school_id}"
+        leave_room(room_name)
+        print(f"DEBUG: Client left school room: {room_name}")
+    else:
+        print(f"DEBUG: leave_school called without school_id: {data}")
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
