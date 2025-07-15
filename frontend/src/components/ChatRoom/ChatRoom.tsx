@@ -20,13 +20,15 @@ import { getCurrentUser } from "../../utils/auth";
 interface AvatarProps {
   isUser: boolean;
   userId: string;
+  userColor?: string; // 追加
 }
 
-const Avatar = ({ isUser, userId }: AvatarProps) => (
+const Avatar = ({ isUser, userId, userColor }: AvatarProps) => (
   <div className={styles.messageAvatarBox}>
     <div className={styles.messageAvatar}>
       <FaCircleUser
         className={isUser ? styles.userAvatar : styles.otherAvatar}
+        style={userColor ? { color: userColor } : undefined} // 追加
       />
     </div>
     <div className={styles.avatarIdBox}>{userId}</div>
@@ -158,6 +160,7 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
                   <Avatar
                     isUser={false}
                     userId={message.student_id.toString()}
+                    userColor={message.user_color}
                   />
                 )}
                 <div className={styles.messageContent}>
@@ -174,7 +177,11 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
                   <div className={styles.messageTime}>{displayTime}</div>
                 </div>
                 {isUser && (
-                  <Avatar isUser={true} userId={currentUser.id.toString()} />
+                  <Avatar
+                    isUser={true}
+                    userId={currentUser.id.toString()}
+                    userColor={message.user_color}
+                  />
                 )}
               </div>
             </div>

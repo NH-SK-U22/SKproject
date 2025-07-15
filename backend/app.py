@@ -8,6 +8,8 @@ from flask_socketio import SocketIO, emit
 from components.init import init_db
 from components.signup import signup_o
 from components.login import login_o
+from components.message import message_o
+from components.colorset import colorset_o
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
@@ -21,31 +23,7 @@ init_db()
 def health():
     return jsonify({'status': 'ok'})
 
-# colorset
-@app.route('/api/colorsets/<camp>', methods=['GET'])
-def get_colorsets(camp):
-    try:
-        # camp1 = camp_type 1, camp2 = camp_type 2
-        camp_type = 1 if camp == 'camp1' else 2
-        
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute('SELECT group_number, colors FROM colorsets WHERE camp_type = ? ORDER BY group_number', (camp_type,))
-        rows = c.fetchall()
-        conn.close()
-        
-        colorsets = []
-        for row in rows:
-            colors = json.loads(row[1])
-            colorsets.append({
-                'group_number': row[0],
-                'colors': colors
-            })
-        
-        return jsonify(colorsets)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
 app.register_blueprint(login_o)
 
@@ -510,76 +488,7 @@ def delete_sticky(sticky_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Message API endpoints
-@app.route('/api/message', methods=['POST'])
-def create_message():
-    if not request.json:
-        return jsonify({'error': 'リクエストボディが必要です'}), 400
-    
-    required_fields = ['student_id', 'message_content', 'camp_id', 'sticky_id']
-    for field in required_fields:
-        if field not in request.json:
-            return jsonify({'error': f'{field}が必要です'}), 400
-    
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        
-        c.execute('''INSERT INTO message (student_id, message_content, camp_id, sticky_id, feedback_A, feedback_B, feedback_C) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                 (request.json['student_id'], 
-                  request.json['message_content'],
-                  request.json['camp_id'],
-                  request.json['sticky_id'],
-                  request.json.get('feedback_A', 0),
-                  request.json.get('feedback_B', 0),
-                  request.json.get('feedback_C', 0)))
-        
-        message_id = c.lastrowid
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'status': 'success',
-            'message': 'メッセージが作成されました',
-            'message_id': message_id
-        }), 201
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/message/sticky/<int:sticky_id>', methods=['GET'])
-def get_messages_by_sticky(sticky_id):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        
-        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
-                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name
-                     FROM message m
-                     JOIN students s ON m.student_id = s.student_id
-                     WHERE m.sticky_id = ? ORDER BY m.created_at ASC''', (sticky_id,))
-        
-        messages = []
-        for row in c.fetchall():
-            messages.append({
-                'message_id': row[0],
-                'student_id': row[1],
-                'message_content': row[2],
-                'camp_id': row[3],
-                'sticky_id': row[4],
-                'feedback_A': row[5],
-                'feedback_B': row[6],
-                'feedback_C': row[7],
-                'created_at': row[8],
-                'student_name': row[9]
-            })
-        
-        conn.close()
-        return jsonify(messages)
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+app.register_blueprint(message_o)
 
 #データベース接続関数を追加
 def get_db_connection():
@@ -687,7 +596,6 @@ def add_reward():
     except Exception as e:
         import traceback
         return jsonify({'error': 'サーバーエラーが発生しました'}), 500
-
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
