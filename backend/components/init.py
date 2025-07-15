@@ -1,4 +1,5 @@
 import sqlite3
+from flask import current_app
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -178,3 +179,13 @@ def init_db():
     conn.commit()
     conn.close()
     
+def get_db_connection():
+    db_uri = current_app.config['DATABASE_URI']
+    # SQLiteの場合、URIからファイル名を抽出
+    if db_uri.startswith('sqlite:///'):
+        db_path = db_uri.replace('sqlite:///', '')
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+    # 他のDBの場合は適宜実装
+    raise NotImplementedError("他のDBは未対応です")

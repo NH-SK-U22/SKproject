@@ -89,9 +89,12 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
       await sendMessage({
         message_content: newMessage.trim(),
         student_id: currentUser.id,
-        camp_id: currentUser.camp_id || 1, // デフォルト陣営
+        camp_id: currentUser.camp_id || 1,
         sticky_id: stickyId,
       });
+
+      // 送信後、DBから最新メッセージを取得
+      await loadMessages(stickyId);
 
       setNewMessage("");
     }
