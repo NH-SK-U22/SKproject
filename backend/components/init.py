@@ -115,6 +115,25 @@ def init_db():
         FOREIGN KEY(reward_id) REFERENCES reward(reward_id)
     )''')
     
+    # debate_settingsを作成(討論設定)
+    c.execute('''CREATE TABLE IF NOT EXISTS debate_settings (
+        theme_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+        title        TEXT    NOT NULL,     -- テーマタイトル
+        description  TEXT,                  -- テーマの説明
+        colorset_id   INTEGER NOT NULL,          -- colorsets.id を参照
+        start_date   TIMESTAMP NOT NULL,   -- 開始日
+        end_date     TIMESTAMP NOT NULL,    -- 終了日
+        FOREIGN KEY(colorset_id) REFERENCES colorsets(id)
+    )''')
+    # campsを作成(陣営)
+    c.execute('''CREATE TABLE IF NOT EXISTS camps (
+        camp_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+        theme_id    INTEGER NOT NULL,      -- どのテーマに属するか
+        camp_name   TEXT    NOT NULL,      -- 陣営名
+        is_winner   BOOLEAN NOT NULL DEFAULT 0,  -- 勝敗フラグ：勝者なら1
+        FOREIGN KEY(theme_id) REFERENCES debate_settings(theme_id)
+    )''')
+    
     # colorsetsデータの挿入
     colorsets_data = [
         (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1
