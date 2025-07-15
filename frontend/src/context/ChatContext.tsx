@@ -20,6 +20,7 @@ interface Message {
   created_at: string;
   student_name: string;
   student_number: string;
+  user_color: string;
 }
 
 interface ChatContextType {
