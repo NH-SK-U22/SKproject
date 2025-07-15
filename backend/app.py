@@ -855,7 +855,38 @@ def delete_hold_reward(hold_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Socket.IO イベント処理
+@socketio.on('connect')
+def handle_connect():
+    print('DEBUG: Client connected')
 
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('DEBUG: Client disconnected')
+
+@socketio.on('join_school')
+def handle_join_school(data):
+    """学校のルームに参加"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import join_room
+        room_name = f"school_{school_id}"
+        join_room(room_name)
+        print(f"DEBUG: Client joined school room: {room_name}")
+    else:
+        print(f"DEBUG: join_school called without school_id: {data}")
+
+@socketio.on('leave_school')
+def handle_leave_school(data):
+    """学校のルームから退出"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import leave_room
+        room_name = f"school_{school_id}"
+        leave_room(room_name)
+        print(f"DEBUG: Client left school room: {room_name}")
+    else:
+        print(f"DEBUG: leave_school called without school_id: {data}")
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
