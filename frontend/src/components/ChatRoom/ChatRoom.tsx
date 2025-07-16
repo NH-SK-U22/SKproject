@@ -1,9 +1,10 @@
 // react
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // react-icons
 import { IoSend } from "react-icons/io5";
 import { FaCircleUser } from "react-icons/fa6";
+import { FaChevronDown } from "react-icons/fa6";
 
 // css
 import styles from "./ChatRoom.module.css";
@@ -20,7 +21,7 @@ import { getCurrentUser } from "../../utils/auth";
 interface AvatarProps {
   isUser: boolean;
   userId: string;
-  userColor?: string; // 追加
+  userColor?: string;
 }
 
 const Avatar = ({ isUser, userId, userColor }: AvatarProps) => (
@@ -28,7 +29,7 @@ const Avatar = ({ isUser, userId, userColor }: AvatarProps) => (
     <div className={styles.messageAvatar}>
       <FaCircleUser
         className={isUser ? styles.userAvatar : styles.otherAvatar}
-        style={userColor ? { color: userColor } : undefined} // 追加
+        style={userColor ? { color: userColor } : undefined}
       />
     </div>
     <div className={styles.avatarIdBox}>{userId}</div>
@@ -41,6 +42,8 @@ interface ChatRoomProps {
 
 const ChatRoom = ({ stickyId }: ChatRoomProps) => {
   const [newMessage, setNewMessage] = useState("");
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const messageListRef = useRef<HTMLDivElement>(null);
   const {
     messages,
     sendMessage,
@@ -49,6 +52,45 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
     leaveStickyChat,
     connectChatSocket,
   } = useChat();
+
+  // 一番下にあるかチェック
+  const checkIfAtBottom = () => {
+    if (messageListRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messageListRef.current;
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10; // 10px 的容差
+      setShowScrollButton(!isAtBottom);
+    }
+  };
+
+  // 下までスクロール
+  const scrollToBottom = () => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  };
+
+  // スクロールイベントをスパイする
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    if (messageList) {
+      messageList.addEventListener("scroll", checkIfAtBottom);
+      return () => messageList.removeEventListener("scroll", checkIfAtBottom);
+    }
+  }, []);
+
+  // メッセージが更新されたときに自動的に下までスクロールする必要があるかどうかをチェック
+  useEffect(() => {
+    if (messageListRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messageListRef.current;
+      const wasAtBottom = scrollTop + clientHeight >= scrollHeight - 100;
+
+      if (wasAtBottom) {
+        scrollToBottom();
+      } else {
+        checkIfAtBottom();
+      }
+    }
+  }, [messages]);
 
   // チャットルームの初期化
   useEffect(() => {
@@ -104,11 +146,11 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
 
   return (
     <div className={styles.chatContainer}>
-      <div className={styles.messageList}>
+      <div className={styles.messageList} ref={messageListRef}>
         {messages.map((message) => {
           const isUser = currentUser && message.student_id === currentUser.id;
 
-          // 時間のフォーマット処理、エラーチェックを追加
+          // 時間的フォーマット處理，エラーチェックを追加
           const formatTime = (dateString: string) => {
             try {
               if (!dateString) {
@@ -191,6 +233,17 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
           );
         })}
       </div>
+
+      {/* 下までスクロールボタン */}
+      {showScrollButton && (
+        <button
+          className={styles.scrollToBottomButton}
+          onClick={scrollToBottom}
+          aria-label="下までスクロール"
+        >
+          <FaChevronDown className={styles.scrollIcon} />
+        </button>
+      )}
 
       <form onSubmit={handleSendMessage} className={styles.inputContainer}>
         <input
