@@ -8,7 +8,15 @@ import {
   Divider,
   TextField,
   Button,
+  Avatar,
 } from "@mui/material";
+import {
+  DarkModeOutlined,
+  NotificationsOutlined,
+  LanguageOutlined,
+  PaletteOutlined,
+} from "@mui/icons-material";
+import { FaUserCircle } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { DarkLightTogle } from "../../components/DarkLightTogle/DarkLightTogle";
 import { LanguageTogle } from "../../components/LanguageTogle/LanguageTogle";
@@ -19,7 +27,7 @@ const Setting = () => {
   const [languageEnabled, setLanguageEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const { darkMode, toggleDarkMode } = useTheme();
-  const [colorPalette, setColorPalette] = useState("#0000ff");
+  const [colorPalette, setColorPalette] = useState("#f9bc60");
 
   const handleSubmit = async () => {
     // localStorageからuser情報を取得
@@ -119,9 +127,16 @@ const Setting = () => {
                 width: "100%",
               }}
             >
-              <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
-                テーマ
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  sx={{ bgcolor: "rgba(0,230,184,0.1)", width: 40, height: 40 }}
+                >
+                  <DarkModeOutlined sx={{ color: "#00e6b8" }} />
+                </Avatar>
+                <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
+                  テーマ
+                </Typography>
+              </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <Typography
                   sx={{
@@ -151,9 +166,16 @@ const Setting = () => {
                 width: "100%",
               }}
             >
-              <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
-                通知
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  sx={{ bgcolor: "rgba(0,230,184,0.1)", width: 40, height: 40 }}
+                >
+                  <NotificationsOutlined sx={{ color: "#00e6b8" }} />
+                </Avatar>
+                <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
+                  通知
+                </Typography>
+              </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
                 <Typography
                   sx={{
@@ -179,9 +201,16 @@ const Setting = () => {
                 width: "100%",
               }}
             >
-              <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
-                言語
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  sx={{ bgcolor: "rgba(0,230,184,0.1)", width: 40, height: 40 }}
+                >
+                  <LanguageOutlined sx={{ color: "#00e6b8" }} />
+                </Avatar>
+                <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
+                  言語
+                </Typography>
+              </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
                 <Typography
                   sx={{
@@ -207,30 +236,49 @@ const Setting = () => {
                 width: "100%",
               }}
             >
-              <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
-                アイコンカラー
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar
+                  sx={{ bgcolor: "rgba(0,230,184,0.1)", width: 40, height: 40 }}
+                >
+                  <PaletteOutlined sx={{ color: "#00e6b8" }} />
+                </Avatar>
+                <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
+                  アイコンカラー
+                </Typography>
+              </Box>
               <Box
-                sx={{ display: "flex", alignItems: "center", gap: 2, pr: 2.4 }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
+                  mr: 2,
+                }}
               >
-                <Box
+                <Avatar
                   sx={{
                     width: 40,
                     height: 40,
                     backgroundColor: colorPalette,
-                    borderRadius: 1,
-                    mr: 5.7,
+                    border: "2px solid #f0f0f0",
+                    mr: 4,
                   }}
-                />
+                >
+                  <FaUserCircle style={{ color: "white", fontSize: "24px" }} />
+                </Avatar>
                 <TextField
                   type="color"
                   value={colorPalette}
                   onChange={(e) => setColorPalette(e.target.value)}
+                  size="small"
                   sx={{
                     "& .MuiInputBase-input": {
                       padding: "4px",
-                      width: "50px",
+                      width: "60px",
                       height: "40px",
+                      borderRadius: "8px",
+                    },
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "8px",
                     },
                   }}
                 />
@@ -241,7 +289,14 @@ const Setting = () => {
               <Button
                 variant="contained"
                 onClick={handleSubmit}
-                sx={{ backgroundColor: "#00e6b8", mr: 2 }}
+                sx={{
+                  backgroundColor: "#00e6b8",
+                  mr: 2,
+                  transition: "background-color 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: "#00a484",
+                  },
+                }}
               >
                 送信
               </Button>
