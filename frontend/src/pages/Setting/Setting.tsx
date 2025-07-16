@@ -6,7 +6,6 @@ import {
   Paper,
   Container,
   Divider,
-  TextField,
   Button,
   Avatar,
 } from "@mui/material";
@@ -260,28 +259,50 @@ const Setting = () => {
                     height: 40,
                     backgroundColor: colorPalette,
                     border: "2px solid #f0f0f0",
-                    mr: 4,
+                    mr: 3.5,
                   }}
                 >
                   <FaUserCircle style={{ color: "white", fontSize: "24px" }} />
                 </Avatar>
-                <TextField
-                  type="color"
-                  value={colorPalette}
-                  onChange={(e) => setColorPalette(e.target.value)}
-                  size="small"
+                <Box
                   sx={{
-                    "& .MuiInputBase-input": {
-                      padding: "4px",
-                      width: "60px",
-                      height: "40px",
-                      borderRadius: "8px",
-                    },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "8px",
-                    },
+                    position: "relative",
+                    width: 68,
+                    height: 40,
+                    borderRadius: "8px",
+                    border: "2px solid #e0e0e0",
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
                   }}
-                />
+                >
+                  <input
+                    type="color"
+                    value={colorPalette}
+                    onChange={(e) => setColorPalette(e.target.value)}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      border: "none",
+                      cursor: "pointer",
+                      backgroundColor: "transparent",
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      backgroundColor: colorPalette,
+                      pointerEvents: "none",
+                    }}
+                  />
+                </Box>
               </Box>
             </Box>
             <Divider sx={{ opacity: 0.5 }} />
@@ -291,7 +312,7 @@ const Setting = () => {
                 onClick={handleSubmit}
                 sx={{
                   backgroundColor: "#00e6b8",
-                  mr: 2,
+                  mr: 2.4,
                   transition: "background-color 0.2s ease",
                   "&:hover": {
                     backgroundColor: "#00a484",
