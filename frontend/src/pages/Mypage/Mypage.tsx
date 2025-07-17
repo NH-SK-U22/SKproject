@@ -1,14 +1,57 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import styles from './mypage.module.css'
 import Sidebar from '../../components/Sidebar/Sidebar'
 import Card from '../../components/Mypage/Card'
 import Progressbar from '../../components/Mypage/Progressbar'
-import itist from '../../images/1st.png'
+import itist from '../../../public/images/1st.png'
 import Popup from '../../components/Mypage/Popup'
 import RewardComponent from "../../components/Reward/RewardComponent";
 
 const Mypage = () => {
+  const [Reward, setReward] = useState<number|null>(null);
+  const [error, setError]     = useState<string|null>(null);
+  // ランクの引っ張り、
   const [tabs,setTabs]=useState(0)
+  const userJson = localStorage.getItem('user');
+  const userObj = userJson ? JSON.parse(userJson) : null;
+  const userId = userObj?.id;
+  const sumP=userObj?.sum_point
+
+  useEffect(() => {
+    // 全生徒データを取得
+    fetch(`/api/holdRewards?student_id=${userId}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return res.json();
+      })
+      .then(reward => {
+        reward.forEach(element => {
+          fetch(`/api/themes/${element.reward_id}`)
+          .then(res => {
+            if (!res.ok) throw new Error(`Status ${res.status}`);
+            return res.json();
+          })
+          .then(rewa => {
+            
+            console.log(rewa)
+            
+            }
+          )
+          .catch(err => {
+            console.error(err);
+            setError('データの取得に失敗しました');
+          });
+          });
+          
+          console.log(reward)
+          
+        }
+      )
+      .catch(err => {
+        console.error(err);
+        setError('データの取得に失敗しました');
+      });
+  }, [userId]);
   const RewardData: Rewarddata[] = [
   {
     rewardInfo: "報酬1",
@@ -38,6 +81,7 @@ const Mypage = () => {
               <p>あなたは</p>
               <div className={styles.rankimg}>
                 <p className={styles.rank}>プラチナランク</p>
+                {sumP}
                 <img src={itist} alt="" width={50} />
               </div>
               <p>です</p>
@@ -45,8 +89,9 @@ const Mypage = () => {
             <div className={styles.status_right}>
               <p>次のxxxランクへは</p>
               {/* <p className={styles.points}>あと、500pt</p> */}
-              <Progressbar  remaining={500} target={2000} />
+              <Progressbar  remaining={500-sumP} target={2000} />
             </div>
+            {/* 過去ランクの上にログアウトbtn */}
             <Popup/>
           </div>
         </div>
@@ -79,6 +124,7 @@ const Mypage = () => {
               <li className={styles.history_item}>FIFA: ボール持ったフランスのが持ってない日本より速いです</li>
               <li className={styles.history_item}>きのこ派: 手が汚れにくいですよね???</li>
               <li className={styles.history_item}>発言履歴で評価の数(kanさんの作ってくれたやつの顔の奴、)過去ランク</li>
+              <li className={styles.history_item}>過去ランクの上評価の数</li>
             </ul>
           </div>):""}
 

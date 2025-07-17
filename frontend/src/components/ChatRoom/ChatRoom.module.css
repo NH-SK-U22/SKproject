@@ -6,6 +6,7 @@
   background-color: #fff;
   border: none;
   box-shadow: 0 0 30px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
 }
 
 .messageList {
@@ -199,4 +200,37 @@
   font-size: 20px;
   color: white;
   transform: rotate(-35deg) translateX(1px) translateY(-1px);
+}
+
+/* 下までスクロールボタン */
+.scrollToBottomButton {
+  position: absolute;
+  bottom: 80px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background-color: #00e6b8;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease-in-out;
+  z-index: 100;
+  opacity: 0.9;
+}
+
+.scrollToBottomButton:hover {
+  background-color: #00a484;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  opacity: 1;
+}
+
+.scrollIcon {
+  font-size: 16px;
+  color: white;
 }

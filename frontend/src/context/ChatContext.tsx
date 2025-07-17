@@ -20,6 +20,7 @@ interface Message {
   created_at: string;
   student_name: string;
   student_number: string;
+  user_color: string;
 }
 
 interface ChatContextType {
@@ -55,6 +56,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       );
       if (response.ok) {
         const data = await response.json();
+        console.log("バックエンドから返されたメッセージデータ:", data);
         setMessages(data);
         setCurrentStickyId(sticky_id);
       } else {
@@ -73,6 +75,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       camp_id: number;
       sticky_id: number;
     }) => {
+      const currentTime = new Date().toISOString();
+      const optimisticMessage: Message = {
+        message_id: Date.now(),
+        student_id: message.student_id,
+        message_content: message.message_content,
+        camp_id: message.camp_id,
+        sticky_id: message.sticky_id,
+        feedback_A: 0,
+        feedback_B: 0,
+        feedback_C: 0,
+        created_at: currentTime,
+        student_name: "",
+        student_number: "",
+      };
+
+      console.log(
+        "メッセージ送信時間:",
+        currentTime,
+        "結果:",
+        new Date(currentTime)
+      );
+
+      // すぐにローカル状態を更新
+      setMessages((prev) => [...prev, optimisticMessage]);
+
       try {
         if (chatSocketRef.current && chatSocketRef.current.connected) {
           // Socket.IO経由でメッセージを送信
@@ -90,13 +117,32 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           });
 
           if (response.ok) {
+            const savedMessage = await response.json();
+            // 実際のメッセージで更新を置き換え
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.message_id === optimisticMessage.message_id
+                  ? { ...savedMessage, ...message }
+                  : msg
+              )
+            );
             console.log("HTTPでメッセージが送信されました");
           } else {
+            // 送信に失敗した場合、更新を削除
+            setMessages((prev) =>
+              prev.filter(
+                (msg) => msg.message_id !== optimisticMessage.message_id
+              )
+            );
             console.error("HTTPメッセージ送信に失敗しました");
           }
         }
       } catch (error) {
         console.error("メッセージ送信エラー:", error);
+        // 送信に失敗した場合、更新を削除
+        setMessages((prev) =>
+          prev.filter((msg) => msg.message_id !== optimisticMessage.message_id)
+        );
       }
     },
     []
@@ -151,6 +197,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         // 現在のメッセージリストが空でない場合、最初のメッセージのsticky_idと比較
         if (prev.length > 0 && prev[0].sticky_id !== data.sticky_id) {
           return prev; // 異なるsticky_idの場合は追加しない
+        }
+
+        // 同じ内容と時間のメッセージが見つかった場合、サーバーから返されたメッセージで置き換え
+        const optimisticMessageIndex = prev.findIndex(
+          (msg) =>
+            msg.message_content === data.message_content &&
+            msg.student_id === data.student_id &&
+            msg.sticky_id === data.sticky_id &&
+            msg.message_id > 1000000000000
+        );
+
+        if (optimisticMessageIndex !== -1) {
+          // 更新を置き換え
+          const newMessages = [...prev];
+          newMessages[optimisticMessageIndex] = data;
+          return newMessages;
         }
 
         // メッセージが既に存在するかどうかを確認（重複を防ぐ）
