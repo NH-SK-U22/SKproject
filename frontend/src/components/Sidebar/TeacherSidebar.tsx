@@ -46,7 +46,7 @@ const TeacherSidebar = () => {
   };
 
   const handleTeacherReward = () => {
-    navigate("/TeacherReward");
+    navigate("/Reward");
   };
 
   const handleStudentList = () => {

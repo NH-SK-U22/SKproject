@@ -52,21 +52,20 @@
 
 .down {
   width: 100%;
-  height: auto;
+  height: 100%;
   margin-top: 100px;
-  padding: 20px 15px;
+  /* padding: 20px 15px; */
+  flex: 1;
+  overflow-y: auto;         /* 縦スクロールを有効に */
+  max-height: calc(100vh - 100px); /* ヘッダー分を引いた高さに */
   display: flex;
-  justify-content: flex-start;
-  gap: 20px;
+  justify-content: space-around;
   flex-wrap: wrap;
 }
 
 .rewardContainer {
-  width: 100%;
-  max-width: 1200px;
+  width: 95%;
   margin: 0;
-  display: flex;
-  justify-content: flex-start;
-  gap: 20px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5列にする */
 }
