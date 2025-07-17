@@ -5,6 +5,7 @@ import { usePost } from "../../context/PostContext";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
+import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import Loading from "../../components/Loading/Loading";
 
 // utils
@@ -28,12 +29,18 @@ const Create = () => {
   const [showLoading, setShowLoading] = useState(false);
   const navigate = useNavigate();
   const { addPost } = usePost();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     // loading画面の表示を遅らせるタイマー
     const loadingTimer = setTimeout(() => {
       setShowLoading(true);
     }, 500); // loading画面は500ms後に表示
+
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+    }
 
     const fetchColorSets = async () => {
       try {
@@ -112,7 +119,7 @@ const Create = () => {
 
   return (
     <div className={styles.container}>
-      <Sidebar />
+      {currentUser?.user_type === "teacher" ? <TeacherSidebar /> : <Sidebar />}
       <form className={styles.createForm} onSubmit={handleSubmit}>
         <h2>Add new post</h2>
         <textarea

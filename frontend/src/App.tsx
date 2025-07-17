@@ -7,7 +7,6 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import SelectUsrtype from "./components/SelectUsertype/SelectUsertype";
 import Loading from "./components/Loading/Loading";
 import Reward from "./pages/Reward/Reward";
-import TeacherReward from "./pages/TeacherReward/TeacherReward";
 import StudentList from "./pages/StudentList/StudentList";
 import Signup from "./pages/Signup/Signup";
 import Create from "./pages/Create/Create";
@@ -36,7 +35,6 @@ function App() {
               <Route path="/usertypeSelect" element={<SelectUsrtype />} />
               <Route path="/loading" element={<Loading />} />
               <Route path="/Reward" element={<Reward />} />
-              <Route path="/TeacherReward" element={<TeacherReward />} />
               <Route path="/StudentList" element={<StudentList />} />
               <Route path="/mypage" element={<Mypage />} />
               <Route path="/create" element={<Create />} />

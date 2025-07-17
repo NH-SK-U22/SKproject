@@ -7,7 +7,11 @@ interface RewardForm {
   rank: "ブロンズ" | "シルバー" | "ゴールド" | "ダイヤモンド";
 }
 
-const TeacherRewardComponent = () => {
+interface TeacherRewardComponentProps {
+  fetchRewards: () => void;
+}
+
+const TeacherRewardComponent: React.FC<TeacherRewardComponentProps> = ({ fetchRewards }) => {
   const [showPopup, setShowPopup] = useState(false);
   const [formData, setFormData] = useState<RewardForm>({
     content: "",
@@ -73,9 +77,6 @@ const TeacherRewardComponent = () => {
       // handleSubmit関数のfetchリクエストを修正
       const response = await fetch("http://localhost:5000/api/rewards", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(requestData),
       });
       
@@ -84,6 +85,7 @@ const TeacherRewardComponent = () => {
         console.log("✅ 成功レスポンス:", result);
         alert("報酬が正常に追加されました！");
         handleClose();
+        fetchRewards();
       } else {
         console.log("❌ エラーレスポンス (status:", response.status, ")");
         
@@ -167,7 +169,6 @@ const TeacherRewardComponent = () => {
 
             <button className={styles.submitButton} onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? "追加中..." : "追加"}
-         {isSubmitting ? "追加中..." : "追加"}
             </button>
           </div>
         </div>

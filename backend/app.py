@@ -2,10 +2,13 @@ from flask import Flask, jsonify, request
 import sqlite3
 import json
 from flask_cors import CORS # Flask-CORSをインポート
+from flask_socketio import SocketIO, emit
 import os
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
+
+socketio = SocketIO(app,cors_allowed_origins= "*")
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -1045,6 +1048,42 @@ def add_reward():
     except Exception as e:
         import traceback
         return jsonify({'error': 'サーバーエラーが発生しました'}), 500
+    
+@app.route('/api/rewards',methods=['GET'])
+def get_rewards():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT reward_id,reward_content,need_point,need_rank,creater FROM reward')
+        rewards = [
+            {
+                'reward_id': row[0],
+                'reward_content': row[1],
+                'need_point': row[2],
+                'need_rank': row[3],
+                'creater': row[4]
+            }
+            for row in cursor.fetchall()
+        ]
+        conn.close()
+        return jsonify(rewards),200
+    except Exception as e:
+        return jsonify({'error':str(e)}),500
+
+@app.route('/api/rewards/<int:reward_id>', methods=['DELETE'])
+def delete_reward(reward_id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM reward WHERE reward_id = ?', (reward_id,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'error': '報酬が見つかりません'}), 404
+        conn.close()
+        return jsonify({'status': 'success', 'message': '報酬が削除されました'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @socketio.on('join_sticky_chat')
