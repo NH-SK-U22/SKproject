@@ -4,6 +4,7 @@ import json
 from flask_cors import CORS # Flask-CORSをインポート
 from flask_socketio import SocketIO, emit
 import os
+from flask_socketio import SocketIO, emit
 
 from components.init import init_db
 from components.signup import signup_o
@@ -12,13 +13,13 @@ from components.message import message_o
 from components.colorset import colorset_o
 from components.student import student_o
 from components.themes import themes_o
-from components.init import get_db_connection
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
 
 socketio = SocketIO(app,cors_allowed_origins= "*")
 
+    
 # SocketIOを初期化
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -346,6 +347,20 @@ def delete_sticky(sticky_id):
         return jsonify({'error': str(e)}), 500
 
 app.register_blueprint(message_o)
+
+#データベース接続関数を追加
+def get_db_connection():
+    # データベースファイルのパスを設定
+    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
+    
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        return conn
+    except sqlite3.Error as e:
+        raise
 
 # 基本的なヘルスチェック用エンドポイント
 @app.route('/health', methods=['GET'])
