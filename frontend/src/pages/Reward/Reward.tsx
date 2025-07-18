@@ -15,9 +15,18 @@ interface Rewarddata {
   point: number;
 }
 
+interface HoldReward {
+  hold_id: number;
+  student_id: number;
+  reward_id: number;
+  is_holding: boolean;
+  used_at: string | null;
+}
+
 const Reward = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [rewards,setRewards] = useState<Rewarddata[]>([]);
+  const [holdRewards, setHoldRewards] = useState<HoldReward[]>([]);
 
   const fetchRewards = () => {
     fetch("http://localhost:5000/api/rewards")
@@ -33,6 +42,14 @@ const Reward = () => {
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
+      // holdReward情報も取得
+      if (user.user_type === "student") {
+        fetch(`http://localhost:5000/api/holdRewards?student_id=${user.id}`)
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data)) setHoldRewards(data);
+          });
+      }
     }
   },[]);
 
@@ -49,21 +66,27 @@ const Reward = () => {
             <p className={styles.rewardp}>報酬</p>
           </div>
           <div className={styles.point}>
-            <p className={styles.pointp}>保有ポイント：200</p>
+            <p className={styles.pointp}>保有ポイント：{currentUser?.have_point ?? 0}</p>
           </div>
         </div>
         <div className={styles.down}>
           <div className={styles.rewardContainer}>
-            {rewards.map((reward) => (
-              <RewardComponent
-                key={reward.reward_id}
-                rewardInfo={reward.reward_content}
-                point={reward.need_point}
-                rank={reward.need_rank}
-                reward_id={reward.reward_id}
-                onDelete={(id) => setRewards((prev) => prev.filter((r) => r.reward_id !== id))}
-              />
-            ))}
+            {rewards.map((reward) => {
+              const isSold = holdRewards.some(hr => hr.reward_id === reward.reward_id && hr.is_holding);
+              return (
+                <RewardComponent
+                  key={reward.reward_id}
+                  rewardInfo={reward.reward_content}
+                  point={reward.need_point}
+                  rank={reward.need_rank}
+                  reward_id={reward.reward_id}
+                  isSold={isSold}
+                  userHavePoint={currentUser?.have_point ?? 0}
+                  onDelete={(id) => setRewards((prev) => prev.filter((r) => r.reward_id !== id))}
+                  onExchanged={(newHavePoint) => setCurrentUser(cur => cur ? { ...cur, have_point: newHavePoint } : cur)}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
