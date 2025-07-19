@@ -1,5 +1,6 @@
 import sqlite3
 from flask import current_app
+import os
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -46,6 +47,7 @@ def init_db():
         teammate_avg_score REAL DEFAULT 0,
         enemy_avg_score REAL DEFAULT 0,
         overall_avg_score REAL DEFAULT 0,
+        theme_id INTEGER NOT NULL,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
@@ -124,8 +126,12 @@ def init_db():
         colorset_id   INTEGER NOT NULL,          -- colorsets.id を参照
         start_date   TIMESTAMP NOT NULL,   -- 開始日
         end_date     TIMESTAMP NOT NULL,    -- 終了日
+        team1        TEXT    NOT NULL,
+        team2        TEXT    NOT NULL,
+        school_id    INTEGER NOT NULL,
         FOREIGN KEY(colorset_id) REFERENCES colorsets(id)
     )''')
+    
     # campsを作成(陣営)
     c.execute('''CREATE TABLE IF NOT EXISTS camps (
         camp_id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -178,14 +184,17 @@ def init_db():
     
     conn.commit()
     conn.close()
-    
+
+#データベース接続関数を追加
 def get_db_connection():
-    db_uri = current_app.config['DATABASE_URI']
-    # SQLiteの場合、URIからファイル名を抽出
-    if db_uri.startswith('sqlite:///'):
-        db_path = db_uri.replace('sqlite:///', '')
+    # データベースファイルのパスを設定
+    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
+    
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
+    
+    try:
         conn = sqlite3.connect(db_path)
-        conn.row_factory = sqlite3.Row
         return conn
-    # 他のDBの場合は適宜実装
-    raise NotImplementedError("他のDBは未対応です")
+    except sqlite3.Error as e:
+        raise

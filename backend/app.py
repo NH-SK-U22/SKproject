@@ -4,7 +4,6 @@ import json
 from flask_cors import CORS # Flask-CORSをインポート
 from flask_socketio import SocketIO, emit
 import os
-from flask_socketio import SocketIO, emit
 
 from components.init import init_db
 from components.signup import signup_o
@@ -13,179 +12,20 @@ from components.message import message_o
 from components.colorset import colorset_o
 from components.student import student_o
 from components.themes import themes_o
+from components.init import get_db_connection
+from components.topicset import topicset_o
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
 
 socketio = SocketIO(app,cors_allowed_origins= "*")
 
-def init_db():
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    
-    # 外部キー制約を有効にする
-    c.execute('PRAGMA foreign_keys = ON')
-    
-    # students tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS students(
-        student_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        school_id TEXT NOT NULL,
-        name TEXT,
-        number TEXT NOT NULL,
-        class_id TEXT NOT NULL,
-        password TEXT NOT NULL,
-        user_type TEXT NOT NULL CHECK(user_type IN ('student', 'teacher')),
-        sum_point INTEGER DEFAULT 0,
-        have_point INTEGER DEFAULT 0,
-        camp_id INTEGER,
-        theme_color TEXT,
-        user_color TEXT,
-        blacklist_point INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(school_id, class_id, number, user_type)
-    )''')
-    
-    # sticky tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS sticky(
-        sticky_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER NOT NULL,
-        sticky_content TEXT NOT NULL,
-        sticky_color TEXT NOT NULL,
-        x_axis INTEGER DEFAULT 0,
-        y_axis INTEGER DEFAULT 0,
-        feedback_A INTEGER DEFAULT 0,
-        feedback_B INTEGER DEFAULT 0,
-        feedback_C INTEGER DEFAULT 0,
-        ai_summary_content TEXT,
-        ai_teammate_avg_prediction REAL DEFAULT 0,
-        ai_enemy_avg_prediction REAL DEFAULT 0,
-        ai_overall_avg_prediction REAL DEFAULT 0,
-        teammate_avg_score REAL DEFAULT 0,
-        enemy_avg_score REAL DEFAULT 0,
-        overall_avg_score REAL DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (student_id) REFERENCES students(student_id)
-        )''')
-    
-    # display_indexのマイグレーション
-    try:
-        c.execute('ALTER TABLE sticky ADD COLUMN display_index INTEGER DEFAULT 0')
-        print("Added display_index column to sticky table")
-    except sqlite3.OperationalError:
-        # カラムが既に存在する場合はスキップする
-        pass
-    
-    # message tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS message(
-        message_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER NOT NULL,
-        message_content TEXT NOT NULL,
-        camp_id INTEGER NOT NULL,
-        sticky_id INTEGER NOT NULL,
-        feedback_A INTEGER DEFAULT 0,
-        feedback_B INTEGER DEFAULT 0,
-        feedback_C INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (student_id) REFERENCES students(student_id),
-        FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id)
-        )''')
-    
-    
-    # colorsets tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS colorsets(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        group_number INTEGER NOT NULL,
-        camp_type INTEGER NOT NULL,
-        colors TEXT NOT NULL,
-        UNIQUE(group_number, camp_type)
-    )''')
-    
-    # teachers tableを作成
-    # numberは教員番号
-    c.execute('''CREATE TABLE IF NOT EXISTS teachers(
-        teacher_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        school_id TEXT NOT NULL,
-        class_id TEXT NOT NULL,
-        password TEXT NOT NULL,
-        number TEXT NOT NULL,
-        user_type TEXT NOT NULL CHECK(user_type IN ('student', 'teacher')),
-        UNIQUE(school_id,class_id,number,user_type)
-    )''')
-    
-    # reward tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS reward(
-        reward_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        reward_content TEXT NOT NULL UNIQUE,
-        need_point INTEGER NOT NULL,
-        need_rank INTEGER NOT NULL,
-        creater INTEGER NOT NULL,
-        FOREIGN KEY(creater) REFERENCES teachers(teacher_id)
-    )''')
-    
-    # holdReward tableを作成
-    c.execute('''CREATE TABLE IF NOT EXISTS holdReward(
-        hold_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER NOT NULL,
-        reward_id INTEGER NOT NULL,
-        is_holding BOOLEAN NOT NULL,
-        used_at TIMESTAMP NULL,
-        FOREIGN KEY(student_id) REFERENCES students(id),
-        FOREIGN KEY(reward_id) REFERENCES reward(reward_id)
-    )''')
-    
-    # vote_history tableを作成 - 投票履歴を記録
-    c.execute('''CREATE TABLE IF NOT EXISTS vote_history(
-        vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER NOT NULL,
-        sticky_id INTEGER NOT NULL,
-        feedback_type TEXT NOT NULL CHECK(feedback_type IN ('A', 'B', 'C')),
-        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
-        updated_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
-        FOREIGN KEY (student_id) REFERENCES students(student_id),
-        FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id),
-        UNIQUE(student_id, sticky_id)
-    )''')
-    
-    # colorsetsデータの挿入
-    colorsets_data = [
-        (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1
-        (1, 2, '["#faeada", "#f5d2b3", "#eeb483", "#e68c51", "#df6624"]'),  # 1 陣営2
-        (2, 1, '["#6c84ff", "#4959ff", "#2929ff", "#211ee4", "#1a1aaf"]'),  # 2 陣営1
-        (2, 2, '["#faeccb", "#f4d893", "#eec05b", "#eaa935", "#e38d24"]'),  # 2 陣営2
-        (3, 1, '["#8b7bff", "#6646ff", "#5321ff", "#450ff2", "#3a0ccd"]'),  # 3 陣営1
-        (3, 2, '["#effc8c", "#ecfa4a", "#eef619", "#e6e50c", "#d0bf08"]'),  # 3 陣営2
-        (4, 1, '["#c3b5fd", "#a58bfa", "#885df5", "#783bec", "#6325cd"]'),  # 4 陣営1
-        (4, 2, '["#fbfbea", "#f4f6d1", "#e8eda9", "#d7e076", "#bfcd41"]'),  # 4 陣営2
-        (5, 1, '["#c76bff", "#b333ff", "#a10cff", "#8d00f3", "#6e04b6"]'),  # 5 陣営1
-        (5, 2, '["#ffc472", "#fea039", "#fc8313", "#ed6809", "#cd510a"]'),  # 5 陣営2
-        (6, 1, '["#ead5ff", "#dab5fd", "#c485fb", "#ad57f5", "#9025e6"]'),  # 6 陣営1
-        (6, 2, '["#fdf9e9", "#fbf2c6", "#f8e290", "#f4ca50", "#efb121"]'),  # 6 陣営2
-        (7, 1, '["#fad3fb", "#f6b1f3", "#ef83e9", "#e253da", "#ba30b0"]'),  # 7 陣営1
-        (7, 2, '["#f8fbea", "#eef6d1", "#dceda9", "#c3df77", "#a0c937"]'),  # 7 陣営2
-        (8, 1, '["#f8d2e9", "#f4add7", "#ec7aba", "#e1539e", "#c12d74"]'),  # 8 陣営1
-        (8, 2, '["#dffcdc", "#c0f7bb", "#8fee87", "#56dd4b", "#2cb721"]'),  # 8 陣営2
-        (9, 1, '["#f6d4e5", "#efb2cf", "#e482ae", "#d85c91", "#c43a6e"]'),  # 9 陣営1
-        (9, 2, '["#cef9ef", "#9cf3e1", "#62e6cf", "#32cfb9", "#1bbfab"]'),  # 9 陣営2
-        (10, 1, '["#fcd4cc", "#f9b5a8", "#f48975", "#e9634a", "#d74b31"]'), # 10 陣営1
-        (10, 2, '["#cef9f0", "#9df2e0", "#64e4cf", "#35ccb8", "#1ec0ad"]'), # 10 陣営2
-    ]
-    
-    # データが存在しない場合は挿入
-    for group_num, camp_type, colors in colorsets_data:
-        c.execute('INSERT OR IGNORE INTO colorsets (group_number, camp_type, colors) VALUES (?, ?, ?)',
-                 (group_num, camp_type, colors))
-    
-    conn.commit()
-    conn.close()
-    
-# SocketIOを初期化
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-init_db()
-
 @app.route('/')
 def health():
     return jsonify({'status': 'ok'})
+
+
+init_db()
 
 app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
@@ -208,6 +48,9 @@ def create_sticky():
             print(f"DEBUG: Missing field: {field}")
             return jsonify({'error': f'{field}が必要です'}), 400
     
+    # theme_idを取得（任意項目として扱う場合はgetでOK）
+    theme_id = request.json.get('theme_id')
+
     try:
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
@@ -242,10 +85,12 @@ def create_sticky():
         new_display_index = (max_index_result[0] or 0) + 1
         
         # 付箋插入
-        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, feedback_A, feedback_B, feedback_C,
-                                         ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
-                                         teammate_avg_score, enemy_avg_score, overall_avg_score) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        c.execute('''INSERT INTO sticky (
+        student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, 
+        feedback_A, feedback_B, feedback_C, ai_summary_content, 
+        ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction, 
+        teammate_avg_score, enemy_avg_score, overall_avg_score, theme_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                  (request.json['student_id'], 
                   request.json['sticky_content'],
                   request.json['sticky_color'],
@@ -261,7 +106,9 @@ def create_sticky():
                   request.json.get('ai_overall_avg_prediction', 0),
                   request.json.get('teammate_avg_score', 0),
                   request.json.get('enemy_avg_score', 0),
-                  request.json.get('overall_avg_score', 0)))
+                  request.json.get('overall_avg_score', 0),
+                  theme_id  # 追加
+                 ))
         
         sticky_id = c.lastrowid
         
@@ -327,16 +174,26 @@ def get_sticky_notes():
         
         student_id = request.args.get('student_id')
         school_id = request.args.get('school_id')
+        theme_id = request.args.get('theme_id')
         
-        # 付箋取得
-        if student_id:
+        # # 付箋取得
+        # if student_id:
+        #     c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
+        #                         s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+        #                         s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+        #                         s.overall_avg_score, s.created_at, st.name
+        #                  FROM sticky s
+        #                  JOIN students st ON s.student_id = st.student_id
+        #                  WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
+        if school_id and theme_id:
+            # school_id と theme_id の両方で絞り込む
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
                                 s.overall_avg_score, s.created_at, st.name
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
-                         WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
+                         WHERE st.school_id = ? AND s.theme_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id, theme_id))
         elif school_id:
             # 同校の全学生の付箋を取得
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
@@ -506,19 +363,6 @@ def delete_sticky(sticky_id):
 
 app.register_blueprint(message_o)
 
-#データベース接続関数を追加
-def get_db_connection():
-    # データベースファイルのパスを設定
-    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
-    
-    if not os.path.exists(db_path):
-        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
-    
-    try:
-        conn = sqlite3.connect(db_path)
-        return conn
-    except sqlite3.Error as e:
-        raise
 
 # 基本的なヘルスチェック用エンドポイント
 @app.route('/health', methods=['GET'])
@@ -742,6 +586,8 @@ def update_camp(camp_id):
     conn.commit()
     conn.close()
     return jsonify({'status': 'updated'})
+
+app.register_blueprint(topicset_o)
 
 # --- holdReward エンドポイント ----------------------
 

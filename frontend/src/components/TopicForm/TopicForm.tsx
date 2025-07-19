@@ -11,11 +11,15 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ja } from 'date-fns/locale/ja';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import axios from 'axios';
+import { getCurrentUser } from '../../utils/auth';
 
 interface Topic {
   id: number;
   title: string;
   description: string;
+  colorset_id: string;
   startDate: Date;
   endDate: Date;
   team1: string;
@@ -26,27 +30,54 @@ interface TopicFormProps {
   onAddTopic: (topic: Omit<Topic, 'id'>) => void;
 }
 
-const TopicForm = ({ onAddTopic }: TopicFormProps) => {
+const TopicForm = () => {
   const [topic, setTopic] = useState({
     title: '',
     description: '',
+    colorset_id: '',
     startDate: new Date(),
     endDate: new Date(),
     team1: '',
     team2: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const user = getCurrentUser(); // ユーザー情報取得
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAddTopic(topic);
-    setTopic({
-      title: '',
-      description: '',
-      startDate: new Date(),
-      endDate: new Date(),
-      team1: '',
-      team2: '',
-    });
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/topics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...topic,
+          // 日付はISO文字列で送るのが一般的
+          startDate: topic.startDate.toISOString(),
+          endDate: topic.endDate.toISOString(),
+          school_id: user?.school_id, // school_idを追加
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('テーマ追加に失敗しました');
+      }
+
+      alert('テーマが追加されました');
+      setTopic({
+        title: '',
+        description: '',
+        colorset_id: '',
+        startDate: new Date(),
+        endDate: new Date(),
+        team1: '',
+        team2: '',
+      });
+    } catch (error) {
+      alert('テーマ追加に失敗しました');
+    }
   };
 
   return (
@@ -76,19 +107,21 @@ const TopicForm = ({ onAddTopic }: TopicFormProps) => {
         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
             <Box sx={{ flex: 1 }}>
-              <DatePicker
-                label="開始日"
+              <DateTimePicker
+                label="開始日時"
                 value={topic.startDate}
                 onChange={(newValue) => setTopic({ ...topic, startDate: newValue || new Date() })}
                 slotProps={{ textField: { fullWidth: true } }}
+                views={['year', 'month', 'day', 'hours', 'minutes', 'seconds']}
               />
             </Box>
             <Box sx={{ flex: 1 }}>
-              <DatePicker
-                label="終了日"
+              <DateTimePicker
+                label="終了日時"
                 value={topic.endDate}
                 onChange={(newValue) => setTopic({ ...topic, endDate: newValue || new Date() })}
                 slotProps={{ textField: { fullWidth: true } }}
+                views={['year', 'month', 'day', 'hours', 'minutes', 'seconds']}
               />
             </Box>
           </LocalizationProvider>

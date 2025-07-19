@@ -11,6 +11,8 @@ import styles from "./Dashboard.module.css";
 
 // context
 import { usePost } from "../../context/PostContext";
+import { useDebateTheme } from "../../context/DebateThemeContext";
+import { useNavigate } from "react-router-dom";
 
 // utils
 import { getCurrentUser, type User } from "../../utils/auth";
@@ -243,6 +245,8 @@ const Dashboard = () => {
   }>({});
 
   const moveTimeoutRef = useRef<number | null>(null);
+  const { theme } = useDebateTheme();
+  const navigate = useNavigate();
 
   const handleNoteMove = useCallback(
     (id: number, x: number, y: number) => {
@@ -280,8 +284,10 @@ const Dashboard = () => {
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
-      // 同校の付箋を読み込む
-      loadSchoolPosts(user.school_id);
+      // 同校の付箋を読み込む（theme_idが必須）
+      if (theme?.theme_id) {
+        loadSchoolPosts(user.school_id, theme.theme_id);
+      }
       // Socket接続を開始
       connectSocket(user.school_id);
     }
@@ -290,7 +296,7 @@ const Dashboard = () => {
     return () => {
       disconnectSocket();
     };
-  }, [loadSchoolPosts, connectSocket, disconnectSocket]);
+  }, [loadSchoolPosts, connectSocket, disconnectSocket, theme]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -341,6 +347,22 @@ const Dashboard = () => {
     const timer = setTimeout(checkSidebarHover, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // 期間終了時にResultへ遷移
+  useEffect(() => {
+    if (!theme) return;
+    const now = new Date();
+    const end = new Date(theme.end_date);
+    if (now > end) {
+      navigate("/result");
+    } else {
+      // 残り時間で自動遷移
+      const timeout = setTimeout(() => {
+        navigate("/result");
+      }, end.getTime() - now.getTime());
+      return () => clearTimeout(timeout);
+    }
+  }, [theme, navigate]);
 
   return (
     <div className={styles.dashboardContainer}>
