@@ -184,7 +184,7 @@ def init_db():
     
     conn.commit()
     conn.close()
-
+    
 #データベース接続関数を追加
 def get_db_connection():
     # データベースファイルのパスを設定
