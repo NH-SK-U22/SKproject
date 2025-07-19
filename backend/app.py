@@ -4,7 +4,6 @@ import json
 from flask_cors import CORS # Flask-CORSをインポート
 from flask_socketio import SocketIO, emit
 import os
-from flask_socketio import SocketIO, emit
 
 from components.init import init_db
 from components.signup import signup_o
@@ -13,21 +12,20 @@ from components.message import message_o
 from components.colorset import colorset_o
 from components.student import student_o
 from components.themes import themes_o
+from components.init import get_db_connection
+from components.topicset import topicset_o
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
 
 socketio = SocketIO(app,cors_allowed_origins= "*")
 
-    
-# SocketIOを初期化
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-init_db()
-
 @app.route('/')
 def health():
     return jsonify({'status': 'ok'})
+
+
+init_db()
 
 app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
@@ -50,6 +48,9 @@ def create_sticky():
             print(f"DEBUG: Missing field: {field}")
             return jsonify({'error': f'{field}が必要です'}), 400
     
+    # theme_idを取得（任意項目として扱う場合はgetでOK）
+    theme_id = request.json.get('theme_id')
+
     try:
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
@@ -84,10 +85,12 @@ def create_sticky():
         new_display_index = (max_index_result[0] or 0) + 1
         
         # 付箋插入
-        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, feedback_A, feedback_B, feedback_C,
-                                         ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
-                                         teammate_avg_score, enemy_avg_score, overall_avg_score) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        c.execute('''INSERT INTO sticky (
+        student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, 
+        feedback_A, feedback_B, feedback_C, ai_summary_content, 
+        ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction, 
+        teammate_avg_score, enemy_avg_score, overall_avg_score, theme_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                  (request.json['student_id'], 
                   request.json['sticky_content'],
                   request.json['sticky_color'],
@@ -103,7 +106,9 @@ def create_sticky():
                   request.json.get('ai_overall_avg_prediction', 0),
                   request.json.get('teammate_avg_score', 0),
                   request.json.get('enemy_avg_score', 0),
-                  request.json.get('overall_avg_score', 0)))
+                  request.json.get('overall_avg_score', 0),
+                  theme_id  # 追加
+                 ))
         
         sticky_id = c.lastrowid
         
@@ -169,16 +174,26 @@ def get_sticky_notes():
         
         student_id = request.args.get('student_id')
         school_id = request.args.get('school_id')
+        theme_id = request.args.get('theme_id')
         
-        # 付箋取得
-        if student_id:
+        # # 付箋取得
+        # if student_id:
+        #     c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
+        #                         s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+        #                         s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+        #                         s.overall_avg_score, s.created_at, st.name
+        #                  FROM sticky s
+        #                  JOIN students st ON s.student_id = st.student_id
+        #                  WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
+        if school_id and theme_id:
+            # school_id と theme_id の両方で絞り込む
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
                                 s.overall_avg_score, s.created_at, st.name
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
-                         WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
+                         WHERE st.school_id = ? AND s.theme_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id, theme_id))
         elif school_id:
             # 同校の全学生の付箋を取得
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
@@ -348,19 +363,6 @@ def delete_sticky(sticky_id):
 
 app.register_blueprint(message_o)
 
-#データベース接続関数を追加
-def get_db_connection():
-    # データベースファイルのパスを設定
-    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
-    
-    if not os.path.exists(db_path):
-        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
-    
-    try:
-        conn = sqlite3.connect(db_path)
-        return conn
-    except sqlite3.Error as e:
-        raise
 
 # 基本的なヘルスチェック用エンドポイント
 @app.route('/health', methods=['GET'])
@@ -584,6 +586,8 @@ def update_camp(camp_id):
     conn.commit()
     conn.close()
     return jsonify({'status': 'updated'})
+
+app.register_blueprint(topicset_o)
 
 # --- holdReward エンドポイント ----------------------
 

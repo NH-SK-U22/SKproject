@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
+import { useDebateTheme } from "./DebateThemeContext";
 
 interface Post {
   id: number;
@@ -21,6 +22,7 @@ interface Post {
   feedback_A?: number;
   feedback_B?: number;
   feedback_C?: number;
+  theme_id?: number;
 }
 
 interface StickyResponse {
@@ -53,9 +55,10 @@ interface PostContextType {
     student_id: number;
     x_axis?: number;
     y_axis?: number;
+    theme_id: number;
   }) => Promise<void>;
   loadPosts: (student_id?: number) => Promise<void>;
-  loadSchoolPosts: (school_id: string) => Promise<void>;
+  loadSchoolPosts: (school_id: string, theme_id: number) => Promise<void>;
   updatePost: (sticky_id: number, updates: Partial<Post>) => Promise<void>;
   deletePost: (sticky_id: number) => Promise<void>;
   connectSocket: (school_id: string) => void;
@@ -70,6 +73,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   const [posts, setPosts] = useState<Post[]>([]);
   const socketRef = useRef<Socket | null>(null);
   const [currentSchoolId, setCurrentSchoolId] = useState<string | null>(null);
+  const { theme } = useDebateTheme();
 
   const loadPosts = useCallback(async (student_id?: number) => {
     try {
@@ -105,10 +109,10 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const loadSchoolPosts = useCallback(async (school_id: string) => {
+  const loadSchoolPosts = useCallback(async (school_id: string, theme_id: number) => {
     try {
-      const url = `http://localhost:5000/api/sticky?school_id=${school_id}`;
-
+      let url = `http://localhost:5000/api/sticky?school_id=${school_id}`;
+      url += `&theme_id=${theme_id}`;
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -144,6 +148,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       student_id: number;
       x_axis?: number;
       y_axis?: number;
+      theme_id: number;
     }) => {
       try {
         const requestBody = {
@@ -152,6 +157,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           sticky_color: post.color,
           x_axis: post.x_axis || 0,
           y_axis: post.y_axis || 0,
+          theme_id: post.theme_id,
         };
 
         const response = await fetch("http://localhost:5000/api/sticky", {
@@ -169,7 +175,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           // failsafeとして1秒後にSocket更新がない場合は手動でデータを再読み込み
           setTimeout(() => {
             if (currentSchoolId) {
-              loadSchoolPosts(currentSchoolId);
+              loadSchoolPosts(currentSchoolId, theme?.theme_id || 0);
             }
           }, 1000);
         } else {
@@ -179,7 +185,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("付箋の作成に失敗しました:", error);
       }
     },
-    [currentSchoolId, loadSchoolPosts]
+    [currentSchoolId, loadSchoolPosts, theme]
   );
 
   const updatePost = useCallback(
@@ -281,6 +287,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         feedback_A: data.feedback_A,
         feedback_B: data.feedback_B,
         feedback_C: data.feedback_C,
+        theme_id: theme?.theme_id,
       };
       setPosts((prev) => {
         console.log(

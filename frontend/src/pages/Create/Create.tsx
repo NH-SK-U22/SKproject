@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePost } from "../../context/PostContext";
+import { useDebateTheme } from "../../context/DebateThemeContext";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
@@ -9,7 +10,7 @@ import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import Loading from "../../components/Loading/Loading";
 
 // utils
-import { getCurrentUser } from "../../utils/auth";
+import { getCurrentUser, type User } from "../../utils/auth";
 
 // css
 import styles from "./Create.module.css";
@@ -30,6 +31,7 @@ const Create = () => {
   const navigate = useNavigate();
   const { addPost } = usePost();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { theme } = useDebateTheme();
 
   useEffect(() => {
     // loading画面の表示を遅らせるタイマー
@@ -90,6 +92,10 @@ const Create = () => {
       navigate("/login");
       return;
     }
+    if (!theme?.theme_id) {
+      alert("テーマ情報が取得できません");
+      return;
+    }
 
     // 新しい付箋のためのランダムな初期位置を生成（重複を避けるため）
     const randomX = Math.floor(Math.random() * 300) + 50; // 50-350px
@@ -101,6 +107,7 @@ const Create = () => {
       student_id: currentUser.id,
       x_axis: randomX,
       y_axis: randomY,
+      theme_id: theme.theme_id,
     });
 
     setPost("");

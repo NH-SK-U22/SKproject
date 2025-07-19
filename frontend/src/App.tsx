@@ -13,38 +13,45 @@ import Create from "./pages/Create/Create";
 import Setting from "./pages/Setting/Setting";
 import TopicSet from "./pages/TopicSet/Topicset";
 import CampSelect from "./pages/CampSelect/CampSelect";
+import Result from "./pages/Result/Result";
 
 import { PostProvider } from "./context/PostContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ChatProvider } from "./context/ChatContext";
+import { DebateThemeProvider } from "./context/DebateThemeContext";
 // css
 import "./App.css";
 import Mypage from "./pages/Mypage/Mypage";
+import Home from "./pages/Home/Home";
 
 function App() {
   return (
     <ThemeProvider>
-      <PostProvider>
-        <ChatProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/usertypeSelect" element={<SelectUsrtype />} />
-              <Route path="/loading" element={<Loading />} />
-              <Route path="/Reward" element={<Reward />} />
-              <Route path="/StudentList" element={<StudentList />} />
-              <Route path="/mypage" element={<Mypage />} />
-              <Route path="/create" element={<Create />} />
-              <Route path="/setting" element={<Setting />} />
-              <Route path="/topicset" element={<TopicSet />} />
-              <Route path="/campselect" element={<CampSelect />} />
-            </Routes>
-          </Router>
-        </ChatProvider>
-      </PostProvider>
+      <DebateThemeProvider>
+        <PostProvider>
+          <ChatProvider>
+            <Router>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/usertypeSelect" element={<SelectUsrtype />} />
+                <Route path="/loading" element={<Loading />} />
+                <Route path="/Reward" element={<Reward />} />
+                <Route path="/StudentList" element={<StudentList />} />
+                <Route path="/mypage" element={<Mypage />} />
+                <Route path="/create" element={<Create />} />
+                <Route path="/setting" element={<Setting />} />
+                <Route path="/topicset" element={<TopicSet />} />
+                <Route path="/campselect" element={<CampSelect />} />
+                <Route path="/result" element={<Result />} />
+                <Route path="/home" element={<Home />} />
+              </Routes>
+            </Router>
+          </ChatProvider>
+        </PostProvider>
+      </DebateThemeProvider>
     </ThemeProvider>
   );
 }

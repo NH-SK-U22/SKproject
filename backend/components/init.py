@@ -47,6 +47,7 @@ def init_db():
         teammate_avg_score REAL DEFAULT 0,
         enemy_avg_score REAL DEFAULT 0,
         overall_avg_score REAL DEFAULT 0,
+        theme_id INTEGER NOT NULL,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
@@ -125,8 +126,12 @@ def init_db():
         colorset_id   INTEGER NOT NULL,          -- colorsets.id を参照
         start_date   TIMESTAMP NOT NULL,   -- 開始日
         end_date     TIMESTAMP NOT NULL,    -- 終了日
+        team1        TEXT    NOT NULL,
+        team2        TEXT    NOT NULL,
+        school_id    INTEGER NOT NULL,
         FOREIGN KEY(colorset_id) REFERENCES colorsets(id)
     )''')
+    
     # campsを作成(陣営)
     c.execute('''CREATE TABLE IF NOT EXISTS camps (
         camp_id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,8 +189,10 @@ def init_db():
 def get_db_connection():
     # データベースファイルのパスを設定
     db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
+    
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
+    
     try:
         conn = sqlite3.connect(db_path)
         return conn

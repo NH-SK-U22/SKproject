@@ -15,6 +15,7 @@ import { IoSettingsSharp } from "react-icons/io5";
 
 // components
 import Notification from "../Notification/Notification";
+import { useDebateTheme } from "../../context/DebateThemeContext";
 
 const Sidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -39,8 +40,21 @@ const Sidebar = () => {
 
   const navigate = useNavigate();
 
-  const handleDashboard = () => {
-    navigate("/dashboard");
+  const { theme } = useDebateTheme();
+
+  const handleDebateClick = () => {
+    if (!theme) {
+      navigate("/home");
+      return;
+    }
+    const now = new Date();
+    const start = new Date(theme.start_date);
+    const end = new Date(theme.end_date);
+    if (now >= start && now <= end) {
+      navigate("/dashboard");
+    } else {
+      navigate("/home");
+    }
   };
 
   const handleCreate = () => {
@@ -73,7 +87,7 @@ const Sidebar = () => {
           <span className={styles.logoText}>Logo</span>
         </div>
         <div className={styles.menu}>
-          <div className={styles.menuItem} onClick={handleDashboard}>
+          <div className={styles.menuItem} onClick={handleDebateClick}>
             <LuLayoutDashboard />
             <span className={styles.menuText}>討論広場</span>
           </div>

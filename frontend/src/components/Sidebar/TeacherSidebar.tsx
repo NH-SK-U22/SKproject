@@ -13,11 +13,13 @@ import { MdCreate } from "react-icons/md";
 import { ImCoinYen } from "react-icons/im";
 import { PiStudentFill } from "react-icons/pi";
 import Notification from "../Notification/Notification";
+import { useDebateTheme } from "../../context/DebateThemeContext";
 
 const TeacherSidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { theme } = useDebateTheme();
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -37,10 +39,6 @@ const TeacherSidebar = () => {
 
   const navigate = useNavigate();
 
-  const handleDashboard = () => {
-    navigate("/dashboard");
-  };
-
   const handleCreate = () => {
     navigate("/create");
   };
@@ -51,6 +49,21 @@ const TeacherSidebar = () => {
 
   const handleStudentList = () => {
     navigate("/StudentList");
+  };
+
+  const handleDebateClick = () => {
+    if (!theme) {
+      navigate("/home");
+      return;
+    }
+    const now = new Date();
+    const start = new Date(theme.start_date);
+    const end = new Date(theme.end_date);
+    if (now >= start && now <= end) {
+      navigate("/dashboard");
+    } else {
+      navigate("/home");
+    }
   };
 
   return (
@@ -66,7 +79,7 @@ const TeacherSidebar = () => {
           <span className={styles.logoText}>Logo</span>
         </div>
         <div className={styles.menu}>
-          <div className={styles.menuItem} onClick={handleDashboard}>
+          <div className={styles.menuItem} onClick={handleDebateClick}>
             <LuLayoutDashboard />
             <span className={styles.menuText}>討論広場</span>
           </div>
