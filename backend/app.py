@@ -31,6 +31,7 @@ app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
 app.register_blueprint(login_o)
 app.register_blueprint(student_o)
+app.register_blueprint(topicset_o)
 
 # Sticky Notes API endpoints
 @app.route('/api/sticky', methods=['POST'])
@@ -586,8 +587,6 @@ def update_camp(camp_id):
     conn.commit()
     conn.close()
     return jsonify({'status': 'updated'})
-
-app.register_blueprint(topicset_o)
 
 # --- holdReward エンドポイント ----------------------
 
