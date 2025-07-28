@@ -1,6 +1,6 @@
 // react
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { usePost } from "../../context/PostContext";
 import { useDebateTheme } from "../../context/DebateThemeContext";
 
@@ -16,14 +16,16 @@ import { getCurrentUser, type User } from "../../utils/auth";
 import styles from "./Create.module.css";
 
 interface ColorSetResponse {
-  group_number: number;
+  camp_type: number;
   colors: string[];
 }
 
-const Create = () => {
-  const [searchParams] = useSearchParams();
-  const camp = searchParams.get("camp") || "camp1";
+interface ThemeColorResponse {
+  group_number: number;
+  colorsets: ColorSetResponse[];
+}
 
+const Create = () => {
   const [colors, setColors] = useState<string[]>([]);
   const [post, setPost] = useState("");
   const [selectColor, setSelectColor] = useState(0);
@@ -31,38 +33,55 @@ const Create = () => {
   const navigate = useNavigate();
   const { addPost } = usePost();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const { theme } = useDebateTheme();
+  const { theme, fetchTheme } = useDebateTheme();
 
   useEffect(() => {
-    // loading画面の表示を遅らせるタイマー
-    const loadingTimer = setTimeout(() => {
-      setShowLoading(true);
-    }, 500); // loading画面は500ms後に表示
+    // テーマに関する情報を取得する
+    fetchTheme();
 
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
     }
+  }, [fetchTheme]);
 
+  // theme が取得されたときに色を設定
+  useEffect(() => {
     const fetchColorSets = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/colorsets/${camp}`
-        );
-        if (response.ok) {
-          const data: ColorSetResponse[] = await response.json();
-          const colorSetsArray = data.map((item) => item.colors);
+        if (theme?.theme_id) {
+          const response = await fetch(
+            `http://localhost:5000/api/colorsets/theme/${theme.theme_id}`
+          );
+          if (response.ok) {
+            const data: ThemeColorResponse = await response.json();
 
-          // 陣営のcolorsetからランダムに選ぶ
-          if (colorSetsArray.length > 0) {
-            const randomIndex = Math.floor(
-              Math.random() * colorSetsArray.length
-            );
-            setColors(colorSetsArray[randomIndex]);
+            // このテーマのすべての陣営の色グループからランダムに選択されます
+            if (data.colorsets && data.colorsets.length > 0) {
+              const randomIndex = Math.floor(
+                Math.random() * data.colorsets.length
+              );
+              setColors(data.colorsets[randomIndex].colors);
+            } else {
+              // フォールバック用のデフォルトカラー
+              setColors([
+                "#8097f9",
+                "#6273f2",
+                "#343be4",
+                "#373acb",
+                "#2f33a4",
+              ]);
+            }
+          } else {
+            console.error("カラーセットのフェッチに失敗");
+            // デフォルトのカラーにフォールバック
+            setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
           }
         } else {
-          console.error("カラーセットのフェッチに失敗");
-          // デフォルトのカラーにフォールバック
+          console.warn(
+            "テーマが取得できませんでした。デフォルトカラーを使用します。"
+          );
+          // テーマがない場合もデフォルトカラーを設定
           setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
         }
       } catch (error) {
@@ -70,17 +89,15 @@ const Create = () => {
         // デフォルトのカラーにフォールバック
         setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
       } finally {
+        // どんな場合でもloading状態を解除
         setShowLoading(false);
-        clearTimeout(loadingTimer);
       }
     };
 
-    fetchColorSets();
-
-    return () => {
-      clearTimeout(loadingTimer);
-    };
-  }, [camp]);
+    // themeの取得を待つため少し遅延させる
+    const timer = setTimeout(fetchColorSets, 200);
+    return () => clearTimeout(timer);
+  }, [theme]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 import sqlite3
+import random
 
 topicset_o = Blueprint('topicset_o', __name__, url_prefix='/api')
 
@@ -8,7 +9,8 @@ def add_topic():
     data = request.get_json()
     title = data.get('title')
     description = data.get('description')
-    colorset_id = data.get('colorset_id')
+    # ランダム選擇colorset_id (1-10)
+    colorset_id = random.randint(1, 10)
     start_date = data.get('startDate')
     end_date = data.get('endDate')
     team1 = data.get('team1')
