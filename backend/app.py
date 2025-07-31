@@ -117,7 +117,7 @@ def create_sticky():
         c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                             s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                             s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                            s.overall_avg_score, s.created_at, st.name, st.school_id
+                            s.overall_avg_score, s.created_at, st.name, st.school_id, st.camp_id
                      FROM sticky s
                      JOIN students st ON s.student_id = st.student_id
                      WHERE s.sticky_id = ?''', (sticky_id,))
@@ -148,7 +148,8 @@ def create_sticky():
                 'overall_avg_score': sticky_data[16],
                 'created_at': sticky_data[17],
                 'student_name': sticky_data[18],
-                'school_id': sticky_data[19]
+                'school_id': sticky_data[19],
+                'author_camp_id': sticky_data[20]
             }
             
             # 同校の全ユーザーに新しい付箋を送信
@@ -177,21 +178,13 @@ def get_sticky_notes():
         school_id = request.args.get('school_id')
         theme_id = request.args.get('theme_id')
         
-        # # 付箋取得
-        # if student_id:
-        #     c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
-        #                         s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
-        #                         s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-        #                         s.overall_avg_score, s.created_at, st.name
-        #                  FROM sticky s
-        #                  JOIN students st ON s.student_id = st.student_id
-        #                  WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
+        #         # 付箋取得（camp_idも含める）
         if school_id and theme_id:
             # school_id と theme_id の両方で絞り込む
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          WHERE st.school_id = ? AND s.theme_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id, theme_id))
@@ -200,7 +193,7 @@ def get_sticky_notes():
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          WHERE st.school_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id,))
@@ -208,7 +201,7 @@ def get_sticky_notes():
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          ORDER BY s.display_index, s.created_at DESC''')
@@ -234,7 +227,8 @@ def get_sticky_notes():
                 'enemy_avg_score': row[15],
                 'overall_avg_score': row[16],
                 'created_at': row[17],
-                'student_name': row[18]
+                'student_name': row[18],
+                'author_camp_id': row[19]
             })
         
         conn.close()
@@ -280,7 +274,7 @@ def update_sticky(sticky_id):
         c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                             s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                             s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                            s.overall_avg_score, s.created_at, st.name, st.school_id
+                            s.overall_avg_score, s.created_at, st.name, st.school_id, st.camp_id
                      FROM sticky s
                      JOIN students st ON s.student_id = st.student_id
                      WHERE s.sticky_id = ?''', (sticky_id,))
@@ -310,7 +304,8 @@ def update_sticky(sticky_id):
                 'overall_avg_score': sticky_data[16],
                 'created_at': sticky_data[17],
                 'student_name': sticky_data[18],
-                'school_id': sticky_data[19]
+                'school_id': sticky_data[19],
+                'author_camp_id': sticky_data[20]
             }
             
             # 同校の全ユーザーに更新された付箋を送信
@@ -358,6 +353,89 @@ def delete_sticky(sticky_id):
         
         conn.close()
         return jsonify({'status': 'success', 'message': '付箋が削除されました'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 陣営別得点計算API
+@app.route('/api/camps/scores/<school_id>/<int:theme_id>', methods=['GET'])
+def get_camp_scores(school_id, theme_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # 各陣営の得点を計算
+        # 同陣営の投票: A(+2), B(+1), C(-1)
+        # 敵陣営の投票: A(+6), B(+3), C(-1)
+        
+        c.execute('''
+            SELECT 
+                s.camp_id,
+                sv.vote_type,
+                st_voter.camp_id as voter_camp_id,
+                COUNT(*) as vote_count
+            FROM sticky sticky_target
+            JOIN students s ON sticky_target.student_id = s.student_id
+            JOIN sticky_votes sv ON sticky_target.sticky_id = sv.sticky_id
+            JOIN students st_voter ON sv.student_id = st_voter.student_id
+            WHERE s.school_id = ? AND sticky_target.theme_id = ?
+            GROUP BY s.camp_id, sv.vote_type, st_voter.camp_id
+        ''', (school_id, theme_id))
+        
+        vote_data = c.fetchall()
+        
+        # 陣営別得点計算
+        camp_scores = {}
+        
+        for target_camp_id, vote_type, voter_camp_id, vote_count in vote_data:
+            if target_camp_id not in camp_scores:
+                camp_scores[target_camp_id] = 0
+            
+            is_same_camp = target_camp_id == voter_camp_id
+            
+            if is_same_camp:
+                # 同陣営の得点配分
+                if vote_type == 'A':  # めっちゃ共感！
+                    camp_scores[target_camp_id] += vote_count * 2
+                elif vote_type == 'B':  # なるほどね
+                    camp_scores[target_camp_id] += vote_count * 1
+                elif vote_type == 'C':  # それはちょっと違うんじゃない
+                    camp_scores[target_camp_id] += vote_count * (-1)
+            else:
+                # 敵陣営の得点配分
+                if vote_type == 'A':  # 意見が変わるくらい納得
+                    camp_scores[target_camp_id] += vote_count * 6
+                elif vote_type == 'B':  # 意見は変わらんけど興味深い
+                    camp_scores[target_camp_id] += vote_count * 3
+                elif vote_type == 'C':  # そうは思わないな
+                    camp_scores[target_camp_id] += vote_count * (-1)
+        
+        # 陣営名を取得
+        c.execute('''
+            SELECT camp_id, camp_name
+            FROM camps
+            WHERE theme_id = ?
+        ''', (theme_id,))
+        
+        camp_names = dict(c.fetchall())
+        
+        # 結果をフォーマット
+        result = []
+        for camp_id, score in camp_scores.items():
+            result.append({
+                'camp_id': camp_id,
+                'camp_name': camp_names.get(camp_id, f'陣営{camp_id}'),
+                'score': score
+            })
+        
+        # 陣営IDでソート
+        result.sort(key=lambda x: x['camp_id'])
+        
+        conn.close()
+        return jsonify({
+            'status': 'success',
+            'scores': result
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

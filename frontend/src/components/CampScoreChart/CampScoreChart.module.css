@@ -1,0 +1,381 @@
+.chartContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  min-height: 300px;
+  border-radius: 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chartContainer::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  z-index: -1;
+}
+
+.scoreBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 2rem;
+  min-height: 200px;
+  margin: 0 auto;
+}
+
+.leftCamp,
+.rightCamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 140px;
+  padding: 1.5rem;
+}
+
+.campName {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  text-align: center;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px currentColor;
+  color: #ffffff;
+  font-family: "Noto Sans JP", sans-serif;
+  text-transform: uppercase;
+  animation: splatoonBounce 1s ease-in-out infinite alternate;
+}
+
+.scoreValue {
+  font-size: 3.2rem;
+  font-weight: 900;
+  text-align: center;
+  color: #ffffff;
+  font-family: "Noto Sans JP", sans-serif;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), 0 0 30px currentColor,
+    0 0 50px currentColor;
+  animation: splatoonScorePulse 2s ease-in-out infinite;
+}
+
+.progressContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 400px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+  padding: 2rem 0;
+}
+
+.progressContainer .progressBar {
+  width: 100%;
+}
+
+.progressBar {
+  height: 60px;
+  background: linear-gradient(145deg, #f0f0f0 0%, #e0e0e0 50%, #d5d5d5 100%);
+  border-radius: 30px;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+  border: 4px solid #ffffff;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.3);
+  z-index: 1;
+  width: 100%;
+  opacity: 1;
+  visibility: visible;
+}
+
+.leftProgress {
+  height: 100%;
+  min-width: 20px;
+  border-radius: 30px 0 0 30px;
+  position: relative;
+  overflow: visible;
+  background: linear-gradient(145deg, #d17aff 0%, #c76bff 40%, #b558e6 100%);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(199, 107, 255, 0.3);
+  z-index: 2;
+  opacity: 1;
+  display: block;
+}
+
+.leftProgress::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.1) 70%,
+    transparent 100%
+  );
+  border-radius: 30px 0 0 0;
+  pointer-events: none;
+}
+
+/* Removed .leftProgress::after for no gloss effect */
+
+.rightProgress {
+  height: 100%;
+  min-width: 20px;
+  border-radius: 0 30px 30px 0;
+  position: relative;
+  overflow: visible;
+  background: linear-gradient(145deg, #ffd085 0%, #ffc472 40%, #ffb459 100%);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(255, 196, 114, 0.3);
+  z-index: 2;
+  opacity: 1;
+  display: block;
+}
+
+.rightProgress::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    rgba(255, 255, 255, 0.1) 70%,
+    transparent 100%
+  );
+  border-radius: 0 30px 0 0;
+  pointer-events: none;
+}
+
+/* Removed .rightProgress::after for no gloss effect */
+
+/* Removed gloss-related animations: splatoonGlow, splatoonPulse, splatoonDrop */
+
+@keyframes splatoonTextGlow {
+  0% {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(199, 107, 255, 0.6);
+  }
+  100% {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 30px rgba(199, 107, 255, 0.8);
+  }
+}
+
+@keyframes splatoonTextGlowOrange {
+  0% {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 196, 114, 0.6);
+  }
+  100% {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 196, 114, 0.8);
+  }
+}
+
+@keyframes splatoonBounce {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes splatoonScorePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.2);
+  }
+}
+
+/* Removed splatoonBg animation for no gloss effect */
+
+.leftPercentage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 1.3rem;
+  font-family: "Noto Sans JP", sans-serif;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(199, 107, 255, 0.6);
+  animation: splatoonTextGlow 2s ease-in-out infinite alternate;
+}
+
+.rightPercentage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 1.3rem;
+  font-family: "Noto Sans JP", sans-serif;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 196, 114, 0.6);
+  animation: splatoonTextGlowOrange 2s ease-in-out infinite alternate;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .chartContainer {
+    padding: 1.5rem;
+    margin: 0 1rem;
+  }
+
+  .scoreBar {
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 150px;
+  }
+
+  .progressContainer {
+    min-width: 300px;
+    padding: 1.5rem 0;
+  }
+
+  .leftCamp,
+  .rightCamp {
+    min-width: 120px;
+    padding: 1rem;
+  }
+
+  .campName {
+    font-size: 1.2rem;
+  }
+
+  .scoreValue {
+    font-size: 2.2rem;
+  }
+
+  .progressBar {
+    height: 45px;
+    width: 100%;
+    margin: 1rem 0;
+    border-radius: 22px;
+    border: 2px solid #ffffff;
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d5d5d5 100%);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  .leftProgress {
+    border-radius: 22px 0 0 22px;
+    min-width: 15px;
+    z-index: 2;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.15);
+  }
+
+  .leftProgress::before {
+    border-radius: 22px 0 0 0;
+  }
+
+  .rightProgress {
+    border-radius: 0 22px 22px 0;
+    min-width: 15px;
+    z-index: 2;
+    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.15);
+  }
+
+  .rightProgress::before {
+    border-radius: 0 22px 0 0;
+  }
+
+  .leftPercentage {
+    font-size: 1.1rem;
+  }
+
+  .rightPercentage {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chartContainer {
+    padding: 1rem;
+    border-radius: 16px;
+    margin: 0 0.5rem;
+  }
+
+  .leftCamp,
+  .rightCamp {
+    min-width: 100px;
+    padding: 0.8rem;
+  }
+
+  .campName {
+    font-size: 1rem;
+  }
+
+  .scoreValue {
+    font-size: 1.8rem;
+  }
+
+  .progressContainer {
+    min-width: 250px;
+    padding: 1rem 0;
+  }
+
+  .progressBar {
+    height: 40px;
+    border-radius: 20px;
+    border: 2px solid #ffffff;
+    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d5d5d5 100%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .leftProgress {
+    border-radius: 20px 0 0 20px;
+    min-width: 12px;
+    z-index: 2;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  .leftProgress::before {
+    border-radius: 20px 0 0 0;
+  }
+
+  .rightProgress {
+    border-radius: 0 20px 20px 0;
+    min-width: 12px;
+    z-index: 2;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+  }
+
+  .rightProgress::before {
+    border-radius: 0 20px 0 0;
+  }
+
+  .leftPercentage {
+    font-size: 1rem;
+  }
+
+  .rightPercentage {
+    font-size: 1rem;
+  }
+}

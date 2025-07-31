@@ -23,6 +23,7 @@ interface Post {
   feedback_B?: number;
   feedback_C?: number;
   theme_id?: number;
+  author_camp_id?: number;
 }
 
 interface StickyResponse {
@@ -38,6 +39,7 @@ interface StickyResponse {
   feedback_C: number;
   created_at: string;
   student_name: string;
+  author_camp_id?: number;
 }
 
 interface UpdateData {
@@ -97,6 +99,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           feedback_A: item.feedback_A,
           feedback_B: item.feedback_B,
           feedback_C: item.feedback_C,
+          author_camp_id: item.author_camp_id,
         }));
         // display_index順でソート
         formattedPosts.sort(
@@ -109,37 +112,42 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const loadSchoolPosts = useCallback(async (school_id: string, theme_id: number) => {
-    try {
-      let url = `http://localhost:5000/api/sticky?school_id=${school_id}`;
-      url += `&theme_id=${theme_id}`;
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        const formattedPosts = data.map((item: StickyResponse) => ({
-          id: item.sticky_id,
-          text: item.sticky_content,
-          color: item.sticky_color,
-          createdAt: item.created_at,
-          student_id: item.student_id,
-          x_axis: item.x_axis,
-          y_axis: item.y_axis,
-          display_index: item.display_index,
-          student_name: item.student_name,
-          feedback_A: item.feedback_A,
-          feedback_B: item.feedback_B,
-          feedback_C: item.feedback_C,
-        }));
-        // display_index順でソート
-        formattedPosts.sort(
-          (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
-        );
-        setPosts(formattedPosts);
+  const loadSchoolPosts = useCallback(
+    async (school_id: string, theme_id: number) => {
+      try {
+        let url = `http://localhost:5000/api/sticky?school_id=${school_id}`;
+        url += `&theme_id=${theme_id}`;
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          const formattedPosts = data.map((item: StickyResponse) => ({
+            id: item.sticky_id,
+            text: item.sticky_content,
+            color: item.sticky_color,
+            createdAt: item.created_at,
+            student_id: item.student_id,
+            x_axis: item.x_axis,
+            y_axis: item.y_axis,
+            display_index: item.display_index,
+            student_name: item.student_name,
+            feedback_A: item.feedback_A,
+            feedback_B: item.feedback_B,
+            feedback_C: item.feedback_C,
+            author_camp_id: item.author_camp_id,
+          }));
+          // display_index順でソート
+          formattedPosts.sort(
+            (a: Post, b: Post) =>
+              (a.display_index || 0) - (b.display_index || 0)
+          );
+          setPosts(formattedPosts);
+        }
+      } catch (error) {
+        console.error("Failed to load school posts:", error);
       }
-    } catch (error) {
-      console.error("Failed to load school posts:", error);
-    }
-  }, []);
+    },
+    []
+  );
 
   const addPost = useCallback(
     async (post: {
@@ -288,6 +296,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         feedback_B: data.feedback_B,
         feedback_C: data.feedback_C,
         theme_id: theme?.theme_id,
+        author_camp_id: data.author_camp_id,
       };
       setPosts((prev) => {
         console.log(
@@ -316,6 +325,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         feedback_A: data.feedback_A,
         feedback_B: data.feedback_B,
         feedback_C: data.feedback_C,
+        author_camp_id: data.author_camp_id,
       };
       setPosts((prev) =>
         prev.map((post) => (post.id === data.sticky_id ? updatedPost : post))
