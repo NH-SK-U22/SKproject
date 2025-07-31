@@ -49,19 +49,29 @@ const Create = () => {
   useEffect(() => {
     const fetchColorSets = async () => {
       try {
-        if (theme?.theme_id) {
+        if (theme?.theme_id && currentUser?.camp_id) {
           const response = await fetch(
             `http://localhost:5000/api/colorsets/theme/${theme.theme_id}`
           );
           if (response.ok) {
             const data: ThemeColorResponse = await response.json();
 
-            // このテーマのすべての陣営の色グループからランダムに選択されます
+            // ユーザーの陣営に対応する色グループを選択
             if (data.colorsets && data.colorsets.length > 0) {
-              const randomIndex = Math.floor(
-                Math.random() * data.colorsets.length
+              // ユーザーのcamp_idに対応するcolorsetを探す
+              const userCampColorset = data.colorsets.find(
+                (colorset) => colorset.camp_type === currentUser.camp_id
               );
-              setColors(data.colorsets[randomIndex].colors);
+
+              if (userCampColorset) {
+                setColors(userCampColorset.colors);
+              } else {
+                // 対応するcolorsetが見つからない場合、最初のcolorsetを使用
+                console.warn(
+                  "ユーザーの陣営に対応するcolorsetが見つかりません。最初のcolorsetを使用します。"
+                );
+                setColors(data.colorsets[0].colors);
+              }
             } else {
               // フォールバック用のデフォルトカラー
               setColors([
@@ -78,10 +88,17 @@ const Create = () => {
             setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
           }
         } else {
-          console.warn(
-            "テーマが取得できませんでした。デフォルトカラーを使用します。"
-          );
-          // テーマがない場合もデフォルトカラーを設定
+          if (!theme?.theme_id) {
+            console.warn(
+              "テーマが取得できませんでした。デフォルトカラーを使用します。"
+            );
+          }
+          if (!currentUser?.camp_id) {
+            console.warn(
+              "ユーザーの陣営情報が取得できませんでした。デフォルトカラーを使用します。"
+            );
+          }
+          // テーマまたは陣営情報がない場合もデフォルトカラーを設定
           setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
         }
       } catch (error) {
@@ -94,10 +111,10 @@ const Create = () => {
       }
     };
 
-    // themeの取得を待つため少し遅延させる
+    // themeとcurrentUserの取得を待つため少し遅延させる
     const timer = setTimeout(fetchColorSets, 200);
     return () => clearTimeout(timer);
-  }, [theme]);
+  }, [theme, currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
