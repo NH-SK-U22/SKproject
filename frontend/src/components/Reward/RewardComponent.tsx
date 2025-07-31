@@ -54,6 +54,12 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
 
   // 外側のボタンはポップアップ表示のみ
   const handleRedeem = () => {
+    if (currentUser?.user_type === "teacher") {
+      // 教師は即削除ポップアップ
+      setShowPopup(true);
+      return;
+    }
+    // 生徒の場合のみ交換バリデーション
     if (isExchanged) {
       alert("この報酬はすでに交換済みです");
       return;
