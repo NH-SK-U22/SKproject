@@ -8,7 +8,13 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import styles from "./Signup.module.css";
 
 // icons
-import { FaSchool, FaUser, FaLock, FaChalkboardTeacher } from "react-icons/fa";
+import {
+  FaSchool,
+  FaUser,
+  FaLock,
+  FaChalkboardTeacher,
+  FaUserTag,
+} from "react-icons/fa";
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
@@ -17,6 +23,7 @@ const Signup = () => {
   const [formData, setFormData] = useState({
     schoolID: "",
     classID: "",
+    name: "",
     userId: "",
     password: "",
     confirmPassword: "",
@@ -46,6 +53,7 @@ const Signup = () => {
         body: JSON.stringify({
           schoolID: formData.schoolID,
           classID: formData.classID,
+          name: formData.name,
           userId: formData.userId,
           password: formData.password,
           userType: userType,
@@ -107,6 +115,20 @@ const Signup = () => {
                 placeholder="クラス記号"
                 required
                 autoComplete="off"
+              />
+            </div>
+          </div>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWrapper}>
+              <FaUserTag className={styles.inputIcon} />
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="名前"
+                required
+                autoComplete="name"
               />
             </div>
           </div>

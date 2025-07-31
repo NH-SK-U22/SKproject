@@ -67,9 +67,10 @@ def signup():
         
         school_id = request.json['schoolID']
         class_id = request.json['classID']
-        number = request.json['userId']  # フロントエンドの userId は番号に対応する (出席番号)
+        number = request.json['userId']  # フロントエンドの userId は番号に対応する (教員番号)
         password = request.json['password']
         user_type = request.json['userType']
+        name = request.json.get('name', '')  # オプションの名前フィールド
         
         if user_type not in ['student', 'teacher']:
             return jsonify({'error': '無効なユーザータイプです'}), 400
@@ -88,9 +89,9 @@ def signup():
                 return jsonify({'error': 'ユーザーがすでに存在します'}), 409
             
             # 新しいユーザーを挿入
-            c.execute('''INSERT INTO teachers (school_id, class_id, number, password, user_type) 
-                         VALUES (?, ?, ?, ?, ?)''',
-                     (school_id, class_id, number, password, user_type))
+            c.execute('''INSERT INTO teachers (school_id, class_id, number, password, user_type, name) 
+                         VALUES (?, ?, ?, ?, ?, ?)''',
+                     (school_id, class_id, number, password, user_type, name))
             
             user_id_db = c.lastrowid
             conn.commit()
