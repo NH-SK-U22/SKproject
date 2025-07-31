@@ -14,6 +14,7 @@ from components.student import student_o
 from components.themes import themes_o
 from components.init import get_db_connection
 from components.topicset import topicset_o
+from components.reward import reward_o
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
@@ -32,6 +33,7 @@ app.register_blueprint(signup_o)
 app.register_blueprint(login_o)
 app.register_blueprint(student_o)
 app.register_blueprint(topicset_o)
+app.register_blueprint(reward_o)
 
 # Sticky Notes API endpoints
 @app.route('/api/sticky', methods=['POST'])
@@ -370,129 +372,6 @@ app.register_blueprint(message_o)
 def health_check():
     return jsonify({'status': 'ok', 'message': 'サーバーは正常に動作しています'}), 200
 
-# 報酬を追加するAPI
-@app.route('/api/rewards', methods=['POST', 'OPTIONS'])
-def add_reward():
-    # OPTIONSリクエストへの対応
-    if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        return response, 200
-    
-    try:
-        # リクエストからJSONデータを取得        
-        # Content-Typeが設定されていない場合でもJSONとして扱う
-        if request.content_type == 'application/json':
-            data = request.get_json()
-        else:
-            # Content-Typeがない場合、手動でJSONパース
-            try:
-                import json
-                data = json.loads(request.data.decode('utf-8'))
-            except (json.JSONDecodeError, UnicodeDecodeError) as e:
-                return jsonify({'error': 'JSONデータの解析に失敗しました'}), 400
-        
-        # 必要なフィールドが存在するかチェック
-        if not data:
-            return jsonify({'error': 'データが送信されませんでした'}), 400
-        
-        required_fields = ['reward_content', 'need_point', 'need_rank', 'creater']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'{field}が不足しています'}), 400
-        
-        # データの型チェック
-        if not isinstance(data['need_point'], int) or data['need_point'] <= 0:
-            return jsonify({'error': '必要ポイントは正の整数である必要があります'}), 400
-        
-        if not isinstance(data['need_rank'], int) or data['need_rank'] < 0:
-            return jsonify({'error': '必要ランクは0以上の整数である必要があります'}), 400
-        
-        if not data['reward_content'].strip():
-            return jsonify({'error': '報酬の内容を入力してください'}), 400
-        
-        # データベースに挿入
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute('''
-                INSERT INTO reward (reward_content, need_point, need_rank, creater)
-                VALUES (?, ?, ?, ?)
-            ''', (
-                data['reward_content'].strip(),
-                data['need_point'],
-                data['need_rank'],
-                data['creater']
-            ))
-            
-            conn.commit()
-            reward_id = cursor.lastrowid
-            
-            # 成功レスポンス
-            response_data = {
-                'message': '報酬が正常に追加されました',
-                'reward_id': reward_id,
-                'data': {
-                    'reward_content': data['reward_content'].strip(),
-                    'need_point': data['need_point'],
-                    'need_rank': data['need_rank'],
-                    'creater': data['creater']
-                }
-            }
-            return jsonify(response_data), 201
-            
-        except sqlite3.IntegrityError as e:
-            # 重複エラー（UNIQUE制約違反）
-            if 'UNIQUE constraint failed' in str(e):
-                return jsonify({'error': 'この報酬は既に存在します'}), 409
-            else:
-                return jsonify({'error': 'データベースエラーが発生しました'}), 500
-        
-        finally:
-            conn.close()
-    
-    except Exception as e:
-        import traceback
-        return jsonify({'error': 'サーバーエラーが発生しました'}), 500
-    
-@app.route('/api/rewards',methods=['GET'])
-def get_rewards():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT reward_id,reward_content,need_point,need_rank,creater FROM reward')
-        rewards = [
-            {
-                'reward_id': row[0],
-                'reward_content': row[1],
-                'need_point': row[2],
-                'need_rank': row[3],
-                'creater': row[4]
-            }
-            for row in cursor.fetchall()
-        ]
-        conn.close()
-        return jsonify(rewards),200
-    except Exception as e:
-        return jsonify({'error':str(e)}),500
-
-@app.route('/api/rewards/<int:reward_id>', methods=['DELETE'])
-def delete_reward(reward_id):
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM reward WHERE reward_id = ?', (reward_id,))
-        conn.commit()
-        if cursor.rowcount == 0:
-            conn.close()
-            return jsonify({'error': '報酬が見つかりません'}), 404
-        conn.close()
-        return jsonify({'status': 'success', 'message': '報酬が削除されました'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 
 @socketio.on('join_sticky_chat')
@@ -590,117 +469,6 @@ def update_camp(camp_id):
 
 # --- holdReward エンドポイント ----------------------
 
-# 1) すべての保持報酬（または student_id で絞り込み）を取得
-@app.route('/api/holdRewards', methods=['GET'])
-def list_hold_rewards():
-    try:
-        student_id = request.args.get('student_id', type=int)
-        conn = get_db_connection()
-        c = conn.cursor()
-        if student_id is not None:
-            c.execute('''
-              SELECT hold_id, student_id, reward_id, is_holding, used_at
-                FROM holdReward
-               WHERE student_id = ?
-            ''', (student_id,))
-        else:
-            c.execute('''
-              SELECT hold_id, student_id, reward_id, is_holding, used_at
-                FROM holdReward
-            ''')
-        rows = c.fetchall()
-        conn.close()
-
-        result = []
-        for r in rows:
-            result.append({
-                'hold_id':    r[0],
-                'student_id': r[1],
-                'reward_id':  r[2],
-                'is_holding': bool(r[3]),
-                'used_at':    r[4]
-            })
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# 2) 新しい保持報酬を作成
-@app.route('/api/holdRewards', methods=['POST'])
-def create_hold_reward():
-    data = request.get_json() or {}
-    if 'student_id' not in data or 'reward_id' not in data:
-        return jsonify({'error': 'student_id と reward_id が必要です'}), 400
-
-    try:
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('''
-          INSERT INTO holdReward (student_id, reward_id, is_holding, used_at)
-          VALUES (?, ?, ?, ?)
-        ''', (
-          data['student_id'],
-          data['reward_id'],
-          data.get('is_holding', True),
-          data.get('used_at')  # null なら自動で NULL
-        ))
-        hold_id = c.lastrowid
-        conn.commit()
-        conn.close()
-        return jsonify({'hold_id': hold_id}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# 3) 保持報酬の更新（is_holding / used_at など）
-@app.route('/api/holdRewards/<int:hold_id>', methods=['PATCH'])
-def update_hold_reward(hold_id):
-    data = request.get_json() or {}
-    allowed = []
-    vals = []
-    if 'is_holding' in data:
-        allowed.append('is_holding = ?')
-        vals.append(1 if data['is_holding'] else 0)
-    if 'used_at' in data:
-        allowed.append('used_at = ?')
-        vals.append(data['used_at'])
-    if not allowed:
-        return jsonify({'error': '更新できるフィールドがありません'}), 400
-
-    vals.append(hold_id)
-    try:
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute(f'''
-          UPDATE holdReward
-             SET {', '.join(allowed)}
-           WHERE hold_id = ?
-        ''', vals)
-        conn.commit()
-        if c.rowcount == 0:
-            conn.close()
-            return jsonify({'error': 'hold_id が見つかりません'}), 404
-        conn.close()
-        return jsonify({'status': 'updated'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# 4) 保持報酬の削除
-@app.route('/api/holdRewards/<int:hold_id>', methods=['DELETE'])
-def delete_hold_reward(hold_id):
-    try:
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('DELETE FROM holdReward WHERE hold_id = ?', (hold_id,))
-        conn.commit()
-        if c.rowcount == 0:
-            conn.close()
-            return jsonify({'error': 'hold_id が見つかりません'}), 404
-        conn.close()
-        return jsonify({'status': 'deleted'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 # Socket.IO イベント処理
 @socketio.on('connect')
