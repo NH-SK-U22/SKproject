@@ -76,7 +76,7 @@ def login():
             c = conn.cursor()
 
             # ユーザーを調べる
-            c.execute('''SELECT teacher_id, school_id, class_id, number, user_type 
+            c.execute('''SELECT teacher_id, school_id, class_id, number, user_type, name 
                          FROM teachers 
                          WHERE school_id = ? AND class_id = ? AND number = ? AND password = ? AND user_type = ?''',
                      (school_id, class_id, number, password, user_type))
@@ -93,6 +93,7 @@ def login():
                         'class_id': user[2],
                         'number': user[3],
                         'user_type': user[4],
+                        'name': user[5],
                     }
                 }), 200
             else:

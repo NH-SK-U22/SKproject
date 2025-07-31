@@ -93,9 +93,18 @@ def init_db():
         class_id TEXT NOT NULL,
         password TEXT NOT NULL,
         number TEXT NOT NULL,
+        name TEXT,
         user_type TEXT NOT NULL CHECK(user_type IN ('student', 'teacher')),
         UNIQUE(school_id,class_id,number,user_type)
     )''')
+    
+    # nameフィールドのマイグレーション（既存のテーブルにフィールドを追加）
+    try:
+        c.execute('ALTER TABLE teachers ADD COLUMN name TEXT')
+        print("Added name column to teachers table")
+    except sqlite3.OperationalError:
+        # カラムが既に存在する場合はスキップする
+        pass
     
     # reward tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS reward(

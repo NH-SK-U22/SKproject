@@ -8,7 +8,13 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import styles from "./Login.module.css";
 
 // icons
-import { FaUser, FaLock, FaSchool, FaChalkboardTeacher } from "react-icons/fa";
+import {
+  FaUser,
+  FaLock,
+  FaSchool,
+  FaChalkboardTeacher,
+  FaUserTag,
+} from "react-icons/fa";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -17,6 +23,7 @@ const Login = () => {
   const [formData, setFormData] = useState({
     schoolID: "",
     classID: "",
+    name: "",
     userId: "",
     password: "",
   });
@@ -35,6 +42,7 @@ const Login = () => {
         body: JSON.stringify({
           schoolID: formData.schoolID,
           classID: formData.classID,
+          name: formData.name,
           userId: formData.userId,
           password: formData.password,
           userType: userType,
@@ -51,8 +59,7 @@ const Login = () => {
         if (userType == "student") {
           // ログイン成功後、陣営選択ページに移動
           navigate("/campselect");
-        }
-        else {
+        } else {
           navigate("/dashboard");
         }
       } else {
@@ -104,6 +111,20 @@ const Login = () => {
                 placeholder="クラス記号"
                 required
                 autoComplete="off"
+              />
+            </div>
+          </div>
+          <div className={styles.inputGroup}>
+            <div className={styles.inputWrapper}>
+              <FaUserTag className={styles.inputIcon} />
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="名前"
+                required
+                autoComplete="name"
               />
             </div>
           </div>
