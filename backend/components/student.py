@@ -1,6 +1,7 @@
 from flask import jsonify, request
 import sqlite3
 from flask import Blueprint
+from components.init import get_db_connection
 
 student_o = Blueprint('student_o', __name__, url_prefix='/api')
 
@@ -148,6 +149,26 @@ def get_students_by_class(class_id):
             })
         conn.close()
         
+        return jsonify(students)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@student_o.route('/studentlist', methods=['GET'])
+def get_studentlist():
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        # 必要なカラムのみ取得（class, number, name, rank）
+        c.execute('''SELECT class, number, name, rank FROM students ORDER BY created_at DESC''')
+        students = []
+        for row in c.fetchall():
+            students.append({
+                'class': row[0],   # 〇年〇組（全角のまま）
+                'number': row[1],  # 〇番（全角のまま）
+                'name': row[2],
+                'rank': row[3]     # 画像名（diamond, 1st, 2nd, 3rd など）
+            })
+        conn.close()
         return jsonify(students)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
