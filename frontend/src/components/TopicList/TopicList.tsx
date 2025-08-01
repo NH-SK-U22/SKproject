@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Paper,
   Table,
@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import TopicDelete from '../TopicDelete/TopicDelete';
 import TopicForm from '../TopicForm/TopicForm';
+import { getCurrentUser } from '../../utils/auth';
 
 interface Topic {
   id: number;
@@ -23,29 +24,35 @@ interface Topic {
 }
 
 // 初期データ
-const initialTopics: Topic[] = [
-  {
-    id: 1,
-    title: 'AIの教育への影響について',
-    description: 'AI技術の発展が教育現場に与える影響について',
-    startDate: new Date('2024-04-01'),
-    endDate: new Date('2024-04-30'),
-    team1: '賛成派',
-    team2: '反対派',
-  },
-  {
-    id: 2,
-    title: '環境問題と経済発展の両立',
-    description: '持続可能な発展のための環境と経済のバランス',
-    startDate: new Date('2024-05-01'),
-    endDate: new Date('2024-05-31'),
-    team1: '環境重視派',
-    team2: '経済重視派',
-  },
-];
+const initialTopics: Topic[] = [];
 
 const TopicList = () => {
   const [topics, setTopics] = useState<Topic[]>(initialTopics);
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      const user = getCurrentUser();
+      if (!user) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/all_debate?school_id=${user.school_id}`);
+        if (!res.ok) throw new Error('テーマ取得失敗');
+        const data = await res.json();
+        const topicsFromApi: Topic[] = data.map((item: any) => ({
+          id: item.theme_id,
+          title: item.title,
+          description: item.description,
+          startDate: new Date(item.start_date),
+          endDate: new Date(item.end_date),
+          team1: item.team1,
+          team2: item.team2,
+        }));
+        setTopics(topicsFromApi);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchTopics();
+  }, []);
 
   const handleAddTopic = (newTopic: Omit<Topic, 'id'>) => {
     const topicWithId = {
