@@ -53,3 +53,24 @@ def get_newest_theme():
         return jsonify({'error': str(e)}), 500
     finally:
         conn.close()
+
+@topicset_o.route('/all_debate', methods=['GET'])
+def get_all_debates():
+    school_id = request.args.get('school_id')
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    try:
+        c.execute('''
+            SELECT * FROM debate_settings WHERE school_id = ? ORDER BY theme_id DESC
+        ''', (school_id,))
+        rows = c.fetchall()
+        if rows:
+            col_names = [description[0] for description in c.description]
+            themes = [dict(zip(col_names, row)) for row in rows]
+            return jsonify(themes), 200
+        else:
+            return jsonify([]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
