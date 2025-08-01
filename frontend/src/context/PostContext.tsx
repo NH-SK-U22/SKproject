@@ -7,6 +7,7 @@ import React, {
   useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
+import { useDebateTheme } from "./DebateThemeContext";
 
 interface Post {
   id: number;
@@ -21,6 +22,8 @@ interface Post {
   feedback_A?: number;
   feedback_B?: number;
   feedback_C?: number;
+  theme_id?: number;
+  author_camp_id?: number;
 }
 
 interface StickyResponse {
@@ -36,6 +39,7 @@ interface StickyResponse {
   feedback_C: number;
   created_at: string;
   student_name: string;
+  author_camp_id?: number;
 }
 
 interface UpdateData {
@@ -53,9 +57,10 @@ interface PostContextType {
     student_id: number;
     x_axis?: number;
     y_axis?: number;
+    theme_id: number;
   }) => Promise<void>;
   loadPosts: (student_id?: number) => Promise<void>;
-  loadSchoolPosts: (school_id: string) => Promise<void>;
+  loadSchoolPosts: (school_id: string, theme_id: number) => Promise<void>;
   updatePost: (sticky_id: number, updates: Partial<Post>) => Promise<void>;
   deletePost: (sticky_id: number) => Promise<void>;
   connectSocket: (school_id: string) => void;
@@ -70,6 +75,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
   const [posts, setPosts] = useState<Post[]>([]);
   const socketRef = useRef<Socket | null>(null);
   const [currentSchoolId, setCurrentSchoolId] = useState<string | null>(null);
+  const { theme } = useDebateTheme();
 
   const loadPosts = useCallback(async (student_id?: number) => {
     try {
@@ -93,6 +99,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           feedback_A: item.feedback_A,
           feedback_B: item.feedback_B,
           feedback_C: item.feedback_C,
+          author_camp_id: item.author_camp_id,
         }));
         // display_index順でソート
         formattedPosts.sort(
@@ -105,37 +112,42 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const loadSchoolPosts = useCallback(async (school_id: string) => {
-    try {
-      const url = `http://localhost:5000/api/sticky?school_id=${school_id}`;
-
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        const formattedPosts = data.map((item: StickyResponse) => ({
-          id: item.sticky_id,
-          text: item.sticky_content,
-          color: item.sticky_color,
-          createdAt: item.created_at,
-          student_id: item.student_id,
-          x_axis: item.x_axis,
-          y_axis: item.y_axis,
-          display_index: item.display_index,
-          student_name: item.student_name,
-          feedback_A: item.feedback_A,
-          feedback_B: item.feedback_B,
-          feedback_C: item.feedback_C,
-        }));
-        // display_index順でソート
-        formattedPosts.sort(
-          (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
-        );
-        setPosts(formattedPosts);
+  const loadSchoolPosts = useCallback(
+    async (school_id: string, theme_id: number) => {
+      try {
+        let url = `http://localhost:5000/api/sticky?school_id=${school_id}`;
+        url += `&theme_id=${theme_id}`;
+        const response = await fetch(url);
+        if (response.ok) {
+          const data = await response.json();
+          const formattedPosts = data.map((item: StickyResponse) => ({
+            id: item.sticky_id,
+            text: item.sticky_content,
+            color: item.sticky_color,
+            createdAt: item.created_at,
+            student_id: item.student_id,
+            x_axis: item.x_axis,
+            y_axis: item.y_axis,
+            display_index: item.display_index,
+            student_name: item.student_name,
+            feedback_A: item.feedback_A,
+            feedback_B: item.feedback_B,
+            feedback_C: item.feedback_C,
+            author_camp_id: item.author_camp_id,
+          }));
+          // display_index順でソート
+          formattedPosts.sort(
+            (a: Post, b: Post) =>
+              (a.display_index || 0) - (b.display_index || 0)
+          );
+          setPosts(formattedPosts);
+        }
+      } catch (error) {
+        console.error("Failed to load school posts:", error);
       }
-    } catch (error) {
-      console.error("Failed to load school posts:", error);
-    }
-  }, []);
+    },
+    []
+  );
 
   const addPost = useCallback(
     async (post: {
@@ -144,6 +156,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
       student_id: number;
       x_axis?: number;
       y_axis?: number;
+      theme_id: number;
     }) => {
       try {
         const requestBody = {
@@ -152,6 +165,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           sticky_color: post.color,
           x_axis: post.x_axis || 0,
           y_axis: post.y_axis || 0,
+          theme_id: post.theme_id,
         };
 
         const response = await fetch("http://localhost:5000/api/sticky", {
@@ -169,7 +183,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           // failsafeとして1秒後にSocket更新がない場合は手動でデータを再読み込み
           setTimeout(() => {
             if (currentSchoolId) {
-              loadSchoolPosts(currentSchoolId);
+              loadSchoolPosts(currentSchoolId, theme?.theme_id || 0);
             }
           }, 1000);
         } else {
@@ -179,7 +193,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         console.error("付箋の作成に失敗しました:", error);
       }
     },
-    [currentSchoolId, loadSchoolPosts]
+    [currentSchoolId, loadSchoolPosts, theme]
   );
 
   const updatePost = useCallback(
@@ -281,6 +295,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         feedback_A: data.feedback_A,
         feedback_B: data.feedback_B,
         feedback_C: data.feedback_C,
+        theme_id: theme?.theme_id,
+        author_camp_id: data.author_camp_id,
       };
       setPosts((prev) => {
         console.log(
@@ -309,6 +325,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         feedback_A: data.feedback_A,
         feedback_B: data.feedback_B,
         feedback_C: data.feedback_C,
+        author_camp_id: data.author_camp_id,
       };
       setPosts((prev) =>
         prev.map((post) => (post.id === data.sticky_id ? updatedPost : post))

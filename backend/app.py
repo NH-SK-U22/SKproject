@@ -2,201 +2,38 @@ from flask import Flask, jsonify, request
 import sqlite3
 import json
 from flask_cors import CORS # Flask-CORSをインポート
-import os
 from flask_socketio import SocketIO, emit
+import os
 
 from components.init import init_db
 from components.signup import signup_o
 from components.login import login_o
+from components.message import message_o
+from components.colorset import colorset_o
+from components.student import student_o
+from components.themes import themes_o
+from components.init import get_db_connection
+from components.topicset import topicset_o
+from components.reward import reward_o
 
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
 
-# SocketIOを初期化
-socketio = SocketIO(app, cors_allowed_origins="*")
-
-init_db()
+socketio = SocketIO(app,cors_allowed_origins= "*")
 
 @app.route('/')
 def health():
     return jsonify({'status': 'ok'})
 
-# colorset
-@app.route('/api/colorsets/<camp>', methods=['GET'])
-def get_colorsets(camp):
-    try:
-        # camp1 = camp_type 1, camp2 = camp_type 2
-        camp_type = 1 if camp == 'camp1' else 2
-        
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute('SELECT group_number, colors FROM colorsets WHERE camp_type = ? ORDER BY group_number', (camp_type,))
-        rows = c.fetchall()
-        conn.close()
-        
-        colorsets = []
-        for row in rows:
-            colors = json.loads(row[1])
-            colorsets.append({
-                'group_number': row[0],
-                'colors': colors
-            })
-        
-        return jsonify(colorsets)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
+init_db()
+
+app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
 app.register_blueprint(login_o)
-
-@app.route('/api/students', methods=['GET'])
-def get_students():
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point,
-                            camp_id, theme_color, user_color, blacklist_point, created_at 
-                     FROM students ORDER BY created_at DESC''')
-        students = []
-        for row in c.fetchall():
-            students.append({
-                'id': row[0],
-                'school_id': row[1],
-                'class_id': row[2],
-                'number': row[3],
-                'name': row[4],
-                'user_type': row[5],
-                'sum_point': row[6],
-                'have_point': row[7],
-                'camp_id': row[8],
-                'theme_color': row[9],
-                'user_color': row[10],
-                'blacklist_point': row[11],
-                'created_at': row[12]
-            })
-        conn.close()
-        
-        return jsonify(students)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/students/<int:student_id>/points', methods=['PATCH'])
-def update_student_points(student_id):
-    if not request.json:
-        return jsonify({'error': 'リクエストボディが必要です'}), 400
-    
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        
-        update_fields = []
-        values = []
-        
-        if 'sum_point' in request.json:
-            update_fields.append('sum_point = ?')
-            values.append(request.json['sum_point'])
-        
-        if 'have_point' in request.json:
-            update_fields.append('have_point = ?')
-            values.append(request.json['have_point'])
-            
-        if 'blacklist_point' in request.json:
-            update_fields.append('blacklist_point = ?')
-            values.append(request.json['blacklist_point'])
-        
-        if not update_fields:
-            return jsonify({'error': '更新するフィールドがありません'}), 400
-        
-        values.append(student_id)
-        query = f"UPDATE students SET {', '.join(update_fields)} WHERE student_id = ?"
-        
-        c.execute(query, values)
-        conn.commit()
-        
-        if c.rowcount == 0:
-            conn.close()
-            return jsonify({'error': 'ユーザーが見つかりません'}), 404
-            
-        conn.close()
-        return jsonify({'status': 'success', 'message': 'ポイントが更新されました'})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/students/<int:student_id>/camp', methods=['PATCH'])
-def update_student_camp(student_id):
-    if not request.json:
-        return jsonify({'error': 'リクエストボディが必要です'}), 400
-    
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        
-        update_fields = []
-        values = []
-        
-        if 'camp_id' in request.json:
-            update_fields.append('camp_id = ?')
-            values.append(request.json['camp_id'])
-        
-        if 'theme_color' in request.json:
-            update_fields.append('theme_color = ?')
-            values.append(request.json['theme_color'])
-            
-        if 'user_color' in request.json:
-            update_fields.append('user_color = ?')
-            values.append(request.json['user_color'])
-        
-        if not update_fields:
-            return jsonify({'error': '更新するフィールドがありません'}), 400
-        
-        values.append(student_id)
-        query = f"UPDATE students SET {', '.join(update_fields)} WHERE student_id = ?"
-        
-        c.execute(query, values)
-        conn.commit()
-        
-        if c.rowcount == 0:
-            conn.close()
-            return jsonify({'error': 'Student not found'}), 404
-            
-        conn.close()
-        return jsonify({'status': 'success', 'message': '陣営設定が更新されました'})
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/students/class/<class_id>', methods=['GET'])
-def get_students_by_class(class_id):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point,
-                            camp_id, theme_color, user_color, blacklist_point, created_at 
-                     FROM students WHERE class_id = ? ORDER BY number''', (class_id,))
-        students = []
-        for row in c.fetchall():
-            students.append({
-                'id': row[0],
-                'school_id': row[1],
-                'class_id': row[2],
-                'number': row[3],
-                'name': row[4],
-                'user_type': row[5],
-                'sum_point': row[6],
-                'have_point': row[7],
-                'camp_id': row[8],
-                'theme_color': row[9],
-                'user_color': row[10],
-                'blacklist_point': row[11],
-                'created_at': row[12]
-            })
-        conn.close()
-        
-        return jsonify(students)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
+app.register_blueprint(student_o)
+app.register_blueprint(topicset_o)
+app.register_blueprint(reward_o)
 
 # Sticky Notes API endpoints
 @app.route('/api/sticky', methods=['POST'])
@@ -214,6 +51,9 @@ def create_sticky():
             print(f"DEBUG: Missing field: {field}")
             return jsonify({'error': f'{field}が必要です'}), 400
     
+    # theme_idを取得（任意項目として扱う場合はgetでOK）
+    theme_id = request.json.get('theme_id')
+
     try:
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
@@ -248,10 +88,12 @@ def create_sticky():
         new_display_index = (max_index_result[0] or 0) + 1
         
         # 付箋插入
-        c.execute('''INSERT INTO sticky (student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, feedback_A, feedback_B, feedback_C,
-                                         ai_summary_content, ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction,
-                                         teammate_avg_score, enemy_avg_score, overall_avg_score) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        c.execute('''INSERT INTO sticky (
+        student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, 
+        feedback_A, feedback_B, feedback_C, ai_summary_content, 
+        ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction, 
+        teammate_avg_score, enemy_avg_score, overall_avg_score, theme_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                  (request.json['student_id'], 
                   request.json['sticky_content'],
                   request.json['sticky_color'],
@@ -267,7 +109,9 @@ def create_sticky():
                   request.json.get('ai_overall_avg_prediction', 0),
                   request.json.get('teammate_avg_score', 0),
                   request.json.get('enemy_avg_score', 0),
-                  request.json.get('overall_avg_score', 0)))
+                  request.json.get('overall_avg_score', 0),
+                  theme_id  # 追加
+                 ))
         
         sticky_id = c.lastrowid
         
@@ -275,7 +119,7 @@ def create_sticky():
         c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                             s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                             s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                            s.overall_avg_score, s.created_at, st.name, st.school_id
+                            s.overall_avg_score, s.created_at, st.name, st.school_id, st.camp_id
                      FROM sticky s
                      JOIN students st ON s.student_id = st.student_id
                      WHERE s.sticky_id = ?''', (sticky_id,))
@@ -306,7 +150,8 @@ def create_sticky():
                 'overall_avg_score': sticky_data[16],
                 'created_at': sticky_data[17],
                 'student_name': sticky_data[18],
-                'school_id': sticky_data[19]
+                'school_id': sticky_data[19],
+                'author_camp_id': sticky_data[20]
             }
             
             # 同校の全ユーザーに新しい付箋を送信
@@ -333,22 +178,24 @@ def get_sticky_notes():
         
         student_id = request.args.get('student_id')
         school_id = request.args.get('school_id')
+        theme_id = request.args.get('theme_id')
         
-        # 付箋取得
-        if student_id:
+        #         # 付箋取得（camp_idも含める）
+        if school_id and theme_id:
+            # school_id と theme_id の両方で絞り込む
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
-                         WHERE s.student_id = ? ORDER BY s.display_index, s.created_at DESC''', (student_id,))
+                         WHERE st.school_id = ? AND s.theme_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id, theme_id))
         elif school_id:
             # 同校の全学生の付箋を取得
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          WHERE st.school_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id,))
@@ -356,7 +203,7 @@ def get_sticky_notes():
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                                 s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                                s.overall_avg_score, s.created_at, st.name
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          ORDER BY s.display_index, s.created_at DESC''')
@@ -382,7 +229,8 @@ def get_sticky_notes():
                 'enemy_avg_score': row[15],
                 'overall_avg_score': row[16],
                 'created_at': row[17],
-                'student_name': row[18]
+                'student_name': row[18],
+                'author_camp_id': row[19]
             })
         
         conn.close()
@@ -428,7 +276,7 @@ def update_sticky(sticky_id):
         c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                             s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
                             s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
-                            s.overall_avg_score, s.created_at, st.name, st.school_id
+                            s.overall_avg_score, s.created_at, st.name, st.school_id, st.camp_id
                      FROM sticky s
                      JOIN students st ON s.student_id = st.student_id
                      WHERE s.sticky_id = ?''', (sticky_id,))
@@ -458,7 +306,8 @@ def update_sticky(sticky_id):
                 'overall_avg_score': sticky_data[16],
                 'created_at': sticky_data[17],
                 'student_name': sticky_data[18],
-                'school_id': sticky_data[19]
+                'school_id': sticky_data[19],
+                'author_camp_id': sticky_data[20]
             }
             
             # 同校の全ユーザーに更新された付箋を送信
@@ -510,272 +359,136 @@ def delete_sticky(sticky_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Message API endpoints
-@app.route('/api/message', methods=['POST'])
-def create_message():
-    if not request.json:
-        return jsonify({'error': 'リクエストボディが必要です'}), 400
-    
-    required_fields = ['student_id', 'message_content', 'camp_id', 'sticky_id']
-    for field in required_fields:
-        if field not in request.json:
-            return jsonify({'error': f'{field}が必要です'}), 400
-    
+# 陣営別得点計算API
+@app.route('/api/camps/scores/<school_id>/<int:theme_id>', methods=['GET'])
+def get_camp_scores(school_id, theme_id):
     try:
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        c.execute('''INSERT INTO message (student_id, message_content, camp_id, sticky_id, feedback_A, feedback_B, feedback_C) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                 (request.json['student_id'], 
-                  request.json['message_content'],
-                  request.json['camp_id'],
-                  request.json['sticky_id'],
-                  request.json.get('feedback_A', 0),
-                  request.json.get('feedback_B', 0),
-                  request.json.get('feedback_C', 0)))
+        # 各陣営の得点を計算
+        # 同陣営の投票: A(+2), B(+1), C(-1)
+        # 敵陣営の投票: A(+6), B(+3), C(-1)
         
-        message_id = c.lastrowid
-        conn.commit()
-        conn.close()
+        c.execute('''
+            SELECT 
+                s.camp_id,
+                sv.vote_type,
+                st_voter.camp_id as voter_camp_id,
+                COUNT(*) as vote_count
+            FROM sticky sticky_target
+            JOIN students s ON sticky_target.student_id = s.student_id
+            JOIN sticky_votes sv ON sticky_target.sticky_id = sv.sticky_id
+            JOIN students st_voter ON sv.student_id = st_voter.student_id
+            WHERE s.school_id = ? AND sticky_target.theme_id = ?
+            GROUP BY s.camp_id, sv.vote_type, st_voter.camp_id
+        ''', (school_id, theme_id))
         
-        return jsonify({
-            'status': 'success',
-            'message': 'メッセージが作成されました',
-            'message_id': message_id
-        }), 201
+        vote_data = c.fetchall()
         
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/message/sticky/<int:sticky_id>', methods=['GET'])
-def get_messages_by_sticky(sticky_id):
-    try:
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
+        # 陣営別得点計算
+        camp_scores = {}
         
-        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
-                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name
-                     FROM message m
-                     JOIN students s ON m.student_id = s.student_id
-                     WHERE m.sticky_id = ? ORDER BY m.created_at ASC''', (sticky_id,))
+        for target_camp_id, vote_type, voter_camp_id, vote_count in vote_data:
+            if target_camp_id not in camp_scores:
+                camp_scores[target_camp_id] = 0
+            
+            is_same_camp = target_camp_id == voter_camp_id
+            
+            if is_same_camp:
+                # 同陣営の得点配分
+                if vote_type == 'A':  # めっちゃ共感！
+                    camp_scores[target_camp_id] += vote_count * 2
+                elif vote_type == 'B':  # なるほどね
+                    camp_scores[target_camp_id] += vote_count * 1
+                elif vote_type == 'C':  # それはちょっと違うんじゃない
+                    camp_scores[target_camp_id] += vote_count * (-1)
+            else:
+                # 敵陣営の得点配分
+                if vote_type == 'A':  # 意見が変わるくらい納得
+                    camp_scores[target_camp_id] += vote_count * 6
+                elif vote_type == 'B':  # 意見は変わらんけど興味深い
+                    camp_scores[target_camp_id] += vote_count * 3
+                elif vote_type == 'C':  # そうは思わないな
+                    camp_scores[target_camp_id] += vote_count * (-1)
         
-        messages = []
-        for row in c.fetchall():
-            messages.append({
-                'message_id': row[0],
-                'student_id': row[1],
-                'message_content': row[2],
-                'camp_id': row[3],
-                'sticky_id': row[4],
-                'feedback_A': row[5],
-                'feedback_B': row[6],
-                'feedback_C': row[7],
-                'created_at': row[8],
-                'student_name': row[9]
+        # 陣営名を取得
+        c.execute('''
+            SELECT camp_id, camp_name
+            FROM camps
+            WHERE theme_id = ?
+        ''', (theme_id,))
+        
+        camp_names = dict(c.fetchall())
+        
+        # 結果をフォーマット
+        result = []
+        for camp_id, score in camp_scores.items():
+            result.append({
+                'camp_id': camp_id,
+                'camp_name': camp_names.get(camp_id, f'陣営{camp_id}'),
+                'score': score
             })
         
+        # 陣営IDでソート
+        result.sort(key=lambda x: x['camp_id'])
+        
         conn.close()
-        return jsonify(messages)
+        return jsonify({
+            'status': 'success',
+            'scores': result
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-#データベース接続関数を追加
-def get_db_connection():
-    # データベースファイルのパスを設定
-    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
-    
-    if not os.path.exists(db_path):
-        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
-    
-    try:
-        conn = sqlite3.connect(db_path)
-        return conn
-    except sqlite3.Error as e:
-        raise
+app.register_blueprint(message_o)
+
 
 # 基本的なヘルスチェック用エンドポイント
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'ok', 'message': 'サーバーは正常に動作しています'}), 200
 
-# 報酬を追加するAPI
-@app.route('/api/rewards', methods=['POST', 'OPTIONS'])
-def add_reward():
-    # OPTIONSリクエストへの対応
-    if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-        return response, 200
-    
-    try:
-        # リクエストからJSONデータを取得        
-        # Content-Typeが設定されていない場合でもJSONとして扱う
-        if request.content_type == 'application/json':
-            data = request.get_json()
-        else:
-            # Content-Typeがない場合、手動でJSONパース
-            try:
-                import json
-                data = json.loads(request.data.decode('utf-8'))
-            except (json.JSONDecodeError, UnicodeDecodeError) as e:
-                return jsonify({'error': 'JSONデータの解析に失敗しました'}), 400
-        
-        # 必要なフィールドが存在するかチェック
-        if not data:
-            return jsonify({'error': 'データが送信されませんでした'}), 400
-        
-        required_fields = ['reward_content', 'need_point', 'need_rank', 'creater']
-        for field in required_fields:
-            if field not in data:
-                return jsonify({'error': f'{field}が不足しています'}), 400
-        
-        # データの型チェック
-        if not isinstance(data['need_point'], int) or data['need_point'] <= 0:
-            return jsonify({'error': '必要ポイントは正の整数である必要があります'}), 400
-        
-        if not isinstance(data['need_rank'], int) or data['need_rank'] < 0:
-            return jsonify({'error': '必要ランクは0以上の整数である必要があります'}), 400
-        
-        if not data['reward_content'].strip():
-            return jsonify({'error': '報酬の内容を入力してください'}), 400
-        
-        # データベースに挿入
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        try:
-            cursor.execute('''
-                INSERT INTO reward (reward_content, need_point, need_rank, creater)
-                VALUES (?, ?, ?, ?)
-            ''', (
-                data['reward_content'].strip(),
-                data['need_point'],
-                data['need_rank'],
-                data['creater']
-            ))
-            
-            conn.commit()
-            reward_id = cursor.lastrowid
-            
-            # 成功レスポンス
-            response_data = {
-                'message': '報酬が正常に追加されました',
-                'reward_id': reward_id,
-                'data': {
-                    'reward_content': data['reward_content'].strip(),
-                    'need_point': data['need_point'],
-                    'need_rank': data['need_rank'],
-                    'creater': data['creater']
-                }
-            }
-            return jsonify(response_data), 201
-            
-        except sqlite3.IntegrityError as e:
-            # 重複エラー（UNIQUE制約違反）
-            if 'UNIQUE constraint failed' in str(e):
-                return jsonify({'error': 'この報酬は既に存在します'}), 409
-            else:
-                return jsonify({'error': 'データベースエラーが発生しました'}), 500
-        
-        finally:
-            conn.close()
-    
-    except Exception as e:
-        import traceback
-        return jsonify({'error': 'サーバーエラーが発生しました'}), 500
+
+
+@socketio.on('join_sticky_chat')
+def handle_join_sticky_chat(data):
+    """付箋チャットに参加"""
+    sticky_id = data.get('sticky_id')
+    if sticky_id:
+        from flask_socketio import join_room
+        room_name = f"sticky_{sticky_id}"
+        join_room(room_name)
+        print(f"DEBUG: Client joined sticky chat room: {room_name}")
+    else:
+        print(f"DEBUG: join_sticky_chat called without sticky_id: {data}")
+
+@socketio.on('leave_sticky_chat')
+def handle_leave_sticky_chat(data):
+    """付箋チャットから退出"""
+    sticky_id = data.get('sticky_id')
+    if sticky_id:
+        from flask_socketio import leave_room
+        room_name = f"sticky_{sticky_id}"
+        leave_room(room_name)
+        print(f"DEBUG: Client left sticky chat room: {room_name}")
+    else:
+        print(f"DEBUG: leave_sticky_chat called without sticky_id: {data}")
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    """メッセージ送信を処理"""
+    required_fields = ['student_id', 'message_content', 'camp_id', 'sticky_id']
+    for field in required_fields:
+        if field not in data:
+            print(f"DEBUG: send_message missing field: {field}")
+            return
     
     
 # --- debate_settings エンドポイント ------------------------
 
-# 1) テーマ一覧を取得
-@app.route('/api/themes', methods=['GET'])
-def list_themes():
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('''
-      SELECT theme_id, title, description, colorset_id, start_date, end_date
-        FROM debate_settings
-        ORDER BY start_date DESC
-    ''')
-    themes = [dict(row) for row in c.fetchall()]
-    conn.close()
-    return jsonify(themes)
-
-
-# 2) 新しいテーマを作成
-@app.route('/api/themes', methods=['POST'])
-def create_theme():
-    data = request.get_json() or {}
-    required = ['title', 'description', 'colorset_id', 'start_date', 'end_date']
-    for f in required:
-        if f not in data:
-            return jsonify({'error': f'{f} が必要です'}), 400
-
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('''
-      INSERT INTO debate_settings
-        (title, description, colorset_id, start_date, end_date)
-      VALUES (?, ?, ?, ?, ?)
-    ''', (
-      data['title'],
-      data['description'],
-      data['colorset_id'],
-      data['start_date'],
-      data['end_date'],
-    ))
-    theme_id = c.lastrowid
-    conn.commit()
-    conn.close()
-    return jsonify({'theme_id': theme_id}), 201
-
-
-# 3) テーマ詳細を取得
-@app.route('/api/themes/<int:theme_id>', methods=['GET'])
-def get_theme(theme_id):
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('''
-      SELECT theme_id, title, description, colorset_id, start_date, end_date
-        FROM debate_settings
-       WHERE theme_id = ?
-    ''', (theme_id,))
-    row = c.fetchone()
-    conn.close()
-    if not row:
-        return jsonify({'error': 'テーマが見つかりません'}), 404
-    return jsonify(dict(row))
-
-
-# 4) テーマ情報を更新
-@app.route('/api/themes/<int:theme_id>', methods=['PATCH'])
-def update_theme(theme_id):
-    data = request.get_json() or {}
-    fields = []
-    vals = []
-    for col in ('title', 'description', 'colorset_id', 'start_date', 'end_date'):
-        if col in data:
-            fields.append(f"{col} = ?")
-            vals.append(data[col])
-    if not fields:
-        return jsonify({'error': '更新フィールドがありません'}), 400
-
-    vals.append(theme_id)
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute(f'''
-      UPDATE debate_settings
-         SET {', '.join(fields)}
-       WHERE theme_id = ?
-    ''', vals)
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'updated'})
-
+app.register_blueprint(themes_o)
 
 # --- camps エンドポイント ----------------------------------
 
@@ -834,120 +547,173 @@ def update_camp(camp_id):
 
 # --- holdReward エンドポイント ----------------------
 
-# 1) すべての保持報酬（または student_id で絞り込み）を取得
-@app.route('/api/holdRewards', methods=['GET'])
-def list_hold_rewards():
+
+# Socket.IO イベント処理
+@socketio.on('connect')
+def handle_connect():
+    print('DEBUG: Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('DEBUG: Client disconnected')
+
+@socketio.on('join_school')
+def handle_join_school(data):
+    """学校のルームに参加"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import join_room
+        room_name = f"school_{school_id}"
+        join_room(room_name)
+        print(f"DEBUG: Client joined school room: {room_name}")
+    else:
+        print(f"DEBUG: join_school called without school_id: {data}")
+
+@socketio.on('leave_school')
+def handle_leave_school(data):
+    """学校のルームから退出"""
+    school_id = data.get('school_id')
+    if school_id:
+        from flask_socketio import leave_room
+        room_name = f"school_{school_id}"
+        leave_room(room_name)
+        print(f"DEBUG: Client left school room: {room_name}")
+    else:
+        print(f"DEBUG: leave_school called without school_id: {data}")
+
+# 投票状態API
+@app.route('/api/sticky/<int:sticky_id>/vote-status/<int:student_id>', methods=['GET'])
+def get_vote_status(sticky_id, student_id):
     try:
-        student_id = request.args.get('student_id', type=int)
-        conn = get_db_connection()
+        conn = sqlite3.connect('database.db')
         c = conn.cursor()
-        if student_id is not None:
-            c.execute('''
-              SELECT hold_id, student_id, reward_id, is_holding, used_at
-                FROM holdReward
-               WHERE student_id = ?
-            ''', (student_id,))
+        
+        # ユーザーが投票したかどうかを確認
+        c.execute('''SELECT vote_type FROM sticky_votes 
+                     WHERE student_id = ? AND sticky_id = ?''', 
+                  (student_id, sticky_id))
+        
+        vote_record = c.fetchone()
+        
+        # 投票できるかどうかを確認（自分のstickyではない）
+        c.execute('''SELECT student_id FROM sticky WHERE sticky_id = ?''', (sticky_id,))
+        sticky_author = c.fetchone()
+        
+        conn.close()
+        
+        if not sticky_author:
+            return jsonify({'error': 'Sticky not found'}), 404
+        
+        can_vote = sticky_author[0] != student_id
+        
+        return jsonify({
+            'voted': vote_record is not None,
+            'vote_type': vote_record[0] if vote_record else None,
+            'can_vote': can_vote
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 投票API
+@app.route('/api/sticky/<int:sticky_id>/feedback', methods=['POST'])
+def submit_feedback(sticky_id):
+    if not request.json:
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
+    
+    try:
+        student_id = request.json.get('student_id')
+        feedback_type = request.json.get('feedback_type')
+        
+        if not student_id or not feedback_type:
+            return jsonify({'error': 'student_id と feedback_type が必要です'}), 400
+        
+        if feedback_type not in ['A', 'B', 'C']:
+            return jsonify({'error': '無効な feedback_type です'}), 400
+        
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        
+        # 自分のstickyには投票できない
+        c.execute('''SELECT student_id FROM sticky WHERE sticky_id = ?''', (sticky_id,))
+        sticky_author = c.fetchone()
+        
+        if not sticky_author:
+            conn.close()
+            return jsonify({'error': 'Sticky not found'}), 404
+        
+        if sticky_author[0] == student_id:
+            conn.close()
+            return jsonify({'error': '自分の付箋には投票できません'}), 400
+        
+        # 既存の投票を確認
+        c.execute('''SELECT vote_type FROM sticky_votes 
+                     WHERE student_id = ? AND sticky_id = ?''', 
+                  (student_id, sticky_id))
+        
+        existing_vote = c.fetchone()
+        
+        if existing_vote:
+            # 既存の投票を更新
+            old_vote_type = existing_vote[0]
+            
+            # 古い投票のカウントを減らす
+            c.execute(f'''UPDATE sticky SET feedback_{old_vote_type} = feedback_{old_vote_type} - 1 
+                         WHERE sticky_id = ?''', (sticky_id,))
+            
+            # 新しい投票のカウントを増やす
+            c.execute(f'''UPDATE sticky SET feedback_{feedback_type} = feedback_{feedback_type} + 1 
+                         WHERE sticky_id = ?''', (sticky_id,))
+            
+            # 投票記録を更新
+            c.execute('''UPDATE sticky_votes SET vote_type = ?, created_at = datetime('now', '+9 hours')
+                         WHERE student_id = ? AND sticky_id = ?''', 
+                      (feedback_type, student_id, sticky_id))
         else:
-            c.execute('''
-              SELECT hold_id, student_id, reward_id, is_holding, used_at
-                FROM holdReward
-            ''')
-        rows = c.fetchall()
-        conn.close()
-
-        result = []
-        for r in rows:
-            result.append({
-                'hold_id':    r[0],
-                'student_id': r[1],
-                'reward_id':  r[2],
-                'is_holding': bool(r[3]),
-                'used_at':    r[4]
-            })
-        return jsonify(result)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# 2) 新しい保持報酬を作成
-@app.route('/api/holdRewards', methods=['POST'])
-def create_hold_reward():
-    data = request.get_json() or {}
-    if 'student_id' not in data or 'reward_id' not in data:
-        return jsonify({'error': 'student_id と reward_id が必要です'}), 400
-
-    try:
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('''
-          INSERT INTO holdReward (student_id, reward_id, is_holding, used_at)
-          VALUES (?, ?, ?, ?)
-        ''', (
-          data['student_id'],
-          data['reward_id'],
-          data.get('is_holding', True),
-          data.get('used_at')  # null なら自動で NULL
-        ))
-        hold_id = c.lastrowid
+            # 新しい投票を追加
+            c.execute(f'''UPDATE sticky SET feedback_{feedback_type} = feedback_{feedback_type} + 1 
+                         WHERE sticky_id = ?''', (sticky_id,))
+            
+            # 投票記録を追加
+            c.execute('''INSERT INTO sticky_votes (student_id, sticky_id, vote_type) 
+                         VALUES (?, ?, ?)''', (student_id, sticky_id, feedback_type))
+        
+        # 更新後のフィードバック数を取得
+        c.execute('''SELECT feedback_A, feedback_B, feedback_C FROM sticky 
+                     WHERE sticky_id = ?''', (sticky_id,))
+        
+        feedback_counts = c.fetchone()
+        
+        # 同校の全ユーザーに更新情報を送信
+        c.execute('''SELECT st.school_id FROM sticky s
+                     JOIN students st ON s.student_id = st.student_id
+                     WHERE s.sticky_id = ?''', (sticky_id,))
+        school_result = c.fetchone()
+        
         conn.commit()
         conn.close()
-        return jsonify({'hold_id': hold_id}), 201
+        
+        # Socket.IOでフィードバック更新を通知
+        if school_result:
+            socketio.emit('feedback_updated', {
+                'sticky_id': sticky_id,
+                'feedback_A': feedback_counts[0],
+                'feedback_B': feedback_counts[1],
+                'feedback_C': feedback_counts[2]
+            }, to=f"school_{school_result[0]}")
+        
+        return jsonify({
+            'status': 'success',
+            'message': '投票が完了しました',
+            'feedback_counts': {
+                'feedback_A': feedback_counts[0],
+                'feedback_B': feedback_counts[1],
+                'feedback_C': feedback_counts[2]
+            }
+        })
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-
-# 3) 保持報酬の更新（is_holding / used_at など）
-@app.route('/api/holdRewards/<int:hold_id>', methods=['PATCH'])
-def update_hold_reward(hold_id):
-    data = request.get_json() or {}
-    allowed = []
-    vals = []
-    if 'is_holding' in data:
-        allowed.append('is_holding = ?')
-        vals.append(1 if data['is_holding'] else 0)
-    if 'used_at' in data:
-        allowed.append('used_at = ?')
-        vals.append(data['used_at'])
-    if not allowed:
-        return jsonify({'error': '更新できるフィールドがありません'}), 400
-
-    vals.append(hold_id)
-    try:
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute(f'''
-          UPDATE holdReward
-             SET {', '.join(allowed)}
-           WHERE hold_id = ?
-        ''', vals)
-        conn.commit()
-        if c.rowcount == 0:
-            conn.close()
-            return jsonify({'error': 'hold_id が見つかりません'}), 404
-        conn.close()
-        return jsonify({'status': 'updated'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# 4) 保持報酬の削除
-@app.route('/api/holdRewards/<int:hold_id>', methods=['DELETE'])
-def delete_hold_reward(hold_id):
-    try:
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('DELETE FROM holdReward WHERE hold_id = ?', (hold_id,))
-        conn.commit()
-        if c.rowcount == 0:
-            conn.close()
-            return jsonify({'error': 'hold_id が見つかりません'}), 404
-        conn.close()
-        return jsonify({'status': 'deleted'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)

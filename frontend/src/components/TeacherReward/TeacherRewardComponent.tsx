@@ -1,13 +1,21 @@
 import React, { useState } from "react";
 import styles from "./TeacherRewardComponent.module.css";
 
+import { IoClose } from "react-icons/io5";
+
 interface RewardForm {
   content: string;
   points: string;
   rank: "ブロンズ" | "シルバー" | "ゴールド" | "ダイヤモンド";
 }
 
-const TeacherRewardComponent = () => {
+interface TeacherRewardComponentProps {
+  fetchRewards: () => void;
+}
+
+const TeacherRewardComponent: React.FC<TeacherRewardComponentProps> = ({
+  fetchRewards,
+}) => {
   const [showPopup, setShowPopup] = useState(false);
   const [formData, setFormData] = useState<RewardForm>({
     content: "",
@@ -15,7 +23,7 @@ const TeacherRewardComponent = () => {
     rank: "ブロンズ",
   });
 
-  const [isSubmitting,setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleClick = () => {
     setShowPopup(true);
@@ -40,13 +48,18 @@ const TeacherRewardComponent = () => {
     }));
   };
 
-  const rankToNumber = (rank:string): number => {
+  const rankToNumber = (rank: string): number => {
     switch (rank) {
-      case "ブロンズ":return 0;
-      case "シルバー":return 1;
-      case "ゴールド":return 2;
-      case "ダイヤモンド":return 3;
-      default: return 0;
+      case "ブロンズ":
+        return 0;
+      case "シルバー":
+        return 1;
+      case "ゴールド":
+        return 2;
+      case "ダイヤモンド":
+        return 3;
+      default:
+        return 0;
     }
   };
 
@@ -61,7 +74,7 @@ const TeacherRewardComponent = () => {
       return;
     }
     setIsSubmitting(true);
-  
+
     try {
       const requestData = {
         reward_content: formData.content,
@@ -69,28 +82,26 @@ const TeacherRewardComponent = () => {
         need_rank: rankToNumber(formData.rank),
         creater: 1,
       };
-  
+
       // handleSubmit関数のfetchリクエストを修正
       const response = await fetch("http://localhost:5000/api/rewards", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(requestData),
       });
-      
+
       if (response.ok) {
         const result = await response.json();
         console.log("✅ 成功レスポンス:", result);
         alert("報酬が正常に追加されました！");
         handleClose();
+        fetchRewards();
       } else {
         console.log("❌ エラーレスポンス (status:", response.status, ")");
-        
+
         // レスポンスの内容を詳しく確認
         const responseText = await response.text();
         console.log("📝 エラーレスポンス内容 (text):", responseText);
-        
+
         try {
           const errorData = JSON.parse(responseText);
           console.log("📝 エラーレスポンス内容 (JSON):", errorData);
@@ -107,7 +118,6 @@ const TeacherRewardComponent = () => {
     }
   };
 
-
   return (
     <>
       <div className={styles.addButton} onClick={handleClick}>
@@ -119,7 +129,7 @@ const TeacherRewardComponent = () => {
           <div className={styles.popup}>
             <h2 className={styles.popupTitle}>報酬の追加</h2>
             <button className={styles.closeButton} onClick={handleClose}>
-              閉じる
+              <IoClose />
             </button>
 
             <div className={styles.formGroup}>
@@ -165,9 +175,12 @@ const TeacherRewardComponent = () => {
               </select>
             </div>
 
-            <button className={styles.submitButton} onClick={handleSubmit} disabled={isSubmitting}>
+            <button
+              className={styles.submitButton}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
               {isSubmitting ? "追加中..." : "追加"}
-         {isSubmitting ? "追加中..." : "追加"}
             </button>
           </div>
         </div>

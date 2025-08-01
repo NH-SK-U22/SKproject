@@ -1,4 +1,6 @@
 import sqlite3
+from flask import current_app
+import os
 
 def init_db():
     conn = sqlite3.connect('database.db')
@@ -45,6 +47,7 @@ def init_db():
         teammate_avg_score REAL DEFAULT 0,
         enemy_avg_score REAL DEFAULT 0,
         overall_avg_score REAL DEFAULT 0,
+        theme_id INTEGER NOT NULL,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
@@ -90,9 +93,18 @@ def init_db():
         class_id TEXT NOT NULL,
         password TEXT NOT NULL,
         number TEXT NOT NULL,
+        name TEXT,
         user_type TEXT NOT NULL CHECK(user_type IN ('student', 'teacher')),
         UNIQUE(school_id,class_id,number,user_type)
     )''')
+    
+    # nameフィールドのマイグレーション（既存のテーブルにフィールドを追加）
+    try:
+        c.execute('ALTER TABLE teachers ADD COLUMN name TEXT')
+        print("Added name column to teachers table")
+    except sqlite3.OperationalError:
+        # カラムが既に存在する場合はスキップする
+        pass
     
     # reward tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS reward(
@@ -123,8 +135,12 @@ def init_db():
         colorset_id   INTEGER NOT NULL,          -- colorsets.id を参照
         start_date   TIMESTAMP NOT NULL,   -- 開始日
         end_date     TIMESTAMP NOT NULL,    -- 終了日
+        team1        TEXT    NOT NULL,
+        team2        TEXT    NOT NULL,
+        school_id    INTEGER NOT NULL,
         FOREIGN KEY(colorset_id) REFERENCES colorsets(id)
     )''')
+    
     # campsを作成(陣営)
     c.execute('''CREATE TABLE IF NOT EXISTS camps (
         camp_id     INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,6 +148,18 @@ def init_db():
         camp_name   TEXT    NOT NULL,      -- 陣営名
         is_winner   BOOLEAN NOT NULL DEFAULT 0,  -- 勝敗フラグ：勝者なら1
         FOREIGN KEY(theme_id) REFERENCES debate_settings(theme_id)
+    )''')
+    
+    # sticky_votes tableを作成（投票記録）
+    c.execute('''CREATE TABLE IF NOT EXISTS sticky_votes(
+        vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,
+        sticky_id INTEGER NOT NULL,
+        vote_type TEXT NOT NULL CHECK(vote_type IN ('A', 'B', 'C')),
+        created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        FOREIGN KEY (student_id) REFERENCES students(student_id),
+        FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id),
+        UNIQUE(student_id, sticky_id)
     )''')
     
     # colorsetsデータの挿入
@@ -166,3 +194,16 @@ def init_db():
     conn.commit()
     conn.close()
     
+#データベース接続関数を追加
+def get_db_connection():
+    # データベースファイルのパスを設定
+    db_path = 'database.db'  # 実際のデータベースファイル名に変更してください
+    
+    if not os.path.exists(db_path):
+        raise FileNotFoundError(f"データベースファイルが見つかりません: {db_path}")
+    
+    try:
+        conn = sqlite3.connect(db_path)
+        return conn
+    except sqlite3.Error as e:
+        raise

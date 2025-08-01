@@ -1,52 +1,58 @@
-import { useState } from 'react';
-import {
-  Box,
-  TextField,
-  Button,
-  Paper,
-  Typography,
-  Grid,
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { ja } from 'date-fns/locale/ja';
+import { useState } from "react";
+import { Box, TextField, Button, Paper, Typography } from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { ja } from "date-fns/locale/ja";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { getCurrentUser } from "../../utils/auth";
 
-interface Topic {
-  id: number;
-  title: string;
-  description: string;
-  startDate: Date;
-  endDate: Date;
-  team1: string;
-  team2: string;
-}
-
-interface TopicFormProps {
-  onAddTopic: (topic: Omit<Topic, 'id'>) => void;
-}
-
-const TopicForm = ({ onAddTopic }: TopicFormProps) => {
+const TopicForm = () => {
   const [topic, setTopic] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     startDate: new Date(),
     endDate: new Date(),
-    team1: '',
-    team2: '',
+    team1: "",
+    team2: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const user = getCurrentUser(); // ユーザー情報取得
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAddTopic(topic);
-    setTopic({
-      title: '',
-      description: '',
-      startDate: new Date(),
-      endDate: new Date(),
-      team1: '',
-      team2: '',
-    });
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/topics`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...topic,
+          // 日付はISO文字列で送るのが一般的
+          startDate: topic.startDate.toISOString(),
+          endDate: topic.endDate.toISOString(),
+          school_id: user?.school_id, // school_idを追加
+          // colorset_idは後端でランダム生成
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("テーマ追加に失敗しました");
+      }
+
+      alert("テーマが追加されました");
+      setTopic({
+        title: "",
+        description: "",
+        startDate: new Date(),
+        endDate: new Date(),
+        team1: "",
+        team2: "",
+      });
+    } catch {
+      alert("テーマ追加に失敗しました");
+    }
   };
 
   return (
@@ -73,27 +79,34 @@ const TopicForm = ({ onAddTopic }: TopicFormProps) => {
           rows={4}
           required
         />
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+
+        <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
             <Box sx={{ flex: 1 }}>
-              <DatePicker
-                label="開始日"
+              <DateTimePicker
+                label="開始日時"
                 value={topic.startDate}
-                onChange={(newValue) => setTopic({ ...topic, startDate: newValue || new Date() })}
+                onChange={(newValue) =>
+                  setTopic({ ...topic, startDate: newValue || new Date() })
+                }
                 slotProps={{ textField: { fullWidth: true } }}
+                views={["year", "month", "day", "hours", "minutes", "seconds"]}
               />
             </Box>
             <Box sx={{ flex: 1 }}>
-              <DatePicker
-                label="終了日"
+              <DateTimePicker
+                label="終了日時"
                 value={topic.endDate}
-                onChange={(newValue) => setTopic({ ...topic, endDate: newValue || new Date() })}
+                onChange={(newValue) =>
+                  setTopic({ ...topic, endDate: newValue || new Date() })
+                }
                 slotProps={{ textField: { fullWidth: true } }}
+                views={["year", "month", "day", "hours", "minutes", "seconds"]}
               />
             </Box>
           </LocalizationProvider>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+        <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
           <TextField
             fullWidth
             label="陣営1"
@@ -113,7 +126,7 @@ const TopicForm = ({ onAddTopic }: TopicFormProps) => {
           type="submit"
           variant="contained"
           color="primary"
-          sx={{ mt: 2, backgroundColor: '#00e6b8' }}
+          sx={{ mt: 2, backgroundColor: "#00e6b8" }}
         >
           テーマを追加
         </Button>

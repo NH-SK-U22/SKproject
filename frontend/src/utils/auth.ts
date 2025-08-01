@@ -32,29 +32,29 @@ export const getCurrentUser = (): User | null => {
   }
 };
 
-// 獲取用戶類型
+// ユーザータイプの取得
 export const getUserType = (): "student" | "teacher" | null => {
   const user = getCurrentUser();
   return user ? user.user_type : null;
 };
 
-// 登出功能
+// ログアウト機能
 export const logout = (): void => {
   localStorage.removeItem("user");
   localStorage.removeItem("isLoggedIn");
 };
 
-// 檢查用戶是否為老師
+// ユーザーが教師であるかどうかを確認する
 export const isTeacher = (): boolean => {
   return getUserType() === "teacher";
 };
 
-// 檢查用戶是否為學生
+// ユーザーが学生であるかどうかを確認する
 export const isStudent = (): boolean => {
   return getUserType() === "student";
 };
 
-// 需要身份驗證的路由保護
+// 身分認証が必要なルーティング保護
 export const requireAuth = (): User | null => {
   if (!isLoggedIn()) {
     return null;

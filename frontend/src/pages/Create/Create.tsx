@@ -1,59 +1,104 @@
 // react
 import React, { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { usePost } from "../../context/PostContext";
+import { useDebateTheme } from "../../context/DebateThemeContext";
 
 // components
 import Sidebar from "../../components/Sidebar/Sidebar";
+import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import Loading from "../../components/Loading/Loading";
 
 // utils
-import { getCurrentUser } from "../../utils/auth";
+import { getCurrentUser, type User } from "../../utils/auth";
 
 // css
 import styles from "./Create.module.css";
 
 interface ColorSetResponse {
-  group_number: number;
+  camp_type: number;
   colors: string[];
 }
 
-const Create = () => {
-  const [searchParams] = useSearchParams();
-  const camp = searchParams.get("camp") || "camp1";
+interface ThemeColorResponse {
+  group_number: number;
+  colorsets: ColorSetResponse[];
+}
 
+const Create = () => {
   const [colors, setColors] = useState<string[]>([]);
   const [post, setPost] = useState("");
   const [selectColor, setSelectColor] = useState(0);
   const [showLoading, setShowLoading] = useState(false);
   const navigate = useNavigate();
   const { addPost } = usePost();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { theme, fetchTheme } = useDebateTheme();
 
   useEffect(() => {
-    // loading画面の表示を遅らせるタイマー
-    const loadingTimer = setTimeout(() => {
-      setShowLoading(true);
-    }, 500); // loading画面は500ms後に表示
+    // テーマに関する情報を取得する
+    fetchTheme();
 
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+    }
+  }, [fetchTheme]);
+
+  // theme が取得されたときに色を設定
+  useEffect(() => {
     const fetchColorSets = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/colorsets/${camp}`
-        );
-        if (response.ok) {
-          const data: ColorSetResponse[] = await response.json();
-          const colorSetsArray = data.map((item) => item.colors);
+        if (theme?.theme_id && currentUser?.camp_id) {
+          const response = await fetch(
+            `http://localhost:5000/api/colorsets/theme/${theme.theme_id}`
+          );
+          if (response.ok) {
+            const data: ThemeColorResponse = await response.json();
 
-          // 陣営のcolorsetからランダムに選ぶ
-          if (colorSetsArray.length > 0) {
-            const randomIndex = Math.floor(
-              Math.random() * colorSetsArray.length
-            );
-            setColors(colorSetsArray[randomIndex]);
+            // ユーザーの陣営に対応する色グループを選択
+            if (data.colorsets && data.colorsets.length > 0) {
+              // ユーザーのcamp_idに対応するcolorsetを探す
+              const userCampColorset = data.colorsets.find(
+                (colorset) => colorset.camp_type === currentUser.camp_id
+              );
+
+              if (userCampColorset) {
+                setColors(userCampColorset.colors);
+              } else {
+                // 対応するcolorsetが見つからない場合、最初のcolorsetを使用
+                console.warn(
+                  "ユーザーの陣営に対応するcolorsetが見つかりません。最初のcolorsetを使用します。"
+                );
+                setColors(data.colorsets[0].colors);
+              }
+            } else {
+              // フォールバック用のデフォルトカラー
+              setColors([
+                "#8097f9",
+                "#6273f2",
+                "#343be4",
+                "#373acb",
+                "#2f33a4",
+              ]);
+            }
+          } else {
+            console.error("カラーセットのフェッチに失敗");
+            // デフォルトのカラーにフォールバック
+            setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
           }
         } else {
-          console.error("カラーセットのフェッチに失敗");
-          // デフォルトのカラーにフォールバック
+          if (!theme?.theme_id) {
+            console.warn(
+              "テーマが取得できませんでした。デフォルトカラーを使用します。"
+            );
+          }
+          if (!currentUser?.camp_id) {
+            console.warn(
+              "ユーザーの陣営情報が取得できませんでした。デフォルトカラーを使用します。"
+            );
+          }
+          // テーマまたは陣営情報がない場合もデフォルトカラーを設定
           setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
         }
       } catch (error) {
@@ -61,17 +106,15 @@ const Create = () => {
         // デフォルトのカラーにフォールバック
         setColors(["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]);
       } finally {
+        // どんな場合でもloading状態を解除
         setShowLoading(false);
-        clearTimeout(loadingTimer);
       }
     };
 
-    fetchColorSets();
-
-    return () => {
-      clearTimeout(loadingTimer);
-    };
-  }, [camp]);
+    // themeとcurrentUserの取得を待つため少し遅延させる
+    const timer = setTimeout(fetchColorSets, 200);
+    return () => clearTimeout(timer);
+  }, [theme, currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +124,10 @@ const Create = () => {
     if (!currentUser) {
       console.error("ログインしているユーザーがいない");
       navigate("/login");
+      return;
+    }
+    if (!theme?.theme_id) {
+      alert("テーマ情報が取得できません");
       return;
     }
 
@@ -94,6 +141,7 @@ const Create = () => {
       student_id: currentUser.id,
       x_axis: randomX,
       y_axis: randomY,
+      theme_id: theme.theme_id,
     });
 
     setPost("");
@@ -112,7 +160,7 @@ const Create = () => {
 
   return (
     <div className={styles.container}>
-      <Sidebar />
+      {currentUser?.user_type === "teacher" ? <TeacherSidebar /> : <Sidebar />}
       <form className={styles.createForm} onSubmit={handleSubmit}>
         <h2>Add new post</h2>
         <textarea

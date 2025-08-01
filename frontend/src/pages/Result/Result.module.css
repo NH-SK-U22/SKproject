@@ -1,0 +1,176 @@
+.container,
+.container * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.container {
+  height: 100vh;
+  width: calc(100vw - 70px);
+  margin: 0;
+  margin-left: 70px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.up {
+  position: fixed;
+  top: 0;
+  left: 70px;
+  width: calc(100vw - 70px);
+  height: 80px;
+  margin-bottom: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  z-index: 1000;
+  overflow-x: hidden;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.resultp {
+  margin: 0;
+  color: #00e6b8;
+  font-size: 2.6rem;
+  font-weight: bold;
+  text-align: center;
+  font-family: "Noto Sans JP", sans-serif;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.down {
+  width: 100%;
+  height: calc(100vh - 100px);
+  margin-top: 100px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  box-sizing: border-box;
+  gap: 2rem;
+}
+
+.loadingContainer {
+  display: flex;
+  height: 100vh;
+  width: calc(100vw - 70px);
+  margin-left: 70px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.loadingContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.errorContainer {
+  text-align: center;
+  padding: 2rem;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.errorText {
+  color: #e53e3e;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  font-family: "Noto Sans JP", sans-serif;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.noDataContainer {
+  text-align: center;
+  padding: 3rem;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.noDataText {
+  color: #718096;
+  font-size: 1.2rem;
+  font-weight: 500;
+  margin: 0;
+  font-family: "Noto Sans JP", sans-serif;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.buttonContainer {
+  position: relative;
+  margin-top: 2rem;
+  width: auto;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.homeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 2rem;
+  color: white;
+  background: linear-gradient(90deg, #00e6b8 0%, #05b18e 100%);
+  border: none;
+  border-radius: 32px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-family: "Noto Sans JP", sans-serif;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 12px 0 #25e2b655, 0 0 8px 2px #25e2b633;
+  max-width: calc(100% - 4rem);
+  box-sizing: border-box;
+  white-space: nowrap;
+  min-width: max-content;
+}
+
+.homeButton:hover {
+  background: linear-gradient(90deg, #05b18e 0%, #00e6b8 100%);
+  box-shadow: 0 4px 16px 0 #25e2b699, 0 0 12px 4px #25e2b655;
+}
+
+.homeIcon {
+  font-size: 1.3rem;
+}
