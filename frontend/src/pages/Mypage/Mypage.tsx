@@ -8,7 +8,18 @@ import Popup from '../../components/Mypage/Popup'
 import RewardComponent from "../../components/Reward/RewardComponent";
 
 const Mypage = () => {
-  const [Reward, setReward] = useState<number|null>(null);
+  type HoldReward = {
+  hold_id: number;
+  student_id: number;
+  reward_id: number;
+  is_holding: boolean;
+  used_at: string | null;
+  // （JOIN して取得した場合は報酬名や必要ポイントもここに追加）
+  reward_content?: string;
+  need_point?: number;
+  need_rank?: number;
+};
+  const [reward, setReward] = useState<HoldReward[]>([]);
   const [error, setError]     = useState<string|null>(null);
   // ランクの引っ張り、
   const [tabs,setTabs]=useState(0)
@@ -18,58 +29,47 @@ const Mypage = () => {
   const sumP=userObj?.sum_point
 
   useEffect(() => {
-    // 全生徒データを取得
+    console.log('① useEffect start', { userId })  
     fetch(`/api/holdRewards?student_id=${userId}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        return res.json();
-      })
-      .then(reward => {
-        reward.forEach(element => {
-          fetch(`/api/themes/${element.reward_id}`)
-          .then(res => {
-            if (!res.ok) throw new Error(`Status ${res.status}`);
-            return res.json();
-          })
-          .then(rewa => {
-            
-            console.log(rewa)
-            
+    .then(res => {
+      console.log('② holdRewards status', res.status)
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      return res.json();
+    })
+    .then((holds: HoldReward[]) => {
+      console.log('③ raw holds:', holds) 
+      return Promise.all(
+        holds.map(h =>
+          
+          fetch(`/api/rewards/${h.reward_id}`)
+            .then(r => {
+              console.log('④ fetching reward for', h.reward_id) 
+              if (!r.ok) throw new Error(`Reward ${h.reward_id} fetch failed`);
+              console.log(`⑤ reward ${h.reward_id} status`, r.status) 
+              return r.json();
+            })
+            .then(rew => ({
+              ...h,
+              reward_content: rew.reward_content,
+              need_point:     rew.need_point,
+              need_rank:      rew.need_rank
             }
-          )
-          .catch(err => {
-            console.error(err);
-            setError('データの取得に失敗しました');
-          });
-          });
-          
-          console.log(reward)
-          
-        }
-      )
-      .catch(err => {
-        console.error(err);
-        setError('データの取得に失敗しました');
-      });
+          ))
+        )
+      );
+    })
+    .then(enriched => {
+      console.log('⑥ enriched holds:', enriched) 
+      console.log(enriched);
+      // enriched は holdReward情報に reward_content, need_point などをマージした配列
+      setReward(enriched);
+    })
+    .catch(err => {
+      console.error(err);
+      setError('データの取得に失敗しました');
+    });
+
   }, [userId]);
-  const RewardData: Rewarddata[] = [
-  {
-    rewardInfo: "報酬1",
-    point: 50,
-  },
-  {
-    rewardInfo: "報酬2",
-    point: 100,
-  },
-  {
-    rewardInfo: "報酬3",
-    point: 150,
-  },
-  {
-    rewardInfo: "報酬4",
-    point: 200,
-  },
-];
   return (
     <div className={styles.vh}>
       <Sidebar/>
@@ -106,11 +106,11 @@ const Mypage = () => {
             
             <div className={styles.bottom}>
               <div className={styles.rewardContainer}>
-                {RewardData.map((reward, index) => (
+                {reward.map(rewa => (
                   <RewardComponent
-                    key={index}
-                    rewardInfo={reward.rewardInfo}
-                    point={reward.point}
+                    key={rewa.hold_id}
+                    rewardInfo={rewa.reward_content ?? ''}
+                    point={rewa.need_point??0}
                   />
                 ))}
               </div>
