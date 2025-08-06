@@ -97,10 +97,13 @@ body {
   width: 100%;
   max-width: 1200px;
   margin: 0;
-  display: flex;
-  justify-content: flex-start;
+  /* display: flex;
+  justify-content: flex-start; */
   gap: 20px;
   flex-wrap: wrap;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr); /* 5列にする */
 }
 /* タブボタン */
 .tabs {

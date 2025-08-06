@@ -128,7 +128,22 @@ def delete_reward(reward_id):
         return jsonify({'status': 'success', 'message': '報酬が削除されました'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+@reward_o.route('/rewards/<int:reward_id>', methods=['GET'])
+def get_reward(reward_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT reward_id, reward_content, need_point, need_rank, creater FROM reward WHERE reward_id = ?', (reward_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'error': '報酬が見つかりません'}), 404
+    return jsonify({
+        'reward_id': row[0],
+        'reward_content': row[1],
+        'need_point': row[2],
+        'need_rank': row[3],
+        'creater': row[4]
+    }), 200
 # 1) すべての保持報酬（または student_id で絞り込み）を取得
 @reward_o.route('/holdRewards', methods=['GET'])
 def list_hold_rewards():
