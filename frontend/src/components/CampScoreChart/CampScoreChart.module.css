@@ -182,7 +182,6 @@
   pointer-events: none;
 }
 
-/* 油漆飛濺效果 */
 .leftProgress::after {
   content: "";
   position: absolute;

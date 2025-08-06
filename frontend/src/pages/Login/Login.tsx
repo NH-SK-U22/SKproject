@@ -1,8 +1,9 @@
 // react
 import React from "react";
-import { useState } from "react";
-import type { FormEvent, ChangeEvent } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import type { FormEvent, ChangeEvent, FocusEvent } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { gsap } from "gsap";
 
 // css
 import styles from "./Login.module.css";
@@ -28,46 +29,115 @@ const Login = () => {
     password: "",
   });
   const [error, setError] = useState("");
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const signupLinkRef = useRef<HTMLAnchorElement>(null);
+
+  // ページ表示時のアニメーション
+  useEffect(() => {
+    if (containerRef.current) {
+      gsap.fromTo(
+        containerRef.current,
+        {
+          opacity: 0,
+          rotationY: -90,
+          scale: 0.8,
+        },
+        {
+          opacity: 1,
+          rotationY: 0,
+          scale: 1,
+          duration: 0.4,
+          ease: "power2.out",
+        }
+      );
+    }
+  }, []);
+
+  // ページ移動時のアニメーション
+  const handleSignupClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const target = e.currentTarget.getAttribute("href");
+
+    if (containerRef.current) {
+      gsap.to(containerRef.current, {
+        opacity: 0,
+        rotationY: 90,
+        scale: 0.8,
+        duration: 0.3,
+        ease: "power2.in",
+        onComplete: () => {
+          if (target) {
+            navigate(target);
+          }
+        },
+      });
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
-    try {
-      const response = await fetch("http://localhost:5000/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    if (containerRef.current) {
+      gsap.to(containerRef.current, {
+        opacity: 0,
+        x: -100,
+        duration: 0.6,
+        ease: "power2.in",
+        onComplete: () => {
+          (async () => {
+            try {
+              const response = await fetch("http://localhost:5000/api/login", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  schoolID: formData.schoolID,
+                  classID: formData.classID,
+                  name: formData.name,
+                  userId: formData.userId,
+                  password: formData.password,
+                  userType: userType,
+                }),
+              });
+
+              const data = await response.json();
+
+              if (response.ok) {
+                // ユーザー情報をlocalStorageに保存する
+                localStorage.setItem("user", JSON.stringify(data.user));
+                localStorage.setItem("isLoggedIn", "true");
+
+                if (userType == "student") {
+                  // ログイン成功後、陣営選択ページに移動
+                  navigate("/campselect");
+                } else {
+                  navigate("/dashboard");
+                }
+              } else {
+                setError(data.error || "ログイン失敗");
+                gsap.to(containerRef.current, {
+                  x: 0,
+                  opacity: 1,
+                  duration: 0.3,
+                  ease: "power2.out",
+                });
+              }
+            } catch (err) {
+              console.error("Login error:", err);
+              setError("サーバーに接続できません");
+              gsap.to(containerRef.current, {
+                x: 0,
+                opacity: 1,
+                duration: 0.3,
+                ease: "power2.out",
+              });
+            }
+          })();
         },
-        body: JSON.stringify({
-          schoolID: formData.schoolID,
-          classID: formData.classID,
-          name: formData.name,
-          userId: formData.userId,
-          password: formData.password,
-          userType: userType,
-        }),
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // ユーザー情報をlocalStorageに保存する
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("isLoggedIn", "true");
-
-        if (userType == "student") {
-          // ログイン成功後、陣営選択ページに移動
-          navigate("/campselect");
-        } else {
-          navigate("/dashboard");
-        }
-      } else {
-        setError(data.error || "ログイン失敗");
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("サーバーに接続できません");
     }
   };
 
@@ -80,9 +150,19 @@ const Login = () => {
     if (error) setError("");
   };
 
+  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
+    setFocusedField(e.target.name);
+  };
+
+  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
+    if (!e.target.value) {
+      setFocusedField(null);
+    }
+  };
+
   return (
     <div className={styles.container}>
-      <div className={styles.loginBox}>
+      <div className={styles.loginBox} ref={containerRef}>
         <h2>Login</h2>
         {error && <div className={styles.error}>{error}</div>}
         <form onSubmit={handleSubmit}>
@@ -94,10 +174,20 @@ const Login = () => {
                 name="schoolID"
                 value={formData.schoolID}
                 onChange={handleChange}
-                placeholder="学校記号"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 required
                 autoComplete="off"
               />
+              <label
+                className={`${styles.floatingLabel} ${
+                  focusedField === "schoolID" || formData.schoolID
+                    ? styles.active
+                    : ""
+                }`}
+              >
+                学校記号
+              </label>
             </div>
           </div>
           <div className={styles.inputGroup}>
@@ -108,10 +198,20 @@ const Login = () => {
                 name="classID"
                 value={formData.classID}
                 onChange={handleChange}
-                placeholder="クラス記号"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 required
                 autoComplete="off"
               />
+              <label
+                className={`${styles.floatingLabel} ${
+                  focusedField === "classID" || formData.classID
+                    ? styles.active
+                    : ""
+                }`}
+              >
+                クラス記号
+              </label>
             </div>
           </div>
           <div className={styles.inputGroup}>
@@ -122,10 +222,18 @@ const Login = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="名前"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 required
                 autoComplete="name"
               />
+              <label
+                className={`${styles.floatingLabel} ${
+                  focusedField === "name" || formData.name ? styles.active : ""
+                }`}
+              >
+                名前
+              </label>
             </div>
           </div>
           <div className={styles.inputGroup}>
@@ -136,10 +244,20 @@ const Login = () => {
                 name="userId"
                 value={formData.userId}
                 onChange={handleChange}
-                placeholder={userType === "student" ? "出席番号" : "教員番号"}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 required
                 autoComplete="username"
               />
+              <label
+                className={`${styles.floatingLabel} ${
+                  focusedField === "userId" || formData.userId
+                    ? styles.active
+                    : ""
+                }`}
+              >
+                {userType === "student" ? "出席番号" : "教員番号"}
+              </label>
             </div>
           </div>
           <div className={styles.inputGroup}>
@@ -150,10 +268,20 @@ const Login = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="パスワード"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
                 required
                 autoComplete="current-password"
               />
+              <label
+                className={`${styles.floatingLabel} ${
+                  focusedField === "password" || formData.password
+                    ? styles.active
+                    : ""
+                }`}
+              >
+                パスワード
+              </label>
             </div>
           </div>
           <button type="submit" className={styles.submitButton}>
@@ -162,7 +290,14 @@ const Login = () => {
         </form>
         <p className={styles.signupLink}>
           アカウントをお持ちでない方は
-          <Link to={`/signup?userType=${userType}`}> Sign up</Link>
+          <a
+            href={`/signup?userType=${userType}`}
+            onClick={handleSignupClick}
+            ref={signupLinkRef}
+          >
+            {" "}
+            Sign up
+          </a>
         </p>
       </div>
     </div>
