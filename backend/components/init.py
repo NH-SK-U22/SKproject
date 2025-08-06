@@ -162,6 +162,17 @@ def init_db():
         UNIQUE(student_id, sticky_id)
     )''')
     
+    # rank_history tableを作成（ランク履歴）
+    c.execute('''CREATE TABLE IF NOT EXISTS rank_history(
+        history_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id   INTEGER NOT NULL,        -- どのユーザーか
+        theme_id     INTEGER NOT NULL,        -- どのテーマか
+        sum_point    INTEGER NOT NULL,        -- その時点の合計ポイント
+        created_at   TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        FOREIGN KEY(student_id) REFERENCES students(student_id),
+        FOREIGN KEY(theme_id)   REFERENCES debate_settings(theme_id)
+    )''')
+    
     # colorsetsデータの挿入
     colorsets_data = [
         (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1

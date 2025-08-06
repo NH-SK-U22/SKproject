@@ -190,7 +190,7 @@ def get_sticky_notes():
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          WHERE st.school_id = ? AND s.theme_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id, theme_id))
-        elif school_id:
+        elif  school_id:
             # 同校の全学生の付箋を取得
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
@@ -199,6 +199,15 @@ def get_sticky_notes():
                          FROM sticky s
                          JOIN students st ON s.student_id = st.student_id
                          WHERE st.school_id = ? ORDER BY s.display_index, s.created_at DESC''', (school_id,))
+        elif student_id:
+            c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
+                                s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
+                                s.ai_enemy_avg_prediction, s.ai_overall_avg_prediction, s.teammate_avg_score, s.enemy_avg_score,
+                                s.overall_avg_score, s.created_at, st.name, st.camp_id
+                         FROM sticky s
+                         JOIN students st ON s.student_id = st.student_id
+                         WHERE s.student_id = ?
+                         ORDER BY s.display_index, s.created_at DESC''', (student_id,))
         else:
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,
                                 s.feedback_A, s.feedback_B, s.feedback_C, s.ai_summary_content, s.ai_teammate_avg_prediction,
@@ -541,11 +550,55 @@ def update_camp(camp_id):
          SET is_winner = ?
        WHERE camp_id = ?
     ''', (1 if data['is_winner'] else 0, camp_id))
+    
+    # 勝ち負けが付く(当該テーマが終わる)と陣営idからテーマを引っ張り逆引きしてstudentの合計ポイントを履歴として保存する
+    # 2) この camp の theme_id を取得
+    c.execute('SELECT theme_id FROM camps WHERE camp_id = ?', (camp_id,))
+    row = c.fetchone()
+    if row:
+        theme_id = row[0]
+
+        # 3) そのテーマに属する全 camp_id を取得
+        c.execute('SELECT camp_id FROM camps WHERE theme_id = ?', (theme_id,))
+        camp_rows = c.fetchall()
+        camp_ids = [r[0] for r in camp_rows]
+
+        if camp_ids:
+            # 4) その camp_id に属する全 student_id と sum_point を取得
+            placeholders = ','.join('?' for _ in camp_ids)
+            c.execute(f'''
+                SELECT student_id, sum_point
+                  FROM students
+                 WHERE camp_id IN ({placeholders})
+            ''', camp_ids)
+            students = c.fetchall()
+
+            # 5) rank_history にレコードを追加
+            for student_id, sum_point in students:
+                c.execute('''
+                  INSERT INTO rank_history (student_id, theme_id, sum_point)
+                  VALUES (?, ?, ?)
+                ''', (student_id, theme_id, sum_point))
+
     conn.commit()
     conn.close()
     return jsonify({'status': 'updated'})
-
-# --- holdReward エンドポイント ----------------------
+# 当該陣営について返すやつ
+@app.route('/api/camps/<int:camp_id>', methods=['GET'])
+def get_camp(camp_id):
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('SELECT camp_id, camp_name, theme_id, is_winner FROM camps WHERE camp_id = ?', (camp_id,))
+    row = c.fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'error': '陣営が見つかりません'}), 404
+    return jsonify({
+        'camp_id': row[0],
+        'camp_name': row[1],
+        'theme_id': row[2],
+        'is_winner': bool(row[3])
+    })
 
 
 # Socket.IO イベント処理
@@ -714,6 +767,32 @@ def submit_feedback(sticky_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/rank_history', methods=['GET'])
+def get_rank_history():
+    student_id = request.args.get('student_id', type=int)
+    if student_id is None:
+        return jsonify({'error':'student_id が必要です'}), 400
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute('''
+      SELECT history_id, theme_id, sum_point, created_at
+        FROM rank_history
+       WHERE student_id = ?
+    ''', (student_id,))
+    rows = c.fetchall()
+    conn.close()
+
+    result = []
+    for h in rows:
+        result.append({
+            'history_id': h[0],
+            'theme_id':   h[1],
+            'sum_point':  h[2],
+            'created_at': h[3],
+        })
+    return jsonify(result)
 
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)

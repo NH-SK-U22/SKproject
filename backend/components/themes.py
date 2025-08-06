@@ -24,7 +24,7 @@ def list_themes():
 @themes_o.route('/themes', methods=['POST'])
 def create_theme():
     data = request.get_json() or {}
-    required = ['title', 'description', 'colorset_id', 'start_date', 'end_date']
+    required = ['title', 'description', 'colorset_id', 'start_date', 'end_date', 'school_id']
     for f in required:
         if f not in data:
             return jsonify({'error': f'{f} が必要です'}), 400
@@ -33,14 +33,15 @@ def create_theme():
     c = conn.cursor()
     c.execute('''
       INSERT INTO debate_settings
-        (title, description, colorset_id, start_date, end_date)
-      VALUES (?, ?, ?, ?, ?)
+        (title, description, colorset_id, start_date, end_date, school_id)
+      VALUES (?, ?, ?, ?, ?, ?)
     ''', (
       data['title'],
       data['description'],
       data['colorset_id'],
       data['start_date'],
       data['end_date'],
+      data['school_id'],
     ))
     theme_id = c.lastrowid
     conn.commit()
