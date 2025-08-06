@@ -57,7 +57,7 @@ const Result: React.FC = () => {
     };
 
     fetchScores();
-  }, [currentUser, theme]);
+  }, [currentUser?.school_id, theme?.theme_id]);
 
   if (loading) {
     return (
