@@ -114,7 +114,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
     }
   }, [theme_id, camp1.camp_id, camp2.camp_id]);
 
-  // 各陣営の割合を計算（安定化）
+  // 各陣営の割合を計算
   const {
     camp1Percentage,
     camp2Percentage,
@@ -134,16 +134,16 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
     const camp1Ratio = Math.abs(camp1.score) / totalScore;
     const camp2Ratio = Math.abs(camp2.score) / totalScore;
 
-    // 真實百分比（用於顯示）
+    // 実際の割合
     const camp1Real = camp1Ratio * 100;
     const camp2Real = camp2Ratio * 100;
 
-    // 顯示百分比（確保最小顯示比例為 8%，這樣即使分數很小也能看到）
+    // 表示の割合
     const minDisplayPercentage = 8;
     let camp1Percent = camp1Real;
     let camp2Percent = camp2Real;
 
-    // 如果任一陣營的比例小於最小顯示比例，進行調整
+    // いずれかの陣営の割合が最小表示割合未満の場合、調整を行います。
     if (camp1Percent < minDisplayPercentage && camp1Percent > 0) {
       camp1Percent = minDisplayPercentage;
       camp2Percent = 100 - minDisplayPercentage;
@@ -185,7 +185,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
       // アニメーション時間軸
       const tl = gsap.timeline();
 
-      // 陣営名稱と得点のアニメーション（更自然的彈跳效果）
+      // 陣営名稱と得点のアニメーション
       tl.to([leftCampRef.current, rightCampRef.current], {
         opacity: 1,
         scale: 1,
@@ -195,7 +195,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
         stagger: 0.15,
       });
 
-      // 進捗状況アニメーション（更流暢的填充效果）
+      // 進捗状況アニメーション
       tl.to(
         leftProgressRef.current,
         {
@@ -216,13 +216,13 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
         "-=1.8"
       );
 
-      // 数字計算アニメーション（更自然的計數效果）
+      // 数字計算アニメーション
       const camp1ScoreObj = { value: 0 };
       const camp2ScoreObj = { value: 0 };
       const camp1PercentageObj = { value: 0 };
       const camp2PercentageObj = { value: 0 };
 
-      // 分數動畫（與進度條同步）
+      // 点数アニメーション
       tl.to(
         camp1ScoreObj,
         {
@@ -255,7 +255,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
         "-=1.8"
       );
 
-      // 百分比動畫（稍微延遲開始，營造層次感）
+      // パーセンテージアニメーション
       tl.to(
         camp1PercentageObj,
         {
@@ -322,7 +322,18 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           </div>
         </div>
 
-        <div className={styles.progressContainer}>
+        <div
+          className={styles.progressContainer}
+          style={
+            {
+              "--camp1-color": camp1TextColor,
+              "--camp2-color": camp2TextColor,
+            } as React.CSSProperties & {
+              "--camp1-color": string;
+              "--camp2-color": string;
+            }
+          }
+        >
           <div className={styles.progressBar}>
             <div
               ref={leftProgressRef}
@@ -332,7 +343,32 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
                 background: camp1Color,
               }}
             >
-              <span ref={leftPercentageRef} className={styles.leftPercentage}>
+              <span
+                ref={leftPercentageRef}
+                className={styles.leftPercentage}
+                style={
+                  {
+                    left: "0%",
+                    top: "-40px",
+                    fontSize: camp1RealPercentage < 15 ? "1.4rem" : "2.2rem",
+                    zIndex: 100,
+                    position: "absolute",
+                    transform: "translateX(0%) translateY(-50%)",
+                    color: "#ffffff",
+                    textShadow:
+                      camp1RealPercentage < 15
+                        ? `0 2px 4px rgba(0,0,0,0.8), 0 0 15px ${camp1TextColor}`
+                        : `0 2px 4px rgba(0,0,0,0.6), 0 0 20px ${camp1TextColor}`,
+                    minWidth: "auto",
+                    whiteSpace: "nowrap",
+                    overflow: "visible",
+                    background: "transparent",
+                    padding: "0",
+                    borderRadius: "0",
+                    "--camp1-color": camp1TextColor,
+                  } as React.CSSProperties & { "--camp1-color": string }
+                }
+              >
                 {Math.round(camp1RealPercentage)}%
               </span>
             </div>
@@ -344,7 +380,32 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
                 background: camp2Color,
               }}
             >
-              <span ref={rightPercentageRef} className={styles.rightPercentage}>
+              <span
+                ref={rightPercentageRef}
+                className={styles.rightPercentage}
+                style={
+                  {
+                    left: "100%",
+                    top: "-40px",
+                    fontSize: camp2RealPercentage < 15 ? "1.4rem" : "2.2rem",
+                    zIndex: 100,
+                    position: "absolute",
+                    transform: "translateX(-100%) translateY(-50%)",
+                    color: "#ffffff",
+                    textShadow:
+                      camp2RealPercentage < 15
+                        ? `0 2px 4px rgba(0,0,0,0.8), 0 0 15px ${camp2TextColor}`
+                        : `0 2px 4px rgba(0,0,0,0.6), 0 0 20px ${camp2TextColor}`,
+                    minWidth: "auto",
+                    whiteSpace: "nowrap",
+                    overflow: "visible",
+                    background: "transparent",
+                    padding: "0",
+                    borderRadius: "0",
+                    "--camp2-color": camp2TextColor,
+                  } as React.CSSProperties & { "--camp2-color": string }
+                }
+              >
                 {Math.round(camp2RealPercentage)}%
               </span>
             </div>

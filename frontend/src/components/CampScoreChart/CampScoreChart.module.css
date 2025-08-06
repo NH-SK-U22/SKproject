@@ -9,7 +9,8 @@
   min-height: 300px;
   border-radius: 30px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  text-align: center;
 }
 
 .chartContainer::before {
@@ -30,6 +31,8 @@
   gap: 2rem;
   min-height: 200px;
   margin: 0 auto;
+  text-align: center;
+  position: relative;
 }
 
 .leftCamp,
@@ -37,8 +40,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   min-width: 140px;
   padding: 1.5rem;
+  text-align: center;
+  position: relative;
+  z-index: 10;
 }
 
 .campName {
@@ -54,6 +61,9 @@
   text-transform: uppercase;
   animation: splatoonBounce 1.5s ease-in-out infinite alternate;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .scoreValue {
@@ -67,6 +77,9 @@
   animation: splatoonScorePulse 2.5s ease-in-out infinite;
   filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
   transform: perspective(100px) rotateX(5deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .progressContainer {
@@ -77,13 +90,14 @@
   justify-content: center;
   min-width: 400px;
   width: 100%;
-  max-width: 600px;
+  max-width: 450px;
   margin: 0 auto;
   position: relative;
   padding: 2rem 0;
+  text-align: center;
+  z-index: 5;
 }
 
-/* 進度條周圍的油漆點綴 */
 .progressContainer::before {
   content: "";
   position: absolute;
@@ -93,7 +107,7 @@
   height: 15px;
   background: radial-gradient(
     circle,
-    rgba(199, 107, 255, 0.6) 0%,
+    var(--camp1-color, rgba(199, 107, 255, 0.6)) 0%,
     transparent 70%
   );
   border-radius: 50%;
@@ -109,7 +123,7 @@
   height: 12px;
   background: radial-gradient(
     circle,
-    rgba(255, 196, 114, 0.6) 0%,
+    var(--camp2-color, rgba(255, 196, 114, 0.6)) 0%,
     transparent 70%
   );
   border-radius: 50%;
@@ -121,9 +135,9 @@
 }
 
 .progressBar {
-  height: 120px;
+  height: 80px;
   background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%);
-  border-radius: 60px;
+  border-radius: 40px;
   overflow: visible;
   display: flex;
   position: relative;
@@ -140,13 +154,10 @@
 .leftProgress {
   height: 100%;
   min-width: 60px;
-  border-radius: 60px 0 0 60px;
+  border-radius: 40px 0 0 40px;
   position: relative;
   overflow: visible;
   background: linear-gradient(135deg, #d17aff 0%, #c76bff 50%, #b558e6 100%);
-  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.3),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.2), 0 3px 12px rgba(199, 107, 255, 0.4),
-    0 0 15px rgba(199, 107, 255, 0.2);
   z-index: 2;
   opacity: 1;
   display: block;
@@ -181,8 +192,8 @@
   height: 30px;
   background: radial-gradient(
     circle,
-    rgba(199, 107, 255, 0.8) 0%,
-    rgba(199, 107, 255, 0.4) 40%,
+    var(--camp1-color, rgba(199, 107, 255, 0.8)) 0%,
+    var(--camp1-color, rgba(199, 107, 255, 0.4)) 40%,
     transparent 70%
   );
   border-radius: 50%;
@@ -194,13 +205,10 @@
 .rightProgress {
   height: 100%;
   min-width: 60px;
-  border-radius: 0 60px 60px 0;
+  border-radius: 0 40px 40px 0;
   position: relative;
   overflow: visible;
   background: linear-gradient(135deg, #ffd085 0%, #ffc472 50%, #ffb459 100%);
-  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.3),
-    inset 0 -3px 6px rgba(0, 0, 0, 0.2), 0 3px 12px rgba(255, 196, 114, 0.4),
-    0 0 15px rgba(255, 196, 114, 0.2);
   z-index: 2;
   opacity: 1;
   display: block;
@@ -225,7 +233,6 @@
   pointer-events: none;
 }
 
-/* 右側油漆飛濺效果 */
 .rightProgress::after {
   content: "";
   position: absolute;
@@ -235,8 +242,8 @@
   height: 30px;
   background: radial-gradient(
     circle,
-    rgba(255, 196, 114, 0.8) 0%,
-    rgba(255, 196, 114, 0.4) 40%,
+    var(--camp2-color, rgba(255, 196, 114, 0.8)) 0%,
+    var(--camp2-color, rgba(255, 196, 114, 0.4)) 40%,
     transparent 70%
   );
   border-radius: 50%;
@@ -245,7 +252,6 @@
   z-index: 1;
 }
 
-/* Splatoon 油漆飛濺動畫 */
 @keyframes paintSplash {
   0% {
     transform: scale(0.8) rotate(0deg);
@@ -261,7 +267,6 @@
   }
 }
 
-/* 油漆滴落效果 */
 @keyframes paintDrop {
   0% {
     transform: translateY(0) scale(1);
@@ -277,7 +282,6 @@
   }
 }
 
-/* 進度條光澤效果 */
 @keyframes splatoonGlow {
   0% {
     box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.4),
@@ -293,19 +297,23 @@
 
 @keyframes splatoonTextGlow {
   0% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 15px rgba(199, 107, 255, 0.4);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4),
+      0 0 15px var(--camp1-color, rgba(199, 107, 255, 0.4));
   }
   100% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(199, 107, 255, 0.6);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5),
+      0 0 20px var(--camp1-color, rgba(199, 107, 255, 0.6));
   }
 }
 
 @keyframes splatoonTextGlowOrange {
   0% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 196, 114, 0.4);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4),
+      0 0 15px var(--camp2-color, rgba(255, 196, 114, 0.4));
   }
   100% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 196, 114, 0.6);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5),
+      0 0 20px var(--camp2-color, rgba(255, 196, 114, 0.6));
   }
 }
 
@@ -330,40 +338,60 @@
   }
 }
 
-/* Removed splatoonBg animation for no gloss effect */
-
 .leftPercentage {
   position: absolute;
-  top: 50%;
-  left: 20px;
-  transform: translateY(-50%);
+  top: -40px;
+  left: 0%;
+  transform: translateX(0%) translateY(-50%);
   color: #ffffff;
   font-weight: 900;
   font-size: 2.2rem;
   font-family: "Noto Sans JP", sans-serif;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(199, 107, 255, 0.6),
-    0 0 30px rgba(199, 107, 255, 0.4);
   animation: splatoonTextGlow 2s ease-in-out infinite alternate;
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
-  z-index: 10;
+  z-index: 100;
   pointer-events: none;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
+  min-width: auto;
+  word-break: keep-all;
+  word-wrap: normal;
+  clip-path: none;
+  -webkit-clip-path: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  text-align: center;
 }
 
 .rightPercentage {
   position: absolute;
-  top: 50%;
-  right: 20px;
-  transform: translateY(-50%);
+  top: -40px;
+  left: 100%;
+  transform: translateX(-100%) translateY(-50%);
   color: #ffffff;
   font-weight: 900;
   font-size: 2.2rem;
   font-family: "Noto Sans JP", sans-serif;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 196, 114, 0.6),
-    0 0 30px rgba(255, 196, 114, 0.4);
   animation: splatoonTextGlowOrange 2s ease-in-out infinite alternate;
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
-  z-index: 10;
+  z-index: 100;
   pointer-events: none;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  max-width: none;
+  min-width: auto;
+  word-break: keep-all;
+  word-wrap: normal;
+  clip-path: none;
+  -webkit-clip-path: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  text-align: center;
 }
 
 /* レスポンシブデザイン */
@@ -377,17 +405,27 @@
     flex-direction: column;
     gap: 1.5rem;
     min-height: 150px;
+    align-items: center;
+    justify-content: center;
   }
 
   .progressContainer {
-    min-width: 300px;
+    min-width: 250px;
     padding: 2rem 0 1.5rem 0;
+    z-index: 5;
   }
 
   .leftCamp,
   .rightCamp {
     min-width: 120px;
     padding: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
   }
 
   .campName {
@@ -401,10 +439,10 @@
   }
 
   .progressBar {
-    height: 90px;
+    height: 60px;
     width: 100%;
     margin: 1rem 0;
-    border-radius: 45px;
+    border-radius: 30px;
     border: 6px solid #ffffff;
     background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 4px 10px rgba(0, 0, 0, 0.15),
@@ -414,43 +452,45 @@
   }
 
   .leftProgress {
-    border-radius: 45px 0 0 45px;
+    border-radius: 30px 0 0 30px;
     min-width: 30px;
     z-index: 2;
-    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.3),
-      inset 0 -2px 3px rgba(0, 0, 0, 0.15);
   }
 
   .leftProgress::before {
-    border-radius: 45px 0 0 0;
+    border-radius: 30px 0 0 0;
   }
 
   .rightProgress {
-    border-radius: 0 45px 45px 0;
+    border-radius: 0 30px 30px 0;
     min-width: 30px;
     z-index: 2;
-    box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.3),
-      inset 0 -2px 3px rgba(0, 0, 0, 0.15);
   }
 
   .rightProgress::before {
-    border-radius: 0 45px 0 0;
+    border-radius: 0 30px 0 0;
   }
 
   .leftPercentage {
     font-size: 1.8rem;
-    z-index: 10;
-    top: 50%;
-    left: 15px;
-    transform: translateY(-50%);
+    z-index: 100;
+    top: -35px;
+    left: 0%;
+    transform: translateX(0%) translateY(-50%);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
   }
 
   .rightPercentage {
     font-size: 1.8rem;
-    z-index: 10;
-    top: 50%;
-    right: 15px;
-    transform: translateY(-50%);
+    z-index: 100;
+    top: -35px;
+    left: 100%;
+    transform: translateX(-100%) translateY(-50%);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
   }
 }
 
@@ -465,6 +505,13 @@
   .rightCamp {
     min-width: 100px;
     padding: 0.8rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
   }
 
   .campName {
@@ -476,13 +523,14 @@
   }
 
   .progressContainer {
-    min-width: 250px;
+    min-width: 200px;
     padding: 1.5rem 0;
+    z-index: 5;
   }
 
   .progressBar {
-    height: 80px;
-    border-radius: 40px;
+    height: 50px;
+    border-radius: 25px;
     border: 3px solid #ffffff;
     background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 3px 8px rgba(0, 0, 0, 0.12),
@@ -493,42 +541,44 @@
   }
 
   .leftProgress {
-    border-radius: 40px 0 0 40px;
+    border-radius: 25px 0 0 25px;
     min-width: 40px;
     z-index: 2;
-    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.15);
   }
 
   .leftProgress::before {
-    border-radius: 40px 0 0 0;
+    border-radius: 25px 0 0 0;
   }
 
   .rightProgress {
-    border-radius: 0 40px 40px 0;
+    border-radius: 0 25px 25px 0;
     min-width: 40px;
     z-index: 2;
-    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.15);
   }
 
   .rightProgress::before {
-    border-radius: 0 40px 0 0;
+    border-radius: 0 25px 0 0;
   }
 
   .leftPercentage {
     font-size: 1.5rem;
-    z-index: 10;
-    top: 50%;
-    left: 12px;
-    transform: translateY(-50%);
+    z-index: 100;
+    top: -30px;
+    left: 0%;
+    transform: translateX(0%) translateY(-50%);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
   }
 
   .rightPercentage {
     font-size: 1.5rem;
-    z-index: 10;
-    top: 50%;
-    right: 12px;
-    transform: translateY(-50%);
+    z-index: 100;
+    top: -30px;
+    left: 100%;
+    transform: translateX(-100%) translateY(-50%);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
   }
 }
