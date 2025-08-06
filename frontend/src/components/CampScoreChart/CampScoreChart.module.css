@@ -42,27 +42,31 @@
 }
 
 .campName {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 900;
   margin-bottom: 1rem;
   text-align: center;
-  letter-spacing: 1px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px currentColor;
+  letter-spacing: 2px;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.8), 0 0 25px currentColor,
+    0 0 40px currentColor, 0 6px 12px rgba(0, 0, 0, 0.4);
   color: #ffffff;
   font-family: "Noto Sans JP", sans-serif;
   text-transform: uppercase;
-  animation: splatoonBounce 1s ease-in-out infinite alternate;
+  animation: splatoonBounce 1.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
 }
 
 .scoreValue {
-  font-size: 3.2rem;
+  font-size: 4rem;
   font-weight: 900;
   text-align: center;
   color: #ffffff;
   font-family: "Noto Sans JP", sans-serif;
-  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), 0 0 30px currentColor,
-    0 0 50px currentColor;
-  animation: splatoonScorePulse 2s ease-in-out infinite;
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.9), 0 0 30px currentColor,
+    0 0 60px currentColor, 0 8px 16px rgba(0, 0, 0, 0.5);
+  animation: splatoonScorePulse 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
+  transform: perspective(100px) rotateX(5deg);
 }
 
 .progressContainer {
@@ -79,21 +83,54 @@
   padding: 2rem 0;
 }
 
+/* 進度條周圍的油漆點綴 */
+.progressContainer::before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 10%;
+  width: 15px;
+  height: 15px;
+  background: radial-gradient(
+    circle,
+    rgba(199, 107, 255, 0.6) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: paintDrop 3s ease-in-out infinite;
+}
+
+.progressContainer::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  right: 15%;
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 196, 114, 0.6) 0%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: paintDrop 3s ease-in-out infinite 1.5s;
+}
+
 .progressContainer .progressBar {
   width: 100%;
 }
 
 .progressBar {
-  height: 60px;
-  background: linear-gradient(145deg, #f0f0f0 0%, #e0e0e0 50%, #d5d5d5 100%);
-  border-radius: 30px;
-  overflow: hidden;
+  height: 120px;
+  background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%);
+  border-radius: 60px;
+  overflow: visible;
   display: flex;
   position: relative;
-  border: 4px solid #ffffff;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(0, 0, 0, 0.1),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.3);
+  border: 8px solid #ffffff;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2), 0 6px 12px rgba(0, 0, 0, 0.15),
+    inset 0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 -2px 4px rgba(255, 255, 255, 0.1);
   z-index: 1;
   width: 100%;
   opacity: 1;
@@ -102,16 +139,19 @@
 
 .leftProgress {
   height: 100%;
-  min-width: 20px;
-  border-radius: 30px 0 0 30px;
+  min-width: 60px;
+  border-radius: 60px 0 0 60px;
   position: relative;
   overflow: visible;
-  background: linear-gradient(145deg, #d17aff 0%, #c76bff 40%, #b558e6 100%);
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(199, 107, 255, 0.3);
+  background: linear-gradient(135deg, #d17aff 0%, #c76bff 50%, #b558e6 100%);
+  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.3),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.2), 0 3px 12px rgba(199, 107, 255, 0.4),
+    0 0 15px rgba(199, 107, 255, 0.2);
   z-index: 2;
   opacity: 1;
   display: block;
+  filter: saturate(1.2) brightness(1.1);
+  transition: width 2s ease-out;
 }
 
 .leftProgress::before {
@@ -120,31 +160,52 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 40%;
+  height: 50%;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.1) 70%,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
     transparent 100%
   );
-  border-radius: 30px 0 0 0;
+  border-radius: 40px 0 0 0;
   pointer-events: none;
 }
 
-/* Removed .leftProgress::after for no gloss effect */
+/* 油漆飛濺效果 */
+.leftProgress::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  right: -15px;
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(
+    circle,
+    rgba(199, 107, 255, 0.8) 0%,
+    rgba(199, 107, 255, 0.4) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: paintSplash 2s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 1;
+}
 
 .rightProgress {
   height: 100%;
-  min-width: 20px;
-  border-radius: 0 30px 30px 0;
+  min-width: 60px;
+  border-radius: 0 60px 60px 0;
   position: relative;
   overflow: visible;
-  background: linear-gradient(145deg, #ffd085 0%, #ffc472 40%, #ffb459 100%);
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(255, 196, 114, 0.3);
+  background: linear-gradient(135deg, #ffd085 0%, #ffc472 50%, #ffb459 100%);
+  box-shadow: inset 0 3px 6px rgba(255, 255, 255, 0.3),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.2), 0 3px 12px rgba(255, 196, 114, 0.4),
+    0 0 15px rgba(255, 196, 114, 0.2);
   z-index: 2;
   opacity: 1;
   display: block;
+  filter: saturate(1.2) brightness(1.1);
+  transition: width 2s ease-out;
 }
 
 .rightProgress::before {
@@ -153,36 +214,98 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 40%;
+  height: 50%;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.2) 0%,
-    rgba(255, 255, 255, 0.1) 70%,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
     transparent 100%
   );
-  border-radius: 0 30px 0 0;
+  border-radius: 0 40px 0 0;
   pointer-events: none;
 }
 
-/* Removed .rightProgress::after for no gloss effect */
+/* 右側油漆飛濺效果 */
+.rightProgress::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -15px;
+  width: 30px;
+  height: 30px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 196, 114, 0.8) 0%,
+    rgba(255, 196, 114, 0.4) 40%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  animation: paintSplash 2s ease-in-out infinite alternate-reverse;
+  pointer-events: none;
+  z-index: 1;
+}
 
-/* Removed gloss-related animations: splatoonGlow, splatoonPulse, splatoonDrop */
+/* Splatoon 油漆飛濺動畫 */
+@keyframes paintSplash {
+  0% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2) rotate(180deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 0.7;
+  }
+}
+
+/* 油漆滴落效果 */
+@keyframes paintDrop {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(10px) scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+}
+
+/* 進度條光澤效果 */
+@keyframes splatoonGlow {
+  0% {
+    box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.4),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(199, 107, 255, 0.6),
+      0 0 20px rgba(199, 107, 255, 0.3);
+  }
+  100% {
+    box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.6),
+      inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(199, 107, 255, 0.8),
+      0 0 30px rgba(199, 107, 255, 0.5);
+  }
+}
 
 @keyframes splatoonTextGlow {
   0% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(199, 107, 255, 0.6);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 15px rgba(199, 107, 255, 0.4);
   }
   100% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 30px rgba(199, 107, 255, 0.8);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(199, 107, 255, 0.6);
   }
 }
 
 @keyframes splatoonTextGlowOrange {
   0% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 196, 114, 0.6);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 196, 114, 0.4);
   }
   100% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 196, 114, 0.8);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 196, 114, 0.6);
   }
 }
 
@@ -211,26 +334,36 @@
 
 .leftPercentage {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
   color: #ffffff;
   font-weight: 900;
-  font-size: 1.3rem;
+  font-size: 2.2rem;
   font-family: "Noto Sans JP", sans-serif;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(199, 107, 255, 0.6);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(199, 107, 255, 0.6),
+    0 0 30px rgba(199, 107, 255, 0.4);
   animation: splatoonTextGlow 2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+  z-index: 10;
+  pointer-events: none;
 }
 
 .rightPercentage {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
   color: #ffffff;
   font-weight: 900;
-  font-size: 1.3rem;
+  font-size: 2.2rem;
   font-family: "Noto Sans JP", sans-serif;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 196, 114, 0.6);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 196, 114, 0.6),
+    0 0 30px rgba(255, 196, 114, 0.4);
   animation: splatoonTextGlowOrange 2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+  z-index: 10;
+  pointer-events: none;
 }
 
 /* レスポンシブデザイン */
@@ -248,7 +381,7 @@
 
   .progressContainer {
     min-width: 300px;
-    padding: 1.5rem 0;
+    padding: 2rem 0 1.5rem 0;
   }
 
   .leftCamp,
@@ -258,55 +391,66 @@
   }
 
   .campName {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
   }
 
   .scoreValue {
-    font-size: 2.2rem;
+    font-size: 2.8rem;
+    transform: perspective(80px) rotateX(3deg);
   }
 
   .progressBar {
-    height: 45px;
+    height: 90px;
     width: 100%;
     margin: 1rem 0;
-    border-radius: 22px;
-    border: 2px solid #ffffff;
-    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d5d5d5 100%);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    border-radius: 45px;
+    border: 6px solid #ffffff;
+    background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25), 0 4px 10px rgba(0, 0, 0, 0.15),
+      inset 0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(255, 255, 255, 0.1);
+    overflow: visible;
   }
 
   .leftProgress {
-    border-radius: 22px 0 0 22px;
-    min-width: 15px;
+    border-radius: 45px 0 0 45px;
+    min-width: 30px;
     z-index: 2;
     box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.3),
       inset 0 -2px 3px rgba(0, 0, 0, 0.15);
   }
 
   .leftProgress::before {
-    border-radius: 22px 0 0 0;
+    border-radius: 45px 0 0 0;
   }
 
   .rightProgress {
-    border-radius: 0 22px 22px 0;
-    min-width: 15px;
+    border-radius: 0 45px 45px 0;
+    min-width: 30px;
     z-index: 2;
     box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.3),
       inset 0 -2px 3px rgba(0, 0, 0, 0.15);
   }
 
   .rightProgress::before {
-    border-radius: 0 22px 0 0;
+    border-radius: 0 45px 0 0;
   }
 
   .leftPercentage {
-    font-size: 1.1rem;
+    font-size: 1.8rem;
+    z-index: 10;
+    top: 50%;
+    left: 15px;
+    transform: translateY(-50%);
   }
 
   .rightPercentage {
-    font-size: 1.1rem;
+    font-size: 1.8rem;
+    z-index: 10;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
   }
 }
 
@@ -333,49 +477,58 @@
 
   .progressContainer {
     min-width: 250px;
-    padding: 1rem 0;
+    padding: 1.5rem 0;
   }
 
   .progressBar {
-    height: 40px;
-    border-radius: 20px;
-    border: 2px solid #ffffff;
-    background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 50%, #d5d5d5 100%);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    height: 80px;
+    border-radius: 40px;
+    border: 3px solid #ffffff;
+    background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2), 0 3px 8px rgba(0, 0, 0, 0.12),
+      inset 0 2px 3px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 2px rgba(255, 255, 255, 0.1);
+    overflow: visible;
     width: 100%;
   }
 
   .leftProgress {
-    border-radius: 20px 0 0 20px;
-    min-width: 12px;
+    border-radius: 40px 0 0 40px;
+    min-width: 40px;
     z-index: 2;
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.15);
   }
 
   .leftProgress::before {
-    border-radius: 20px 0 0 0;
+    border-radius: 40px 0 0 0;
   }
 
   .rightProgress {
-    border-radius: 0 20px 20px 0;
-    min-width: 12px;
+    border-radius: 0 40px 40px 0;
+    min-width: 40px;
     z-index: 2;
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3),
-      inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.15);
   }
 
   .rightProgress::before {
-    border-radius: 0 20px 0 0;
+    border-radius: 0 40px 0 0;
   }
 
   .leftPercentage {
-    font-size: 1rem;
+    font-size: 1.5rem;
+    z-index: 10;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
   }
 
   .rightPercentage {
-    font-size: 1rem;
+    font-size: 1.5rem;
+    z-index: 10;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
   }
 }

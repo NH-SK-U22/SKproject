@@ -115,13 +115,48 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
   }, [theme_id, camp1.camp_id, camp2.camp_id]);
 
   // 各陣営の割合を計算（安定化）
-  const { camp1Percentage, camp2Percentage } = useMemo(() => {
+  const {
+    camp1Percentage,
+    camp2Percentage,
+    camp1RealPercentage,
+    camp2RealPercentage,
+  } = useMemo(() => {
     const totalScore = Math.abs(camp1.score) + Math.abs(camp2.score);
+    if (totalScore === 0) {
+      return {
+        camp1Percentage: 50,
+        camp2Percentage: 50,
+        camp1RealPercentage: 50,
+        camp2RealPercentage: 50,
+      };
+    }
+
+    const camp1Ratio = Math.abs(camp1.score) / totalScore;
+    const camp2Ratio = Math.abs(camp2.score) / totalScore;
+
+    // 真實百分比（用於顯示）
+    const camp1Real = camp1Ratio * 100;
+    const camp2Real = camp2Ratio * 100;
+
+    // 顯示百分比（確保最小顯示比例為 8%，這樣即使分數很小也能看到）
+    const minDisplayPercentage = 8;
+    let camp1Percent = camp1Real;
+    let camp2Percent = camp2Real;
+
+    // 如果任一陣營的比例小於最小顯示比例，進行調整
+    if (camp1Percent < minDisplayPercentage && camp1Percent > 0) {
+      camp1Percent = minDisplayPercentage;
+      camp2Percent = 100 - minDisplayPercentage;
+    } else if (camp2Percent < minDisplayPercentage && camp2Percent > 0) {
+      camp2Percent = minDisplayPercentage;
+      camp1Percent = 100 - minDisplayPercentage;
+    }
+
     return {
-      camp1Percentage:
-        totalScore > 0 ? (Math.abs(camp1.score) / totalScore) * 100 : 50,
-      camp2Percentage:
-        totalScore > 0 ? (Math.abs(camp2.score) / totalScore) * 100 : 50,
+      camp1Percentage: camp1Percent,
+      camp2Percentage: camp2Percent,
+      camp1RealPercentage: camp1Real,
+      camp2RealPercentage: camp2Real,
     };
   }, [camp1.score, camp2.score]);
 
@@ -138,56 +173,62 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
       // 初始狀態設定
       gsap.set([leftProgressRef.current, rightProgressRef.current], {
         width: "0%",
+        opacity: 0.8,
       });
 
       gsap.set([leftCampRef.current, rightCampRef.current], {
         opacity: 0,
-        scale: 0.8,
+        scale: 0.6,
+        y: 20,
       });
 
       // アニメーション時間軸
       const tl = gsap.timeline();
 
-      // 陣営名稱と得点のアニメーション
+      // 陣営名稱と得点のアニメーション（更自然的彈跳效果）
       tl.to([leftCampRef.current, rightCampRef.current], {
         opacity: 1,
         scale: 1,
-        duration: 0.6,
-        ease: "back.out(1.7)",
-        stagger: 0.1,
+        y: 0,
+        duration: 0.8,
+        ease: "elastic.out(1, 0.3)",
+        stagger: 0.15,
       });
 
-      // 進捗状況アニメーション
+      // 進捗状況アニメーション（更流暢的填充效果）
       tl.to(
         leftProgressRef.current,
         {
           width: `${camp1Percentage}%`,
-          duration: 1.5,
-          ease: "power2.out",
+          opacity: 1,
+          duration: 2.0,
+          ease: "power3.out",
         },
-        "-=0.3"
+        "-=0.4"
       ).to(
         rightProgressRef.current,
         {
           width: `${camp2Percentage}%`,
-          duration: 1.5,
-          ease: "power2.out",
+          opacity: 1,
+          duration: 2.0,
+          ease: "power3.out",
         },
-        "-=1.3"
+        "-=1.8"
       );
 
-      // 数字計算アニメーション
+      // 数字計算アニメーション（更自然的計數效果）
       const camp1ScoreObj = { value: 0 };
       const camp2ScoreObj = { value: 0 };
       const camp1PercentageObj = { value: 0 };
       const camp2PercentageObj = { value: 0 };
 
+      // 分數動畫（與進度條同步）
       tl.to(
         camp1ScoreObj,
         {
           value: camp1.score,
-          duration: 1.2,
-          ease: "power2.out",
+          duration: 1.8,
+          ease: "power2.inOut",
           onUpdate: () => {
             if (leftScoreRef.current) {
               leftScoreRef.current.textContent = Math.round(
@@ -196,56 +237,56 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
             }
           },
         },
-        "-=1.2"
-      )
-        .to(
-          camp2ScoreObj,
-          {
-            value: camp2.score,
-            duration: 1.2,
-            ease: "power2.out",
-            onUpdate: () => {
-              if (rightScoreRef.current) {
-                rightScoreRef.current.textContent = Math.round(
-                  camp2ScoreObj.value
-                ).toString();
-              }
-            },
+        "-=1.8"
+      ).to(
+        camp2ScoreObj,
+        {
+          value: camp2.score,
+          duration: 1.8,
+          ease: "power2.inOut",
+          onUpdate: () => {
+            if (rightScoreRef.current) {
+              rightScoreRef.current.textContent = Math.round(
+                camp2ScoreObj.value
+              ).toString();
+            }
           },
-          "-=1.2"
-        )
-        .to(
-          camp1PercentageObj,
-          {
-            value: camp1Percentage,
-            duration: 1.2,
-            ease: "power2.out",
-            onUpdate: () => {
-              if (leftPercentageRef.current) {
-                leftPercentageRef.current.textContent = `${Math.round(
-                  camp1PercentageObj.value
-                )}%`;
-              }
-            },
+        },
+        "-=1.8"
+      );
+
+      // 百分比動畫（稍微延遲開始，營造層次感）
+      tl.to(
+        camp1PercentageObj,
+        {
+          value: camp1RealPercentage,
+          duration: 1.5,
+          ease: "power3.out",
+          onUpdate: () => {
+            if (leftPercentageRef.current) {
+              leftPercentageRef.current.textContent = `${Math.round(
+                camp1PercentageObj.value
+              )}%`;
+            }
           },
-          "-=1.2"
-        )
-        .to(
-          camp2PercentageObj,
-          {
-            value: camp2Percentage,
-            duration: 1.2,
-            ease: "power2.out",
-            onUpdate: () => {
-              if (rightPercentageRef.current) {
-                rightPercentageRef.current.textContent = `${Math.round(
-                  camp2PercentageObj.value
-                )}%`;
-              }
-            },
+        },
+        "-=1.0"
+      ).to(
+        camp2PercentageObj,
+        {
+          value: camp2RealPercentage,
+          duration: 1.5,
+          ease: "power3.out",
+          onUpdate: () => {
+            if (rightPercentageRef.current) {
+              rightPercentageRef.current.textContent = `${Math.round(
+                camp2PercentageObj.value
+              )}%`;
+            }
           },
-          "-=1.2"
-        );
+        },
+        "-=1.5"
+      );
     }
   }, [
     camp1Color,
@@ -254,6 +295,8 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
     camp2.score,
     camp1Percentage,
     camp2Percentage,
+    camp1RealPercentage,
+    camp2RealPercentage,
   ]);
 
   // 重置アニメーション狀態（データが変更された場合）
@@ -280,12 +323,6 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
         </div>
 
         <div className={styles.progressContainer}>
-          <span ref={leftPercentageRef} className={styles.leftPercentage}>
-            {Math.round(camp1Percentage)}%
-          </span>
-          <span ref={rightPercentageRef} className={styles.rightPercentage}>
-            {Math.round(camp2Percentage)}%
-          </span>
           <div className={styles.progressBar}>
             <div
               ref={leftProgressRef}
@@ -294,7 +331,11 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
                 width: `${camp1Percentage}%`,
                 background: camp1Color,
               }}
-            ></div>
+            >
+              <span ref={leftPercentageRef} className={styles.leftPercentage}>
+                {Math.round(camp1RealPercentage)}%
+              </span>
+            </div>
             <div
               ref={rightProgressRef}
               className={styles.rightProgress}
@@ -302,7 +343,11 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
                 width: `${camp2Percentage}%`,
                 background: camp2Color,
               }}
-            ></div>
+            >
+              <span ref={rightPercentageRef} className={styles.rightPercentage}>
+                {Math.round(camp2RealPercentage)}%
+              </span>
+            </div>
           </div>
         </div>
 
