@@ -38,6 +38,7 @@ const StickyNote = ({
     color: string;
     x_axis?: number;
     y_axis?: number;
+    gemini?: string;
     student_id?: number;
   };
   idx: number;
@@ -219,7 +220,7 @@ const StickyNote = ({
         <span></span>
         <span></span>
       </div>
-      <div className={styles.noteText}>{post.text}</div>
+      <div className={styles.noteText}>{post.gemini}</div>
       <div className={styles.cornerFold}></div>
       <MessageModal post={post} />
     </div>

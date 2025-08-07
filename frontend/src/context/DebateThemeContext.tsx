@@ -10,7 +10,6 @@ export interface DebateTheme {
   end_date: string;
   team1: string;
   team2: string;
-  // 必要に応じて他のカラムも追加
 }
 
 interface DebateThemeContextType {
@@ -31,7 +30,14 @@ export const DebateThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const response = await fetch(`http://localhost:5000/api/newest_theme?school_id=${school_id}`);
       if (response.ok) {
         const data = await response.json();
-        setTheme(data);
+        if (!data) return;
+        const now = new Date();
+        const end = new Date(data.end_date);
+        if (now > end) {
+          setTheme(null);
+        } else {
+          setTheme(data);
+        }
       } else {
         setTheme(null);
       }

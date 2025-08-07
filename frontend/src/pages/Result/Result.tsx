@@ -25,7 +25,7 @@ interface CampScore {
 const Result: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
-  const { theme } = useDebateTheme();
+  const { theme, setTheme } = useDebateTheme();
   const [scores, setScores] = useState<CampScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +45,7 @@ const Result: React.FC = () => {
   }, [currentUser?.school_id, theme?.theme_id]);
 
   useEffect(() => {
+    
     const fetchScores = async () => {
       if (!requestParams || isRequestingRef.current) {
         if (!requestParams && !isRequestingRef.current) {

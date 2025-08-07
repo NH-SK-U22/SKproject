@@ -34,6 +34,7 @@ const Create = () => {
   const { addPost } = usePost();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { theme, fetchTheme } = useDebateTheme();
+  const [isPosting, setIsPosting] = useState(false); // ←追加
 
   useEffect(() => {
     // テーマに関する情報を取得する
@@ -120,14 +121,18 @@ const Create = () => {
     e.preventDefault();
     if (post.trim() === "" || colors.length === 0) return;
 
+    setIsPosting(true);
+
     const currentUser = getCurrentUser();
     if (!currentUser) {
       console.error("ログインしているユーザーがいない");
       navigate("/login");
+      setIsPosting(false);
       return;
     }
     if (!theme?.theme_id) {
       alert("テーマ情報が取得できません");
+      setIsPosting(false);
       return;
     }
 
@@ -195,11 +200,20 @@ const Create = () => {
             type="button"
             className={styles.cancelBtn}
             onClick={() => navigate("/dashboard")}
+            disabled={isPosting}
           >
             Cancel
           </button>
-          <button type="submit" className={styles.postBtn}>
-            Post
+          <button
+            type="submit"
+            className={styles.postBtn}
+            disabled={isPosting}
+            style={{
+              opacity: isPosting ? 0.5 : 1,
+              cursor: isPosting? "not-allowed" : "pointer"
+            }}
+          >
+            {isPosting ? "Posting..." : "Post"}
           </button>
         </div>
       </form>
