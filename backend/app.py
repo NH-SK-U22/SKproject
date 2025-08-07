@@ -3,7 +3,9 @@ import sqlite3
 import json
 from flask_cors import CORS # Flask-CORSをインポート
 from flask_socketio import SocketIO, emit
+import google.generativeai as genai
 import os
+from dotenv import load_dotenv
 
 from components.init import init_db
 from components.signup import signup_o
@@ -27,6 +29,9 @@ def health():
 
 
 init_db()
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+genai.configure(api_key=GEMINI_API_KEY)
 
 app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
@@ -87,6 +92,13 @@ def create_sticky():
         max_index_result = c.fetchone()
         new_display_index = (max_index_result[0] or 0) + 1
         
+        # gemini要約
+        sticky_content = request.json['sticky_content']
+        gemini = genai.GenerativeModel("gemini-2.5-flash")
+        response = gemini.generate_content(f'以下の内容を基に30字以内で要約###内容###{sticky_content}')
+        # レスポンスから要約文を抽出（仮に response.text だとします。実際はAPI仕様に合わせてください）
+        ai_summary_content = response.text if hasattr(response, "text") else str(response)
+        
         # 付箋插入
         c.execute('''INSERT INTO sticky (
         student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, 
@@ -103,7 +115,7 @@ def create_sticky():
                   request.json.get('feedback_A', 0),
                   request.json.get('feedback_B', 0),
                   request.json.get('feedback_C', 0),
-                  request.json.get('ai_summary_content'),
+                  ai_summary_content,
                   request.json.get('ai_teammate_avg_prediction', 0),
                   request.json.get('ai_enemy_avg_prediction', 0),
                   request.json.get('ai_overall_avg_prediction', 0),

@@ -22,6 +22,7 @@ interface Post {
   feedback_A?: number;
   feedback_B?: number;
   feedback_C?: number;
+  gemini?: string;
   theme_id?: number;
   author_camp_id?: number;
 }
@@ -37,6 +38,7 @@ interface StickyResponse {
   feedback_A: number;
   feedback_B: number;
   feedback_C: number;
+  ai_summary_content: string;
   created_at: string;
   student_name: string;
   author_camp_id?: number;
@@ -57,6 +59,7 @@ interface PostContextType {
     student_id: number;
     x_axis?: number;
     y_axis?: number;
+    gemini?: string;
     theme_id: number;
   }) => Promise<void>;
   loadPosts: (student_id?: number) => Promise<void>;
@@ -99,6 +102,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           feedback_A: item.feedback_A,
           feedback_B: item.feedback_B,
           feedback_C: item.feedback_C,
+          gemini: item.ai_summary_content,
           author_camp_id: item.author_camp_id,
         }));
         // display_index順でソート
@@ -133,6 +137,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
             feedback_A: item.feedback_A,
             feedback_B: item.feedback_B,
             feedback_C: item.feedback_C,
+            gemini: item.ai_summary_content,
             author_camp_id: item.author_camp_id,
           }));
           // display_index順でソート
@@ -325,6 +330,7 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         feedback_A: data.feedback_A,
         feedback_B: data.feedback_B,
         feedback_C: data.feedback_C,
+        gemini: data.ai_summary_content,
         author_camp_id: data.author_camp_id,
       };
       setPosts((prev) =>

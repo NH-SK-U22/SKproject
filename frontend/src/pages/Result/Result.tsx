@@ -24,12 +24,13 @@ interface CampScore {
 const Result: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
-  const { theme } = useDebateTheme();
+  const { theme, setTheme } = useDebateTheme();
   const [scores, setScores] = useState<CampScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    
     const fetchScores = async () => {
       if (!currentUser || !theme) {
         setLoading(false);
@@ -57,7 +58,7 @@ const Result: React.FC = () => {
     };
 
     fetchScores();
-  }, [currentUser, theme]);
+  }, [currentUser, theme, setTheme]);
 
   if (loading) {
     return (
