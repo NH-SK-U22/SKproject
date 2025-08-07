@@ -1,7 +1,8 @@
 // react
 import React from "react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { gsap } from "gsap";
 
 // utils
 import { getCurrentUser } from "../../utils/auth";
@@ -13,6 +14,27 @@ const CampSelect = () => {
   const navigate = useNavigate();
   const [selectedCamp, setSelectedCamp] = useState("camp1");
   const [isLoading, setIsLoading] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const nextBtnRef = useRef<HTMLButtonElement>(null);
+
+  // ページ表示時のアニメーション
+  useEffect(() => {
+    if (containerRef.current) {
+      gsap.fromTo(
+        containerRef.current,
+        {
+          opacity: 0,
+          x: 100,
+        },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.8,
+          ease: "power2.out",
+        }
+      );
+    }
+  }, []);
 
   const handleSelect = (camp: string) => {
     setSelectedCamp(camp);
@@ -28,45 +50,123 @@ const CampSelect = () => {
       return;
     }
 
-    try {
-      // 陣営選択をcamp_idに変換 (camp1 = 1, camp2 = 2)
-      const campId = selectedCamp === "camp1" ? 1 : 2;
+    // Nextボタンのアニメーション
+    if (nextBtnRef.current) {
+      gsap.to(nextBtnRef.current, {
+        scale: 0.95,
+        duration: 0.1,
+        ease: "power2.out",
+        onComplete: () => {
+          gsap.to(nextBtnRef.current, {
+            scale: 1,
+            duration: 0.1,
+            ease: "power2.out",
+          });
+        },
+      });
+    }
 
-      // ユーザーのcamp_idをデータベースに保存
-      const response = await fetch(
-        `http://localhost:5000/api/students/${currentUser.id}/camp`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            camp_id: campId,
-          }),
+    // ページ移動のアニメーション
+    if (containerRef.current) {
+      gsap.to(containerRef.current, {
+        opacity: 0,
+        x: -100,
+        duration: 0.6,
+        ease: "power2.in",
+        onComplete: () => {
+          (async () => {
+            try {
+              // 陣営選択をcamp_idに変換 (camp1 = 1, camp2 = 2)
+              const campId = selectedCamp === "camp1" ? 1 : 2;
+
+              // ユーザーのcamp_idをデータベースに保存
+              const response = await fetch(
+                `http://localhost:5000/api/students/${currentUser.id}/camp`,
+                {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    camp_id: campId,
+                  }),
+                }
+              );
+
+              if (response.ok) {
+                // localStorageのユーザー情報を更新
+                const updatedUser = { ...currentUser, camp_id: campId };
+                localStorage.setItem("user", JSON.stringify(updatedUser));
+
+                // Createページに移動
+                navigate("/create");
+              } else {
+                const errorData = await response.json();
+                alert(
+                  "陣営選択に失敗しました: " +
+                    (errorData.error || "不明なエラー")
+                );
+                // エラー時にページ位置を復元
+                gsap.to(containerRef.current, {
+                  x: 0,
+                  opacity: 1,
+                  duration: 0.3,
+                  ease: "power2.out",
+                });
+              }
+            } catch (error) {
+              console.error("陣営選択エラー:", error);
+              alert("通信エラーが発生しました");
+              gsap.to(containerRef.current, {
+                x: 0,
+                opacity: 1,
+                duration: 0.3,
+                ease: "power2.out",
+              });
+            } finally {
+              setIsLoading(false);
+            }
+          })();
+        },
+      });
+    } else {
+      // アニメーションなしの場合の処理
+      try {
+        const campId = selectedCamp === "camp1" ? 1 : 2;
+        const response = await fetch(
+          `http://localhost:5000/api/students/${currentUser.id}/camp`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              camp_id: campId,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const updatedUser = { ...currentUser, camp_id: campId };
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+          navigate("/create");
+        } else {
+          const errorData = await response.json();
+          alert(
+            "陣営選択に失敗しました: " + (errorData.error || "不明なエラー")
+          );
         }
-      );
-
-      if (response.ok) {
-        // localStorageのユーザー情報を更新
-        const updatedUser = { ...currentUser, camp_id: campId };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-
-        // Createページに移動
-        navigate("/create");
-      } else {
-        const errorData = await response.json();
-        alert("陣営選択に失敗しました: " + (errorData.error || "不明なエラー"));
+      } catch (error) {
+        console.error("陣営選択エラー:", error);
+        alert("通信エラーが発生しました");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("陣営選択エラー:", error);
-      alert("通信エラーが発生しました");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <div className={styles.container}>
+    <div ref={containerRef} className={styles.container}>
       <h1 className={styles.title}>Select Camp</h1>
       <div className={styles.campSelect}>
         <button
@@ -87,6 +187,7 @@ const CampSelect = () => {
         </button>
       </div>
       <button
+        ref={nextBtnRef}
         className={styles.next}
         type="button"
         onClick={handleNext}
