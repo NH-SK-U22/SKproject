@@ -18,6 +18,13 @@ from components.init import get_db_connection
 from components.topicset import topicset_o
 from components.reward import reward_o
 
+# Load environment variables safely
+try:
+    load_dotenv()
+except Exception as e:
+    print(f"Warning: Could not load .env file: {e}")
+    # Continue without .env file
+
 app = Flask(__name__)
 CORS(app) # CORSをアプリケーション全体に適用
 
@@ -31,7 +38,10 @@ def health():
 init_db()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=GEMINI_API_KEY)
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+else:
+    print("Warning: GEMINI_API_KEY not found in environment variables")
 
 app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
@@ -94,10 +104,21 @@ def create_sticky():
         
         # gemini要約
         sticky_content = request.json['sticky_content']
-        gemini = genai.GenerativeModel("gemini-2.5-flash")
-        response = gemini.generate_content(f'以下の内容を基に30字以内で要約###内容###{sticky_content}')
-        # レスポンスから要約文を抽出（仮に response.text だとします。実際はAPI仕様に合わせてください）
-        ai_summary_content = response.text if hasattr(response, "text") else str(response)
+        ai_summary_content = ""
+        try:
+            if GEMINI_API_KEY:
+                print(f"DEBUG: Attempting Gemini API call with key: {GEMINI_API_KEY[:10]}...")
+                gemini = genai.GenerativeModel("gemini-2.5-flash")
+                response = gemini.generate_content(f'以下の内容を基に30字以内で要約###内容###{sticky_content}')
+                # レスポンスから要約文を抽出（仮に response.text だとします。実際はAPI仕様に合わせてください）
+                ai_summary_content = response.text if hasattr(response, "text") else str(response)
+                print(f"DEBUG: Gemini API response: {ai_summary_content}")
+            else:
+                print("DEBUG: No GEMINI_API_KEY found, using fallback")
+                ai_summary_content = sticky_content[:30]
+        except Exception as e:
+            print(f"DEBUG: Gemini API call failed: {e}")
+            ai_summary_content = sticky_content[:30]
         
         # 付箋插入
         c.execute('''INSERT INTO sticky (
@@ -807,4 +828,4 @@ def get_rank_history():
     return jsonify(result)
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True, use_reloader=False)
