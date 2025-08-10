@@ -1,4 +1,5 @@
 import React,{ useState,useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./StudentListComponent.module.css";
 
 interface Student {
@@ -27,6 +28,7 @@ function getRankName(sum_point: number): string {
 }
 
 const StudentListComponent = () => {
+    const navigate = useNavigate();
     const [students, setStudents] = useState<Student[]>([]);
     const [selectedClass, setSelectedClass] = useState("全クラス");
     const [sortType, setSortType] = useState("classAsc");
@@ -133,16 +135,19 @@ const StudentListComponent = () => {
             </div>
             <div className={styles.down}>
                 {sortedStudents.map((student) => (
-                  <a href="" key={student.id}>
-                    <div className={styles.Student}>
-                      <div className={styles.lclass}>{toHankaku(student.class_id)}</div>
-                      <div className={styles.lnumber}>{toHankaku(student.number)}番</div>
-                      <div className={styles.lname}>{student.name}</div>
-                      <div className={styles.llank}>
-                        <img src={`/images/${getRankName(student.sum_point ?? 0)}.png`} alt={getRankName(student.sum_point ?? 0)} className={styles.limg}/>
-                      </div>
+                  <div 
+                    key={student.id} 
+                    className={styles.Student}
+                    onClick={() => navigate(`/studentdata/${student.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className={styles.lclass}>{toHankaku(student.class_id)}</div>
+                    <div className={styles.lnumber}>{toHankaku(student.number)}番</div>
+                    <div className={styles.lname}>{student.name}</div>
+                    <div className={styles.llank}>
+                      <img src={`/images/${getRankName(student.sum_point ?? 0)}.png`} alt={getRankName(student.sum_point ?? 0)} className={styles.limg}/>
                     </div>
-                  </a>
+                  </div>
                 ))}
             </div>
         </div>
