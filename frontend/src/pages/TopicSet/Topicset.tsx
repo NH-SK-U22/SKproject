@@ -1,12 +1,15 @@
-import { Box, Container, Typography } from '@mui/material';
-import Sidebar from "../../components/Sidebar/Sidebar";
-import TopicList from '../../components/TopicList/TopicList';
+import { Box, Container, Typography } from "@mui/material";
+import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
+import TopicList from "../../components/TopicList/TopicList";
 
 const TopicSet = () => {
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Sidebar />
-      <Box component="main" sx={{ flexGrow: 1, p: 3, height: '100vh', overflow: 'auto' }}>
+    <Box sx={{ display: "flex" }}>
+      <TeacherSidebar />
+      <Box
+        component="main"
+        sx={{ flexGrow: 1, p: 3, height: "100vh", overflow: "auto" }}
+      >
         <Container maxWidth="lg">
           <Typography variant="h4" component="h1" gutterBottom>
             討論テーマ設定

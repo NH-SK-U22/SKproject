@@ -39,8 +39,8 @@ const TeacherSidebar = () => {
 
   const navigate = useNavigate();
 
-  const handleCreate = () => {
-    navigate("/create");
+  const handleTopicSet = () => {
+    navigate("/topicset");
   };
 
   const handleTeacherReward = () => {
@@ -87,9 +87,9 @@ const TeacherSidebar = () => {
             <FaRegBell />
             <span className={styles.menuText}>通知</span>
           </div>
-          <div className={styles.menuItem} onClick={handleCreate}>
+          <div className={styles.menuItem} onClick={handleTopicSet}>
             <MdCreate />
-            <span className={styles.menuText}>作成</span>
+            <span className={styles.menuText}>トピックセット</span>
           </div>
           <div className={styles.menuItem} onClick={handleTeacherReward}>
             <ImCoinYen />

@@ -23,6 +23,7 @@ import { DebateThemeProvider } from "./context/DebateThemeContext";
 import "./App.css";
 import Mypage from "./pages/Mypage/Mypage";
 import Home from "./pages/Home/Home";
+import Studentdata from "./pages/Studentdata/Studentdata";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
                 <Route path="/campselect" element={<CampSelect />} />
                 <Route path="/result" element={<Result />} />
                 <Route path="/home" element={<Home />} />
+                <Route path="/studentdata/:studentId" element={<Studentdata />} />
               </Routes>
             </Router>
           </ChatProvider>
