@@ -15,7 +15,7 @@ import { useDebateTheme } from "../../context/DebateThemeContext";
 import { useNavigate } from "react-router-dom";
 
 // utils
-import { getCurrentUser, type User } from "../../utils/auth";
+import { getCurrentUser, type User, clearUserCamp } from "../../utils/auth";
 
 const DRAG_MARGIN = 0;
 const GRID_GAP = 30;
@@ -355,10 +355,14 @@ const Dashboard = () => {
     const now = new Date();
     const end = new Date(theme.end_date);
     if (now > end) {
+      // 討論終了時にユーザーの陣営選択を削除
+      clearUserCamp();
       navigate("/result");
     } else {
       // 残り時間で自動遷移
       const timeout = setTimeout(() => {
+        // 討論終了時にユーザーの陣営選択を削除
+        clearUserCamp();
         navigate("/result");
       }, end.getTime() - now.getTime());
       return () => clearTimeout(timeout);
