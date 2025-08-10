@@ -36,6 +36,38 @@ def get_students():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@student_o.route('/students/<int:student_id>', methods=['GET'])
+def get_student(student_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point,
+                            camp_id, theme_color, user_color, blacklist_point, created_at 
+                     FROM students WHERE student_id = ?''', (student_id,))
+        student = c.fetchone()
+        conn.close()
+        
+        if not student:
+            return jsonify({'error': '生徒が見つかりません'}), 404
+        
+        return jsonify({
+            'id': student[0],
+            'school_id': student[1],
+            'class_id': student[2],
+            'number': student[3],
+            'name': student[4],
+            'user_type': student[5],
+            'sum_point': student[6],
+            'have_point': student[7],
+            'camp_id': student[8],
+            'theme_color': student[9],
+            'user_color': student[10],
+            'blacklist_point': student[11],
+            'created_at': student[12]
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @student_o.route('/students/<int:student_id>/points', methods=['PATCH'])
 def update_student_points(student_id):
     if not request.json:
