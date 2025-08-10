@@ -17,6 +17,9 @@ import { IoSettingsSharp } from "react-icons/io5";
 import Notification from "../Notification/Notification";
 import { useDebateTheme } from "../../context/DebateThemeContext";
 
+// utils
+import { getCurrentUser } from "../../utils/auth";
+
 const Sidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -51,7 +54,15 @@ const Sidebar = () => {
     const start = new Date(theme.start_date);
     const end = new Date(theme.end_date);
     if (now >= start && now <= end) {
-      navigate("/dashboard");
+      // 現在のユーザーが陣営を選択しているかどうかを確認する
+      const currentUser = getCurrentUser();
+      if (currentUser && currentUser.camp_id === null) {
+        // 陣営を選択していない場合、まずcampselectページに移動
+        navigate("/campselect");
+      } else {
+        // 陣営を選択した場合、dashboardページに移動
+        navigate("/dashboard");
+      }
     } else {
       navigate("/home");
     }
@@ -72,7 +83,6 @@ const Sidebar = () => {
   const handleMypage = () => {
     navigate("/mypage");
   };
-
 
   return (
     <div className={styles.sidebarContainer}>

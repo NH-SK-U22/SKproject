@@ -7,7 +7,7 @@ import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import Loading from "../../components/Loading/Loading";
 
 // utils
-import { getCurrentUser } from "../../utils/auth";
+import { getCurrentUser, clearUserCamp } from "../../utils/auth";
 import { useDebateTheme } from "../../context/DebateThemeContext";
 
 // components
@@ -25,7 +25,7 @@ interface CampScore {
 const Result: React.FC = () => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
-  const { theme, setTheme } = useDebateTheme();
+  const { theme } = useDebateTheme();
   const [scores, setScores] = useState<CampScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +38,11 @@ const Result: React.FC = () => {
   const buttonRef = useRef<HTMLDivElement>(null);
   const hasAnimatedRef = useRef(false); // アニメーション重複防止
 
+  // 討論終了時にユーザーの陣営選択を削除
+  useEffect(() => {
+    clearUserCamp();
+  }, []);
+
   // API リクエストパラメータ
   const requestParams = useMemo(() => {
     if (!currentUser?.school_id || !theme?.theme_id) return null;
@@ -45,7 +50,6 @@ const Result: React.FC = () => {
   }, [currentUser?.school_id, theme?.theme_id]);
 
   useEffect(() => {
-    
     const fetchScores = async () => {
       if (!requestParams || isRequestingRef.current) {
         if (!requestParams && !isRequestingRef.current) {

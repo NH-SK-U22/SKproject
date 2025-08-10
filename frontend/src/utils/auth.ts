@@ -61,3 +61,38 @@ export const requireAuth = (): User | null => {
   }
   return getCurrentUser();
 };
+
+// ユーザーの陣営選択を削除する
+export const clearUserCamp = async (): Promise<void> => {
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    console.warn("ユーザー情報がありません、陣営選択をクリアできません");
+    return;
+  }
+
+  try {
+    // localStorageから陣営選択を削除する
+    const updatedUser = { ...currentUser, camp_id: null };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    // データベースから陣営選択を削除する
+    const response = await fetch(
+      `http://localhost:5000/api/students/${currentUser.id}/camp`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          camp_id: null,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("データベースから陣営選択を削除できません");
+    }
+  } catch (error) {
+    console.error("陣営選択を削除できません:", error);
+  }
+};
