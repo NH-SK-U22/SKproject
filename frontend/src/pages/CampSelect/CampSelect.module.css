@@ -1,29 +1,45 @@
 .container {
   max-width: 100vw;
-  max-height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 1rem 0;
+  overflow-y: auto;
 }
 
 .title {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 600;
-  margin: 3rem 0 5rem;
+  margin: 0.5rem 0 0.5rem;
   letter-spacing: 1px;
   color: #222;
 }
 
+.themeTitle {
+  font-size: 1.4rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem;
+  color: #666;
+  text-align: center;
+  max-width: 800px;
+  line-height: 1.2;
+  margin: 1rem auto;
+}
+
 .campSelect {
   display: flex;
-  gap: 100px;
-  margin-bottom: 5rem;
+  gap: 50px;
+  margin: 2rem 0 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .campSelectBtn {
-  width: 300px;
-  height: 300px;
+  width: 350px;
+  height: 350px;
   background-color: #fff;
   border: none;
   border-radius: 20px;
@@ -36,19 +52,20 @@
   cursor: pointer;
   outline: none;
   position: relative;
-}
-
-.campSelectBtn img {
-  width: 150px;
-  height: 150px;
-  margin: 0 0 2.5rem 0;
-  object-fit: contain;
+  padding: 20px;
 }
 
 .campSelectBtn span {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   font-weight: 600;
   color: #bbb;
+  text-align: center;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.3;
+  width: 100%;
+  max-width: 310px;
+  padding: 0;
 }
 
 .campSelectBtn:hover,
@@ -64,19 +81,33 @@
 }
 
 .next {
-  padding: 16px 60px;
+  width: 100%;
+  max-width: 200px;
+  padding: 1rem 1.5rem;
+  color: white;
+  background: linear-gradient(90deg, #00e6b8 0%, #05b18e 100%);
   border: none;
-  border-radius: 36px;
-  font-size: 1.5rem;
+  border-radius: 32px;
+  font-size: 1.2rem;
   font-weight: 600;
-  color: #fff;
-  background: linear-gradient(90deg, #00e6b8 0%, #63f2cc 100%);
-  box-shadow: 0 0 16px 4px #00e6b833;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 12px 0 #25e2b655, 0 0 8px 2px #25e2b633;
+  margin-top: 0.3rem;
 }
 
 .next:hover {
-  background: linear-gradient(90deg, #63f2cc 0%, #00e6b8 100%);
-  box-shadow: 0 6px 24px 8px #00e6b855;
+  background: linear-gradient(90deg, #00a484 0%, #00e6b8 100%);
+  box-shadow: 0 4px 16px 0 #25e2b699, 0 0 12px 4px #25e2b655;
+}
+
+.next:disabled {
+  background: #cdfeeb;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.next:disabled:hover {
+  background: #cdfeeb;
+  box-shadow: none;
 }

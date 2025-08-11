@@ -7,6 +7,12 @@ import { gsap } from "gsap";
 // utils
 import { getCurrentUser } from "../../utils/auth";
 
+// context
+import { useDebateTheme } from "../../context/DebateThemeContext";
+
+// components
+import Loading from "../../components/Loading/Loading";
+
 // css
 import styles from "./CampSelect.module.css";
 
@@ -16,9 +22,13 @@ const CampSelect = () => {
   const [isLoading, setIsLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const nextBtnRef = useRef<HTMLButtonElement>(null);
+  const { theme, fetchTheme } = useDebateTheme();
 
-  // ページ表示時のアニメーション
+  // ページ表示時のアニメーションとテーマ取得
   useEffect(() => {
+    // テーマ情報を取得
+    fetchTheme();
+
     if (containerRef.current) {
       gsap.fromTo(
         containerRef.current,
@@ -34,7 +44,7 @@ const CampSelect = () => {
         }
       );
     }
-  }, []);
+  }, [fetchTheme]);
 
   const handleSelect = (camp: string) => {
     setSelectedCamp(camp);
@@ -165,9 +175,15 @@ const CampSelect = () => {
     }
   };
 
+  // テーマが読み込まれていない場合のローディング表示
+  if (!theme) {
+    return <Loading />;
+  }
+
   return (
     <div ref={containerRef} className={styles.container}>
       <h1 className={styles.title}>Select Camp</h1>
+      {theme && <h2 className={styles.themeTitle}>{theme.title}</h2>}
       <div className={styles.campSelect}>
         <button
           className={`${styles.campSelectBtn} ${
@@ -175,7 +191,7 @@ const CampSelect = () => {
           }`}
           onClick={() => handleSelect("camp1")}
         >
-          <span>陣営1</span>
+          <span>{theme.team1}</span>
         </button>
         <button
           className={`${styles.campSelectBtn} ${
@@ -183,7 +199,7 @@ const CampSelect = () => {
           }`}
           onClick={() => handleSelect("camp2")}
         >
-          <span>陣営2</span>
+          <span>{theme.team2}</span>
         </button>
       </div>
       <button
@@ -193,7 +209,7 @@ const CampSelect = () => {
         onClick={handleNext}
         disabled={isLoading}
       >
-        {isLoading ? "選択中..." : "Next"}
+        {isLoading ? "Next..." : "Next"}
       </button>
     </div>
   );
