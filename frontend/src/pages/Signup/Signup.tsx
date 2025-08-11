@@ -17,6 +17,9 @@ import {
   FaUserTag,
 } from "react-icons/fa";
 
+// components
+import BackgroundCircles from "../../components/BackgroundCircles/BackgroundCircles";
+
 const Signup = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -34,7 +37,7 @@ const Signup = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const loginLinkRef = useRef<HTMLAnchorElement>(null);
 
-  // ページ表示時のアニメーション
+  // 页面显示时的动画
   useEffect(() => {
     if (containerRef.current) {
       gsap.fromTo(
@@ -164,6 +167,7 @@ const Signup = () => {
 
   return (
     <div className={styles.container}>
+      <BackgroundCircles />
       <div className={styles.signupBox} ref={containerRef}>
         <h2>Sign up</h2>
         {error && <div className={styles.error}>{error}</div>}
