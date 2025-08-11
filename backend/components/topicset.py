@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import sqlite3
 import random
+from datetime import datetime
 
 topicset_o = Blueprint('topicset_o', __name__, url_prefix='/api')
 
@@ -73,6 +74,98 @@ def get_all_debates():
         else:
             return jsonify([]), 200
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@topicset_o.route('/clear_camp_selections', methods=['POST'])
+def clear_camp_selections():
+    """讨论时间结束时清除所有学生的camp_id"""
+    data = request.get_json()
+    school_id = data.get('school_id')
+    
+    if not school_id:
+        return jsonify({'error': 'school_idが必要です'}), 400
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    try:
+        # 获取当前时间
+        now = datetime.now()
+        
+        # 查找已结束的讨论主题
+        c.execute('''
+            SELECT theme_id FROM debate_settings 
+            WHERE school_id = ? AND end_date <= ?
+        ''', (school_id, now.strftime('%Y-%m-%d %H:%M:%S')))
+        
+        ended_themes = c.fetchall()
+        
+        if not ended_themes:
+            return jsonify({'message': '終了した討論テーマがありません'}), 200
+        
+        # 清除所有学生的camp_id
+        c.execute('''
+            UPDATE students 
+            SET camp_id = NULL 
+            WHERE school_id = ?
+        ''', (school_id,))
+        
+        conn.commit()
+        
+        return jsonify({
+            'message': '陣営選択がクリアされました',
+            'cleared_students': c.rowcount
+        }), 200
+        
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@topicset_o.route('/check_theme_status', methods=['GET'])
+def check_theme_status():
+    """检查讨论主题状态，如果已结束则自动清除camp_id"""
+    school_id = request.args.get('school_id')
+    
+    if not school_id:
+        return jsonify({'error': 'school_idが必要です'}), 400
+    
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    try:
+        # 获取当前时间
+        now = datetime.now()
+        
+        # 查找已结束的讨论主题
+        c.execute('''
+            SELECT theme_id, title, end_date FROM debate_settings 
+            WHERE school_id = ? AND end_date <= ?
+        ''', (school_id, now.strftime('%Y-%m-%d %H:%M:%S')))
+        
+        ended_themes = c.fetchall()
+        
+        if ended_themes:
+            # 清除所有学生的camp_id
+            c.execute('''
+                UPDATE students 
+                SET camp_id = NULL 
+                WHERE school_id = ?
+            ''', (school_id,))
+            
+            conn.commit()
+            
+            return jsonify({
+                'message': '討論が終了し、陣営選択がクリアされました',
+                'ended_themes': [{'theme_id': t[0], 'title': t[1], 'end_date': t[2]} for t in ended_themes],
+                'cleared_students': c.rowcount
+            }), 200
+        else:
+            return jsonify({'message': '進行中の討論があります'}), 200
+        
+    except Exception as e:
+        conn.rollback()
         return jsonify({'error': str(e)}), 500
     finally:
         conn.close()

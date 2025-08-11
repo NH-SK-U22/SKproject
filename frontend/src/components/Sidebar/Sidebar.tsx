@@ -18,7 +18,7 @@ import Notification from "../Notification/Notification";
 import { useDebateTheme } from "../../context/DebateThemeContext";
 
 // utils
-import { getCurrentUser } from "../../utils/auth";
+import { getCurrentUser, clearUserCamp } from "../../utils/auth";
 
 const Sidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -45,7 +45,7 @@ const Sidebar = () => {
 
   const { theme } = useDebateTheme();
 
-  const handleDebateClick = () => {
+  const handleDebateClick = async () => {
     if (!theme) {
       navigate("/home");
       return;
@@ -64,6 +64,15 @@ const Sidebar = () => {
         navigate("/dashboard");
       }
     } else {
+      // 討論が終了している場合、camp_idをクリアしてホームページに移動
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        try {
+          await clearUserCamp();
+        } catch (error) {
+          console.error("陣営選択のクリアエラー:", error);
+        }
+      }
       navigate("/home");
     }
   };

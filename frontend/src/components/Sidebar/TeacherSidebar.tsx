@@ -62,6 +62,7 @@ const TeacherSidebar = () => {
     if (now >= start && now <= end) {
       navigate("/dashboard");
     } else {
+      // 討論が終了している場合、ホームページに移動
       navigate("/home");
     }
   };

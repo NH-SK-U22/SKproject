@@ -43,6 +43,49 @@ if GEMINI_API_KEY:
 else:
     print("Warning: GEMINI_API_KEY not found in environment variables")
 
+def check_and_clear_expired_camps():
+    """定期检查并清除已结束讨论的camp_id"""
+    while True:
+        try:
+            conn = sqlite3.connect('database.db')
+            c = conn.cursor()
+            
+            # 获取当前时间
+            now = datetime.now()
+            
+            # 查找已结束的讨论主题
+            c.execute('''
+                SELECT DISTINCT school_id FROM debate_settings 
+                WHERE end_date <= ?
+            ''', (now.strftime('%Y-%m-%d %H:%M:%S'),))
+            
+            schools = c.fetchall()
+            
+            for school in schools:
+                school_id = school[0]
+                # 清除该学校所有学生的camp_id
+                c.execute('''
+                    UPDATE students 
+                    SET camp_id = NULL 
+                    WHERE school_id = ?
+                ''', (school_id,))
+                
+                if c.rowcount > 0:
+                    print(f"Cleared camp_id for {c.rowcount} students in school {school_id}")
+            
+            conn.commit()
+            conn.close()
+            
+        except Exception as e:
+            print(f"Error in check_and_clear_expired_camps: {e}")
+        
+        # 每5分钟检查一次
+        time.sleep(300)
+
+# 启动定时任务
+camp_clear_thread = threading.Thread(target=check_and_clear_expired_camps, daemon=True)
+camp_clear_thread.start()
+
 app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
 app.register_blueprint(login_o)

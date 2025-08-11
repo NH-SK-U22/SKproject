@@ -285,6 +285,31 @@ const Dashboard = () => {
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
+
+      // 討論主題の状態をチェックし、必要に応じてcamp_idをクリア
+      const checkThemeStatus = async () => {
+        try {
+          const response = await fetch(
+            `http://localhost:5000/api/check_theme_status?school_id=${user.school_id}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (
+              data.message.includes("討論が終了し、陣営選択がクリアされました")
+            ) {
+              // ローカルストレージのcamp_idもクリア
+              const updatedUser = { ...user, camp_id: null };
+              localStorage.setItem("user", JSON.stringify(updatedUser));
+              setCurrentUser(updatedUser);
+            }
+          }
+        } catch (error) {
+          console.error("討論主題状態のチェックエラー:", error);
+        }
+      };
+
+      checkThemeStatus();
+
       // 同校の付箋を読み込む（theme_idが必須）
       if (theme?.theme_id) {
         loadSchoolPosts(user.school_id, theme.theme_id);

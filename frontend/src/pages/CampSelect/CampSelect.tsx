@@ -108,7 +108,7 @@ const CampSelect = () => {
                 const updatedUser = { ...currentUser, camp_id: campId };
                 localStorage.setItem("user", JSON.stringify(updatedUser));
 
-                // Createページに移動
+                // Createページに移動（その後自動的にdashboardに移動）
                 navigate("/create");
               } else {
                 const errorData = await response.json();
