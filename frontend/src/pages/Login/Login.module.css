@@ -15,12 +15,13 @@
   max-height: 90vh;
   padding: 1.5rem;
   border-radius: 24px;
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.12);
   box-shadow: 0 8px 32px 10px rgba(31, 38, 135, 0.1);
   backdrop-filter: blur(18px) saturate(1.5);
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
   border: none;
-  z-index: 1;
+  z-index: 2;
+  position: relative;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -61,10 +62,6 @@
   pointer-events: none;
 }
 
-.loginBox .largeIcon {
-  font-size: 1.3rem;
-}
-
 .loginBox .inputGroup label {
   margin-bottom: 0.5rem;
   color: #999;
@@ -82,41 +79,9 @@
   font-size: 1.15rem;
 }
 
-.loginBox .inputGroup input::placeholder {
-  color: #999;
-  font-size: 1rem;
-  font-weight: 400;
-  font-family: "Noto Sans JP", sans-serif;
-  opacity: 1;
-}
-
-.loginBox .inputGroup input::-webkit-input-placeholder {
-  color: #999;
-  font-size: 1rem;
-  font-weight: 400;
-  font-family: "Noto Sans JP", sans-serif;
-  opacity: 1;
-}
-
-.loginBox .inputGroup input::-moz-placeholder {
-  color: #999;
-  font-size: 1rem;
-  font-weight: 400;
-  font-family: "Noto Sans JP", sans-serif;
-  opacity: 1;
-}
-
-.loginBox .inputGroup input:-ms-input-placeholder {
-  color: #999;
-  font-size: 1rem;
-  font-weight: 400;
-  font-family: "Noto Sans JP", sans-serif;
-  opacity: 1;
-}
-
 .loginBox .inputGroup input:focus {
   border: 1px solid #00e6b8;
-  box-shadow: 0 0 0 1px #00e6b8, 0 2px 8px 0 #ffd16644;
+  box-shadow: 0 0 0 1px #00e6b8, 0 2px 8px 0 #00e6b844;
   outline: none;
 }
 
@@ -174,7 +139,7 @@
 }
 
 .submitButton:hover {
-  background: linear-gradient(90deg, #00a484 0%, #00e6b8 100%);
+  background: linear-gradient(90deg, #05b18e 0%, #00e6b8 100%);
   box-shadow: 0 4px 16px 0 #25e2b699, 0 0 12px 4px #25e2b655;
 }
 
@@ -195,7 +160,7 @@
 }
 
 .signupLink a:hover {
-  color: #00a484;
+  color: #05b18e;
   text-decoration: underline;
 }
 

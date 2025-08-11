@@ -72,14 +72,14 @@
   border-radius: 36px;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #fff;
-  background: linear-gradient(90deg, #00e6b8 0%, #63f2cc 100%);
-  box-shadow: 0 0 16px 4px #00e6b833;
+  color: white;
+  background: linear-gradient(90deg, #00e6b8 0%, #05b18e 100%);
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 12px 0 #25e2b655, 0 0 8px 2px #25e2b633;
 }
 
 .next:hover {
-  background: linear-gradient(90deg, #63f2cc 0%, #00e6b8 100%);
-  box-shadow: 0 6px 24px 8px #00e6b855;
+  background: linear-gradient(90deg, #00a484 0%, #00e6b8 100%);
+  box-shadow: 0 4px 16px 0 #25e2b699, 0 0 12px 4px #25e2b655;
 }

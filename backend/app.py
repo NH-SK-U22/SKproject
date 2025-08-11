@@ -6,6 +6,9 @@ from flask_socketio import SocketIO, emit
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+import threading
+from datetime import datetime
+import time
 
 from components.init import init_db
 from components.signup import signup_o
@@ -63,7 +66,6 @@ def check_and_clear_expired_camps():
             
             for school in schools:
                 school_id = school[0]
-                # 清除该学校所有学生的camp_id
                 c.execute('''
                     UPDATE students 
                     SET camp_id = NULL 
@@ -79,10 +81,8 @@ def check_and_clear_expired_camps():
         except Exception as e:
             print(f"Error in check_and_clear_expired_camps: {e}")
         
-        # 每5分钟检查一次
         time.sleep(300)
 
-# 启动定时任务
 camp_clear_thread = threading.Thread(target=check_and_clear_expired_camps, daemon=True)
 camp_clear_thread.start()
 
@@ -186,7 +186,7 @@ def create_sticky():
                   request.json.get('teammate_avg_score', 0),
                   request.json.get('enemy_avg_score', 0),
                   request.json.get('overall_avg_score', 0),
-                  theme_id  # 追加
+                  theme_id
                  ))
         
         sticky_id = c.lastrowid
@@ -256,7 +256,7 @@ def get_sticky_notes():
         school_id = request.args.get('school_id')
         theme_id = request.args.get('theme_id')
         
-        #         # 付箋取得（camp_idも含める）
+        # 付箋取得（camp_idも含める）
         if school_id and theme_id:
             # school_id と theme_id の両方で絞り込む
             c.execute('''SELECT s.sticky_id, s.student_id, s.sticky_content, s.sticky_color, s.x_axis, s.y_axis, s.display_index,

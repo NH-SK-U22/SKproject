@@ -17,6 +17,9 @@ import {
   FaUserTag,
 } from "react-icons/fa";
 
+// components
+import BackgroundCircles from "../../components/BackgroundCircles/BackgroundCircles";
+
 const Signup = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -164,6 +167,7 @@ const Signup = () => {
 
   return (
     <div className={styles.container}>
+      <BackgroundCircles />
       <div className={styles.signupBox} ref={containerRef}>
         <h2>Sign up</h2>
         {error && <div className={styles.error}>{error}</div>}
