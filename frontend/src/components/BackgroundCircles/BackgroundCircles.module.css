@@ -72,7 +72,7 @@
   right: 15%;
 }
 
-/* 响应式设计 */
+/* レスポンシブデザイン */
 @media (max-width: 768px) {
   .circle1 {
     width: 260px;

@@ -13,15 +13,13 @@ const BackgroundCircles: React.FC = () => {
 
     if (!container) return;
 
-    // 获取容器尺寸 - 移除容器限制，让圆圈在整个画面中移动
     const containerRect = container.getBoundingClientRect();
-    const maxX = containerRect.width * 0.6; // 扩大到60%的范围
-    const maxY = containerRect.height * 0.6; // 扩大到60%的范围
-    const boundPadding = 18; // 邊界安全間距，避免卡在邊上
+    const maxX = containerRect.width * 0.6;
+    const maxY = containerRect.height * 0.6;
+    const boundPadding = 18;
     const boundX = Math.max(0, maxX - boundPadding);
     const boundY = Math.max(0, maxY - boundPadding);
 
-    // 为每个圆圈创建不同的动画（在整个画面中自由移动）
     const animations = [
       {
         element: circles[0],
@@ -67,24 +65,22 @@ const BackgroundCircles: React.FC = () => {
       },
     ];
 
-    // 使用 ticker 驅動的連續位移，以獲得最平滑的效果
     type MotionState = {
       el: Element;
       x: number;
       y: number;
       angle: number;
-      speed: number; // px/sec
-      jitter: number; // 每幀的角度微擾
+      speed: number;
+      jitter: number;
     };
     const states: MotionState[] = [];
-    const baseSpeed = Math.min(boundX, boundY) * 0.1; // 全域基準速度（整體再放慢）
+    const baseSpeed = Math.min(boundX, boundY) * 0.1;
 
     animations.forEach((animation) => {
       const { element, duration, opacity, scale, delay } = animation;
 
-      // 设置初始位置 - 让圆圈在整个画面中分布
-      const initialX = (Math.random() - 0.5) * maxX * 0.8; // 扩大到80%范围
-      const initialY = (Math.random() - 0.5) * maxY * 0.8; // 扩大到80%范围
+      const initialX = (Math.random() - 0.5) * maxX * 0.8;
+      const initialY = (Math.random() - 0.5) * maxY * 0.8;
 
       gsap.set(element, {
         opacity,
@@ -94,12 +90,11 @@ const BackgroundCircles: React.FC = () => {
         y: initialY,
       });
 
-      // 建立並保存此元素的運動狀態
       const isSmallCircle =
         element === circles[3] ||
         element === circles[4] ||
         element === circles[5];
-      const speedMultiplier = isSmallCircle ? 0.6 : 1.0; // 放慢最小三顆
+      const speedMultiplier = isSmallCircle ? 0.6 : 1.0;
       states.push({
         el: element,
         x: initialX,
@@ -109,38 +104,33 @@ const BackgroundCircles: React.FC = () => {
         jitter: 0.015,
       });
 
-      // 其他动画也使用更自然的缓动和稳定的持续时间
       gsap.to(element, {
         rotation: 360,
-        duration: duration * 30.0, // 大幅增加旋转时间，放慢转动速度
+        duration: duration * 30.0,
         delay,
         ease: "none",
         repeat: -1,
       });
-      // 移除缩放动画，保持圆圈大小不变
       gsap.to(element, {
-        opacity: Math.min(opacity + 0.03, 0.85), // 更小的透明度变化
+        opacity: Math.min(opacity + 0.03, 0.85),
         duration: duration * 0.7,
         delay,
-        ease: "none", // 线性透明度变化，无跳跃
+        ease: "none",
         repeat: -1,
         yoyo: true,
       });
     });
 
-    // 統一以 ticker 更新所有圓的位置
     const tick = () => {
-      const ratio = gsap.ticker.deltaRatio(); // 相對 60fps 的倍率
-      const dt = ratio / 60; // 近似秒
+      const ratio = gsap.ticker.deltaRatio();
+      const dt = ratio / 60;
       for (const s of states) {
-        // 角度微擾，讓軌跡更自然
         s.angle += (Math.random() - 0.5) * s.jitter;
 
         const step = s.speed * dt;
         s.x += Math.cos(s.angle) * step;
         s.y += Math.sin(s.angle) * step;
 
-        // 邊界反射
         let bounced = false;
         if (s.x > boundX) {
           s.x = boundX;
@@ -161,7 +151,6 @@ const BackgroundCircles: React.FC = () => {
           bounced = true;
         }
         if (bounced) {
-          // 撞到邊界時加點擾動避免來回直線
           s.angle += (Math.random() - 0.5) * 0.06;
         }
 

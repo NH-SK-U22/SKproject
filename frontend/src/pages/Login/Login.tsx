@@ -36,7 +36,7 @@ const Login = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const signupLinkRef = useRef<HTMLAnchorElement>(null);
 
-  // 页面显示时的动画
+  // ページ表示時のアニメーション
   useEffect(() => {
     if (containerRef.current) {
       gsap.fromTo(
