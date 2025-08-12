@@ -102,12 +102,14 @@
 }
 
 .next:disabled {
-  background: #cdfeeb;
+  opacity: 0.5;
   cursor: not-allowed;
+  background: linear-gradient(90deg, #00e6b8 0%, #05b18e 100%);
   box-shadow: none;
 }
 
 .next:disabled:hover {
-  background: #cdfeeb;
+  opacity: 0.5;
+  background: linear-gradient(90deg, #00e6b8 0%, #05b18e 100%);
   box-shadow: none;
 }

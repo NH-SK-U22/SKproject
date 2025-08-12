@@ -60,11 +60,10 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
 
   const formatScore = (value: number): string => {
     const rounded = Math.round(value);
-    if (rounded < 0) return `\u2212${Math.abs(rounded)}`; // use real minus sign
+    if (rounded < 0) return `\u2212${Math.abs(rounded)}`;
     return String(rounded);
   };
 
-  // 画面左右半分に散布する静止インクドットの種（マウント時に固定）
   const leftFieldDots = useMemo(
     () =>
       Array.from({ length: 28 }).map((_, index) => ({
@@ -234,26 +233,60 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
         stagger: 0.15,
       });
 
-      // 進捗状況アニメーション
-      tl.to(
-        leftProgressRef.current,
-        {
-          width: `${camp1Percentage}%`,
-          opacity: 1,
-          duration: 2.0,
-          ease: "power3.out",
-        },
-        "-=0.4"
-      ).to(
-        rightProgressRef.current,
-        {
-          width: `${camp2Percentage}%`,
-          opacity: 1,
-          duration: 2.0,
-          ease: "power3.out",
-        },
-        "-=1.8"
-      );
+      // 進捗状況アニメーション：高分側から開始
+      const s1 = Math.max(0, camp1.score); // 負分を0として扱う
+      const s2 = Math.max(0, camp2.score);
+      const isRightHigher = s2 > s1;
+
+      if (isRightHigher) {
+        // 右側が高い場合は右から左へ
+        tl.set(rightProgressRef.current, { width: "100%" }) // 右端から開始
+          .set(leftProgressRef.current, { width: "0%" }) // 左は0から
+          .to(
+            rightProgressRef.current,
+            {
+              width: `${camp2Percentage}%`,
+              opacity: 1,
+              duration: 2.0,
+              ease: "power3.out",
+            },
+            "-=0.4"
+          )
+          .to(
+            leftProgressRef.current,
+            {
+              width: `${camp1Percentage}%`,
+              opacity: 1,
+              duration: 2.0,
+              ease: "power3.out",
+            },
+            "-=1.8"
+          );
+      } else {
+        // 左側が高い場合は左から右へ
+        tl.set(leftProgressRef.current, { width: "0%" }) // 左は0から
+          .set(rightProgressRef.current, { width: "0%" }) // 右も0から
+          .to(
+            leftProgressRef.current,
+            {
+              width: `${camp1Percentage}%`,
+              opacity: 1,
+              duration: 2.0,
+              ease: "power3.out",
+            },
+            "-=0.4"
+          )
+          .to(
+            rightProgressRef.current,
+            {
+              width: `${camp2Percentage}%`,
+              opacity: 1,
+              duration: 2.0,
+              ease: "power3.out",
+            },
+            "-=1.8"
+          );
+      }
 
       // フィールドインクドット（左右半分）をふわっと表示
       const leftDots = chartRef.current?.querySelectorAll(
