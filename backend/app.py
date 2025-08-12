@@ -537,6 +537,48 @@ def health_check():
 
 
 
+@app.route('/api/check_theme_status', methods=['GET'])
+def check_theme_status():
+    """学校単位で直近テーマが終了していれば student.camp_id をクリアする"""
+    school_id = request.args.get('school_id')
+    if not school_id:
+        return jsonify({'error': 'school_id が必要です'}), 400
+
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+
+        # 直近(終了日時が最新)テーマについて、終了済みか(= end_date <= now) をDB側で判定
+        c.execute('''
+            SELECT CASE WHEN end_date <= datetime('now') THEN 1 ELSE 0 END AS ended
+              FROM debate_settings
+             WHERE school_id = ?
+             ORDER BY end_date DESC
+             LIMIT 1
+        ''', (school_id,))
+        row = c.fetchone()
+
+        if not row:
+            conn.close()
+            return jsonify({'message': 'テーマが見つかりません'}), 404
+
+        ended = bool(row[0])
+        if ended:
+            c.execute('''
+                UPDATE students
+                   SET camp_id = NULL
+                 WHERE school_id = ?
+            ''', (school_id,))
+            conn.commit()
+            conn.close()
+            return jsonify({'message': '討論が終了し、陣営選択がクリアされました'})
+
+        conn.close()
+        return jsonify({'message': '討論が継続中です'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @socketio.on('join_sticky_chat')
 def handle_join_sticky_chat(data):
     """付箋チャットに参加"""

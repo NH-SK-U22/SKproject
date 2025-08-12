@@ -66,6 +66,39 @@ def get_theme(theme_id):
     return jsonify(dict(row))
 
 
+# newest_theme: 学校ごとの最新(終了が未来のもの優先)テーマを一件取得
+@themes_o.route('/newest_theme', methods=['GET'])
+def newest_theme():
+    school_id = request.args.get('school_id')
+    if not school_id:
+        return jsonify({'error': 'school_id が必要です'}), 400
+
+    conn = get_db_connection()
+    c = conn.cursor()
+    # まず未終了のものを終了日時昇順で、なければ終了済みを終了日時降順で1件
+    c.execute('''
+        SELECT theme_id, title, description, colorset_id, start_date, end_date
+          FROM debate_settings
+         WHERE school_id = ? AND end_date > datetime('now')
+         ORDER BY end_date ASC
+         LIMIT 1
+    ''', (school_id,))
+    row = c.fetchone()
+    if not row:
+        c.execute('''
+            SELECT theme_id, title, description, colorset_id, start_date, end_date
+              FROM debate_settings
+             WHERE school_id = ?
+             ORDER BY end_date DESC
+             LIMIT 1
+        ''', (school_id,))
+        row = c.fetchone()
+
+    conn.close()
+    if not row:
+        return jsonify(None)
+    return jsonify(dict(row))
+
 # 4) テーマ情報を更新
 @themes_o.route('/themes/<int:theme_id>', methods=['PATCH'])
 def update_theme(theme_id):
