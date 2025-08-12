@@ -56,7 +56,10 @@ const Sidebar = () => {
     if (now >= start && now <= end) {
       // 現在のユーザーが陣営を選択しているかどうかを確認する
       const currentUser = getCurrentUser();
-      if (currentUser && currentUser.camp_id === null) {
+      if (
+        currentUser &&
+        (currentUser.camp_id === null || currentUser.camp_id === undefined)
+      ) {
         // 陣営を選択していない場合、まずcampselectページに移動
         navigate("/campselect");
       } else {
@@ -78,7 +81,28 @@ const Sidebar = () => {
   };
 
   const handleCreate = () => {
-    navigate("/create");
+    const currentUser = getCurrentUser();
+    if (!theme) {
+      navigate("/home");
+      return;
+    }
+    // 活動期間内：未選陣営なら先にキャンプ選択
+    const now = new Date();
+    const start = new Date(theme.start_date);
+    const end = new Date(theme.end_date);
+    if (now >= start && now <= end) {
+      if (
+        currentUser &&
+        (currentUser.camp_id === null || currentUser.camp_id === undefined)
+      ) {
+        navigate("/campselect");
+        return;
+      }
+      navigate("/create");
+      return;
+    }
+    // 期間外
+    navigate("/home");
   };
 
   const handleSetting = () => {

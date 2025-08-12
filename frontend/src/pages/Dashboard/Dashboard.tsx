@@ -286,21 +286,28 @@ const Dashboard = () => {
     if (user) {
       setCurrentUser(user);
 
-      // 討論主題の状態をチェックし、必要に応じてcamp_idをクリア
+      // 討論主題の状態をチェック（期間終了後のみサーバ側のクリアAPIを呼ぶ）
       const checkThemeStatus = async () => {
         try {
-          const response = await fetch(
-            `http://localhost:5000/api/check_theme_status?school_id=${user.school_id}`
-          );
-          if (response.ok) {
-            const data = await response.json();
-            if (
-              data.message.includes("討論が終了し、陣営選択がクリアされました")
-            ) {
-              // ローカルストレージのcamp_idもクリア
-              const updatedUser = { ...user, camp_id: null };
-              localStorage.setItem("user", JSON.stringify(updatedUser));
-              setCurrentUser(updatedUser);
+          if (theme) {
+            const now = new Date();
+            const end = new Date(theme.end_date);
+            if (now > end) {
+              const response = await fetch(
+                `http://localhost:5000/api/check_theme_status?school_id=${user.school_id}`
+              );
+              if (response.ok) {
+                const data = await response.json();
+                if (
+                  (data.message || "").includes(
+                    "討論が終了し、陣営選択がクリアされました"
+                  )
+                ) {
+                  const updatedUser = { ...user, camp_id: null };
+                  localStorage.setItem("user", JSON.stringify(updatedUser));
+                  setCurrentUser(updatedUser);
+                }
+              }
             }
           }
         } catch (error) {
@@ -377,6 +384,35 @@ const Dashboard = () => {
   // 期間終了時にResultへ遷移
   useEffect(() => {
     if (!theme) return;
+    // 学生でキャンプ未選択の場合は DB で再確認し、必要時のみ CampSelect へ
+    (async () => {
+      const current = getCurrentUser();
+      if (current && current.user_type === "student") {
+        const now = new Date();
+        const start = new Date(theme.start_date);
+        const end = new Date(theme.end_date);
+        if (now >= start && now <= end) {
+          try {
+            const res = await fetch(
+              `http://localhost:5000/api/students/${current.id}`
+            );
+            if (res.ok) {
+              const s = await res.json();
+              if (s && (s.camp_id === null || s.camp_id === undefined)) {
+                navigate("/campselect");
+                return;
+              } else if (s && s.camp_id !== current.camp_id) {
+                const updated = { ...current, camp_id: s.camp_id } as User;
+                localStorage.setItem("user", JSON.stringify(updated));
+                setCurrentUser(updated);
+              }
+            }
+          } catch (e) {
+            console.error("Failed to verify camp selection on dashboard:", e);
+          }
+        }
+      }
+    })();
     const now = new Date();
     const end = new Date(theme.end_date);
     if (now > end) {

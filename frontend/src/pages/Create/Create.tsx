@@ -48,6 +48,41 @@ const Create = () => {
 
   // theme が取得されたときに色を設定
   useEffect(() => {
+    // 期間中で陣営未選択ならCampSelectへ（DBの最新状態で確認）
+    (async () => {
+      if (theme && currentUser && currentUser.user_type === "student") {
+        const now = new Date();
+        const start = new Date(theme.start_date);
+        const end = new Date(theme.end_date);
+        if (now >= start && now <= end) {
+          try {
+            const res = await fetch(
+              `http://localhost:5000/api/students/${currentUser.id}`
+            );
+            if (res.ok) {
+              const s = await res.json();
+              if (s) {
+                if (s.camp_id === null || s.camp_id === undefined) {
+                  navigate("/campselect");
+                  return;
+                } else if (s.camp_id !== currentUser.camp_id) {
+                  // 同期（ローカル更新）
+                  const updated = {
+                    ...currentUser,
+                    camp_id: s.camp_id,
+                  } as User;
+                  localStorage.setItem("user", JSON.stringify(updated));
+                  setCurrentUser(updated);
+                }
+              }
+            }
+          } catch (e) {
+            console.error("Failed to verify camp selection:", e);
+          }
+        }
+      }
+    })();
+
     const fetchColorSets = async () => {
       try {
         if (theme?.theme_id && currentUser?.camp_id) {
@@ -210,7 +245,7 @@ const Create = () => {
             disabled={isPosting}
             style={{
               opacity: isPosting ? 0.5 : 1,
-              cursor: isPosting? "not-allowed" : "pointer"
+              cursor: isPosting ? "not-allowed" : "pointer",
             }}
           >
             {isPosting ? "Posting..." : "Post"}
