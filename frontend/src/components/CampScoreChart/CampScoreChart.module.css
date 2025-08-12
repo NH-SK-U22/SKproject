@@ -104,7 +104,6 @@
 }
 
 .progressContainer::after {
-  /* 移除圓圈效果 */
   content: none;
   display: none;
 }
@@ -138,7 +137,7 @@
   border-radius: 40px 0 0 40px;
   position: relative;
   overflow: visible;
-  background: var(--ink-color);
+  background: var(--ink-color, #c76bff);
   z-index: 2;
   opacity: 1;
   display: block;
@@ -237,31 +236,35 @@
 @keyframes splatoonGlow {
   0% {
     box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.4),
-      inset 0 -4px 8px rgba(0, 0, 0, 0.3), 0 4px 16px var(--ink-color),
-      0 0 20px var(--ink-color);
+      inset 0 -4px 8px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(199, 107, 255, 0.6),
+      0 0 20px rgba(199, 107, 255, 0.3);
   }
   100% {
     box-shadow: inset 0 4px 8px rgba(255, 255, 255, 0.6),
-      inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px var(--ink-color),
-      0 0 30px var(--ink-color);
+      inset 0 -4px 8px rgba(0, 0, 0, 0.2), 0 6px 20px rgba(199, 107, 255, 0.8),
+      0 0 30px rgba(199, 107, 255, 0.5);
   }
 }
 
 @keyframes splatoonTextGlow {
   0% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 15px var(--camp1-color);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4),
+      0 0 15px var(--camp1-color, rgba(199, 107, 255, 0.4));
   }
   100% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px var(--camp1-color);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5),
+      0 0 20px var(--camp1-color, rgba(199, 107, 255, 0.6));
   }
 }
 
 @keyframes splatoonTextGlowOrange {
   0% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 15px var(--camp2-color);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4),
+      0 0 15px var(--camp2-color, rgba(255, 196, 114, 0.4));
   }
   100% {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 20px var(--camp2-color);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5),
+      0 0 20px var(--camp2-color, rgba(255, 196, 114, 0.6));
   }
 }
 
@@ -286,21 +289,21 @@
   }
 }
 
-/* --- Splatoon 風 インク層 --- */
+/* --- Splatoon --- */
 .inkLayer {
   position: absolute;
-  inset: -2px 0 -12px 0; /* 控制超出範圍，避免巨大覆蓋 */
+  inset: -2px 0 -12px 0;
   pointer-events: none;
   filter: url("#goo-ink");
   z-index: 1;
 }
 
 .leftInk {
-  left: -8px; /* 進度條最左端 */
+  left: -8px;
 }
 
 .rightInk {
-  right: -8px; /* 進度條最右端 */
+  right: -8px;
 }
 
 .inkSplatter {
@@ -308,8 +311,8 @@
   top: 50%;
   width: var(--size, 24px);
   height: var(--size, 24px);
-  background: var(--ink-color);
-  color: var(--ink-color);
+  background: var(--ink-color, #c76bff);
+  color: var(--ink-color, #c76bff);
   border-radius: 50%;
   box-shadow: 0 0 0 calc(var(--size, 24px) * 0.25) currentColor,
     calc(var(--size, 24px) * -0.55) calc(var(--size, 24px) * 0.1) 0
@@ -322,12 +325,10 @@
   opacity: 0.95;
 }
 
-/* 左陣營潑漆：往左外側生成 */
 .leftInk .inkSplatter {
   left: -10px;
 }
 
-/* 右陣營潑漆：往右外側生成 */
 .rightInk .inkSplatter {
   left: calc(100% - 10px);
 }
@@ -337,8 +338,8 @@
   bottom: -6px;
   width: 10px;
   height: var(--length, 24px);
-  background: var(--ink-color);
-  color: var(--ink-color);
+  background: var(--ink-color, #c76bff);
+  color: var(--ink-color, #c76bff);
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
   border-top-left-radius: 6px;
@@ -347,12 +348,10 @@
   opacity: 0.95;
 }
 
-/* 左陣營滴落：相對左端偏移 */
 .leftInk .inkDrip {
   left: var(--offset, 50%);
 }
 
-/* 右陣營滴落：相對右端偏移 */
 .rightInk .inkDrip {
   left: calc(100% - var(--offset, 50%));
 }
