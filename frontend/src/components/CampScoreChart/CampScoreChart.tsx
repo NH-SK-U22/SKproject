@@ -58,6 +58,12 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
   const chartRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 
+  const formatScore = (value: number): string => {
+    const rounded = Math.round(value);
+    if (rounded < 0) return `\u2212${Math.abs(rounded)}`; // use real minus sign
+    return String(rounded);
+  };
+
   // 画面左右半分に散布する静止インクドットの種（マウント時に固定）
   const leftFieldDots = useMemo(
     () =>
@@ -163,12 +169,11 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
     camp1RealPercentage,
     camp2RealPercentage,
   } = useMemo(() => {
-    // 百分比以「差分相對於絕對和」計算，確保總和=100 且能反映負分
-    // p1 = 50% + 50% * (s1 - s2) / (|s1| + |s2|)；p2 = 100 - p1
-    const s1 = Number.isFinite(camp1.score) ? camp1.score : 0;
-    const s2 = Number.isFinite(camp2.score) ? camp2.score : 0;
-    const denom = Math.abs(s1) + Math.abs(s2);
-    if (denom === 0) {
+    // 百分比計算：正分才參與比例，負分視為 0
+    const s1 = Number.isFinite(camp1.score) ? Math.max(0, camp1.score) : 0;
+    const s2 = Number.isFinite(camp2.score) ? Math.max(0, camp2.score) : 0;
+    const totalScore = s1 + s2;
+    if (totalScore === 0) {
       return {
         camp1Percentage: 50,
         camp2Percentage: 50,
@@ -177,9 +182,8 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
       };
     }
 
-    const delta = s1 - s2;
-    const camp1Real = Math.max(0, Math.min(100, 50 + (50 * delta) / denom));
-    const camp2Real = 100 - camp1Real;
+    const camp1Real = (s1 / totalScore) * 100;
+    const camp2Real = (s2 / totalScore) * 100;
 
     return {
       // 進捗バーの幅は実際の割合と完全一致させる
@@ -301,9 +305,9 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           ease: "power2.inOut",
           onUpdate: () => {
             if (leftScoreRef.current) {
-              leftScoreRef.current.textContent = Math.round(
+              leftScoreRef.current.textContent = formatScore(
                 camp1ScoreObj.value
-              ).toString();
+              );
             }
           },
         },
@@ -316,9 +320,9 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           ease: "power2.inOut",
           onUpdate: () => {
             if (rightScoreRef.current) {
-              rightScoreRef.current.textContent = Math.round(
+              rightScoreRef.current.textContent = formatScore(
                 camp2ScoreObj.value
-              ).toString();
+              );
             }
           },
         },
@@ -442,7 +446,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
               } as React.CSSProperties & { WebkitTextStroke: string }
             }
           >
-            {camp1.score}
+            {formatScore(camp1.score)}
           </div>
         </div>
 
@@ -567,7 +571,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
               } as React.CSSProperties & { WebkitTextStroke: string }
             }
           >
-            {camp2.score}
+            {formatScore(camp2.score)}
           </div>
         </div>
       </div>
