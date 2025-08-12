@@ -24,6 +24,16 @@ interface ThemeColorResponse {
   colorsets: ColorSetResponse[];
 }
 
+type CSSVarStyle = React.CSSProperties & {
+  [key: string]: string | number | undefined;
+  ["--ink-color"]?: string;
+  ["--size"]?: string;
+  ["--length"]?: string;
+  ["--offset"]?: string;
+  ["--camp1-color"]?: string;
+  ["--camp2-color"]?: string;
+};
+
 const CampScoreChart: React.FC<CampScoreChartProps> = ({
   scores,
   theme_id,
@@ -45,6 +55,39 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
   const leftCampRef = useRef<HTMLDivElement>(null);
   const rightCampRef = useRef<HTMLDivElement>(null);
   const hasChartAnimated = useRef(false); // チャートの重複アニメーション防止
+  const chartRef = useRef<HTMLDivElement>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+
+  const formatScore = (value: number): string => {
+    const rounded = Math.round(value);
+    if (rounded < 0) return `\u2212${Math.abs(rounded)}`; // use real minus sign
+    return String(rounded);
+  };
+
+  // 画面左右半分に散布する静止インクドットの種（マウント時に固定）
+  const leftFieldDots = useMemo(
+    () =>
+      Array.from({ length: 28 }).map((_, index) => ({
+        id: `lf-${index}`,
+        xPercent: Math.random() * 100,
+        yPercent: Math.random() * 100,
+        sizePx: 8 + Math.random() * 18,
+        opacity: 0.35 + Math.random() * 0.35,
+      })),
+    []
+  );
+
+  const rightFieldDots = useMemo(
+    () =>
+      Array.from({ length: 28 }).map((_, index) => ({
+        id: `rf-${index}`,
+        xPercent: Math.random() * 100,
+        yPercent: Math.random() * 100,
+        sizePx: 8 + Math.random() * 18,
+        opacity: 0.35 + Math.random() * 0.35,
+      })),
+    []
+  );
 
   // 2つの陣営を想定
   const camp1 = scores[0] || { camp_id: 1, camp_name: "陣営1", score: 0 };
@@ -126,7 +169,10 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
     camp1RealPercentage,
     camp2RealPercentage,
   } = useMemo(() => {
-    const totalScore = Math.abs(camp1.score) + Math.abs(camp2.score);
+    // 百分比計算：正分才參與比例，負分視為 0
+    const s1 = Number.isFinite(camp1.score) ? Math.max(0, camp1.score) : 0;
+    const s2 = Number.isFinite(camp2.score) ? Math.max(0, camp2.score) : 0;
+    const totalScore = s1 + s2;
     if (totalScore === 0) {
       return {
         camp1Percentage: 50,
@@ -136,12 +182,8 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
       };
     }
 
-    const camp1Ratio = Math.abs(camp1.score) / totalScore;
-    const camp2Ratio = Math.abs(camp2.score) / totalScore;
-
-    // 実際の割合
-    const camp1Real = camp1Ratio * 100;
-    const camp2Real = camp2Ratio * 100;
+    const camp1Real = (s1 / totalScore) * 100;
+    const camp2Real = (s2 / totalScore) * 100;
 
     return {
       // 進捗バーの幅は実際の割合と完全一致させる
@@ -152,7 +194,6 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
     };
   }, [camp1.score, camp2.score]);
 
-  // 100% 時兩端等圓角處理
   const isLeftFull = camp1Percentage >= 99.999;
   const isRightFull = camp2Percentage >= 99.999;
 
@@ -171,6 +212,8 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
         width: "0%",
         opacity: 0.8,
       });
+      // 進捗バー背景の灰色を隠す
+      gsap.set(progressBarRef.current, { background: "transparent" });
 
       gsap.set([leftCampRef.current, rightCampRef.current], {
         opacity: 0,
@@ -212,6 +255,41 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
         "-=1.8"
       );
 
+      // フィールドインクドット（左右半分）をふわっと表示
+      const leftDots = chartRef.current?.querySelectorAll(
+        `.${styles.inkFieldLeft} .${styles.inkDot}`
+      );
+      const rightDots = chartRef.current?.querySelectorAll(
+        `.${styles.inkFieldRight} .${styles.inkDot}`
+      );
+
+      if (leftDots && leftDots.length > 0) {
+        tl.fromTo(
+          leftDots,
+          { scale: 0, opacity: 0 },
+          {
+            scale: 1,
+            opacity: 1,
+            duration: 0.5,
+            ease: "back.out(2)",
+            stagger: { each: 0.02, from: "random" },
+          }
+        );
+      }
+      if (rightDots && rightDots.length > 0) {
+        tl.fromTo(
+          rightDots,
+          { scale: 0, opacity: 0 },
+          {
+            scale: 1,
+            opacity: 1,
+            duration: 0.5,
+            ease: "back.out(2)",
+            stagger: { each: 0.02, from: "random" },
+          }
+        );
+      }
+
       // 数字計算アニメーション
       const camp1ScoreObj = { value: 0 };
       const camp2ScoreObj = { value: 0 };
@@ -227,9 +305,9 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           ease: "power2.inOut",
           onUpdate: () => {
             if (leftScoreRef.current) {
-              leftScoreRef.current.textContent = Math.round(
+              leftScoreRef.current.textContent = formatScore(
                 camp1ScoreObj.value
-              ).toString();
+              );
             }
           },
         },
@@ -242,9 +320,9 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           ease: "power2.inOut",
           onUpdate: () => {
             if (rightScoreRef.current) {
-              rightScoreRef.current.textContent = Math.round(
+              rightScoreRef.current.textContent = formatScore(
                 camp2ScoreObj.value
-              ).toString();
+              );
             }
           },
         },
@@ -301,14 +379,56 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
   }, [camp1.score, camp2.score]);
 
   return (
-    <div className={styles.chartContainer}>
+    <div ref={chartRef} className={styles.chartContainer}>
+      {/* 画面左半 - 静止インクドット */}
+      <div
+        className={`${styles.inkField} ${styles.inkFieldLeft}`}
+        style={{ ["--ink-color"]: camp1Color } as CSSVarStyle}
+        aria-hidden
+      >
+        {leftFieldDots.map((d) => (
+          <span
+            key={d.id}
+            className={styles.inkDot}
+            style={
+              {
+                left: `${d.xPercent}%`,
+                top: `${d.yPercent}%`,
+                ["--size"]: `${d.sizePx}px`,
+                opacity: d.opacity,
+              } as CSSVarStyle
+            }
+          />
+        ))}
+      </div>
+      {/* 画面右半 - 静止インクドット */}
+      <div
+        className={`${styles.inkField} ${styles.inkFieldRight}`}
+        style={{ ["--ink-color"]: camp2Color } as CSSVarStyle}
+        aria-hidden
+      >
+        {rightFieldDots.map((d) => (
+          <span
+            key={d.id}
+            className={styles.inkDot}
+            style={
+              {
+                left: `${d.xPercent}%`,
+                top: `${d.yPercent}%`,
+                ["--size"]: `${d.sizePx}px`,
+                opacity: d.opacity,
+              } as CSSVarStyle
+            }
+          />
+        ))}
+      </div>
       <div className={styles.scoreBar}>
         <div ref={leftCampRef} className={styles.leftCamp}>
           <div
             className={styles.campName}
             style={{
               color: "#ffffff",
-              textShadow: `0 0 8px ${camp1TextColor}, 0 0 16px ${camp1TextColor}`,
+              textShadow: `0 2px 4px rgba(0,0,0,0.55), 0 0 8px ${camp1TextColor}, 0 0 16px ${camp1TextColor}, 0 0 28px ${camp1TextColor}`,
               filter: "none",
             }}
           >
@@ -317,13 +437,16 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           <div
             ref={leftScoreRef}
             className={styles.scoreValue}
-            style={{
-              color: "#ffffff",
-              textShadow: `0 0 8px ${camp1TextColor}, 0 0 16px ${camp1TextColor}`,
-              filter: "none",
-            }}
+            style={
+              {
+                color: "#ffffff",
+                textShadow: `0 3px 6px rgba(0,0,0,0.6), 0 0 10px ${camp1TextColor}, 0 0 20px ${camp1TextColor}, 0 0 36px ${camp1TextColor}`,
+                filter: "none",
+                WebkitTextStroke: "1px rgba(0,0,0,0.4)",
+              } as React.CSSProperties & { WebkitTextStroke: string }
+            }
           >
-            {camp1.score}
+            {formatScore(camp1.score)}
           </div>
         </div>
 
@@ -339,16 +462,19 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
             }
           }
         >
-          <div className={styles.progressBar}>
+          <div className={styles.progressBar} ref={progressBarRef}>
             <div
               ref={leftProgressRef}
               className={styles.leftProgress}
-              style={{
-                width: `${camp1Percentage}%`,
-                background: camp1Color,
-                borderRadius: isLeftFull ? "9999px" : undefined,
-              }}
+              style={
+                {
+                  width: `${camp1Percentage}%`,
+                  ["--ink-color"]: camp1Color,
+                  borderRadius: isLeftFull ? "9999px" : undefined,
+                } as CSSVarStyle
+              }
             >
+              {/* field ink moved to screen-level; no bar-bound ink here */}
               <span
                 ref={leftPercentageRef}
                 className={styles.leftPercentage}
@@ -381,12 +507,15 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
             <div
               ref={rightProgressRef}
               className={styles.rightProgress}
-              style={{
-                width: `${camp2Percentage}%`,
-                background: camp2Color,
-                borderRadius: isRightFull ? "9999px" : undefined,
-              }}
+              style={
+                {
+                  width: `${camp2Percentage}%`,
+                  ["--ink-color"]: camp2Color,
+                  borderRadius: isRightFull ? "9999px" : undefined,
+                } as CSSVarStyle
+              }
             >
+              {/* field ink moved to screen-level; no bar-bound ink here */}
               <span
                 ref={rightPercentageRef}
                 className={styles.rightPercentage}
@@ -424,7 +553,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
             className={styles.campName}
             style={{
               color: "#ffffff",
-              textShadow: `0 0 8px ${camp2TextColor}, 0 0 16px ${camp2TextColor}`,
+              textShadow: `0 2px 4px rgba(0,0,0,0.55), 0 0 8px ${camp2TextColor}, 0 0 16px ${camp2TextColor}, 0 0 28px ${camp2TextColor}`,
               filter: "none",
             }}
           >
@@ -433,16 +562,34 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           <div
             ref={rightScoreRef}
             className={styles.scoreValue}
-            style={{
-              color: "#ffffff",
-              textShadow: `0 0 8px ${camp2TextColor}, 0 0 16px ${camp2TextColor}`,
-              filter: "none",
-            }}
+            style={
+              {
+                color: "#ffffff",
+                textShadow: `0 3px 6px rgba(0,0,0,0.6), 0 0 10px ${camp2TextColor}, 0 0 20px ${camp2TextColor}, 0 0 36px ${camp2TextColor}`,
+                filter: "none",
+                WebkitTextStroke: "1px rgba(0,0,0,0.4)",
+              } as React.CSSProperties & { WebkitTextStroke: string }
+            }
           >
-            {camp2.score}
+            {formatScore(camp2.score)}
           </div>
         </div>
       </div>
+      {/* Gooey filter for ink blending */}
+      <svg className={styles.hiddenSvg} width="0" height="0" aria-hidden>
+        <defs>
+          <filter id="goo-ink">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+            <feColorMatrix
+              in="blur"
+              mode="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 10 -5"
+              result="goo"
+            />
+            <feBlend in="SourceGraphic" in2="goo" />
+          </filter>
+        </defs>
+      </svg>
     </div>
   );
 };

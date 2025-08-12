@@ -4,7 +4,7 @@
   right: 8px;
   width: 36px;
   height: 36px;
-  background-color: #495057;
+  background-color: #333;
   border: 2px solid #fff;
   border-radius: 50%;
   display: flex;
@@ -17,7 +17,7 @@
 }
 
 .messageTriggerBtn:hover {
-  background-color: #495057;
+  background-color: #333;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
