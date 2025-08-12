@@ -330,11 +330,17 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
       const camp2PercentageObj = { value: 0 };
 
       // 点数アニメーション
+      gsap.set([leftScoreRef.current, rightScoreRef.current], {
+        opacity: 0,
+        scale: 0.3,
+        y: -20,
+      });
+
       tl.to(
         camp1ScoreObj,
         {
           value: camp1.score,
-          duration: 1.8,
+          duration: 1.5,
           ease: "power2.inOut",
           onUpdate: () => {
             if (leftScoreRef.current) {
@@ -345,22 +351,45 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           },
         },
         "-=1.8"
-      ).to(
-        camp2ScoreObj,
-        {
-          value: camp2.score,
-          duration: 1.8,
-          ease: "power2.inOut",
-          onUpdate: () => {
-            if (rightScoreRef.current) {
-              rightScoreRef.current.textContent = formatScore(
-                camp2ScoreObj.value
-              );
-            }
+      )
+        .to(
+          leftScoreRef.current,
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "back.out(1.7)",
           },
-        },
-        "-=1.8"
-      );
+          "<"
+        )
+        .to(
+          camp2ScoreObj,
+          {
+            value: camp2.score,
+            duration: 1.5,
+            ease: "power2.inOut",
+            onUpdate: () => {
+              if (rightScoreRef.current) {
+                rightScoreRef.current.textContent = formatScore(
+                  camp2ScoreObj.value
+                );
+              }
+            },
+          },
+          "-=1.5"
+        )
+        .to(
+          rightScoreRef.current,
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "back.out(1.7)",
+          },
+          "<"
+        );
 
       // パーセンテージアニメーション
       tl.to(
@@ -470,14 +499,14 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           <div
             ref={leftScoreRef}
             className={styles.scoreValue}
-            style={
-              {
-                color: "#ffffff",
-                textShadow: `0 3px 6px rgba(0,0,0,0.6), 0 0 10px ${camp1TextColor}, 0 0 20px ${camp1TextColor}, 0 0 36px ${camp1TextColor}`,
-                filter: "none",
-                WebkitTextStroke: "1px rgba(0,0,0,0.4)",
-              } as React.CSSProperties & { WebkitTextStroke: string }
-            }
+            style={{
+              color: "#ffffff",
+              textShadow: `0 2px 4px rgba(0,0,0,0.6),
+                  0 0 8px ${camp1TextColor},
+                  0 0 16px ${camp1TextColor},
+                  0 0 24px ${camp1TextColor}`,
+              filter: "none",
+            }}
           >
             {formatScore(camp1.score)}
           </div>
@@ -595,14 +624,14 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
           <div
             ref={rightScoreRef}
             className={styles.scoreValue}
-            style={
-              {
-                color: "#ffffff",
-                textShadow: `0 3px 6px rgba(0,0,0,0.6), 0 0 10px ${camp2TextColor}, 0 0 20px ${camp2TextColor}, 0 0 36px ${camp2TextColor}`,
-                filter: "none",
-                WebkitTextStroke: "1px rgba(0,0,0,0.4)",
-              } as React.CSSProperties & { WebkitTextStroke: string }
-            }
+            style={{
+              color: "#ffffff",
+              textShadow: `0 2px 4px rgba(0,0,0,0.6),
+                  0 0 8px ${camp2TextColor},
+                  0 0 16px ${camp2TextColor},
+                  0 0 24px ${camp2TextColor}`,
+              filter: "none",
+            }}
           >
             {formatScore(camp2.score)}
           </div>
