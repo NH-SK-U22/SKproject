@@ -21,7 +21,16 @@ import silverImg from "../../../public/images/2nd.png";
 import goldImg from "../../../public/images/1st.png";
 import diamondImg from "../../../public/images/diamond.png";
 
-const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, reward_id, isSold = false, userHavePoint, onDelete, onExchanged }) => {
+const RewardComponent: React.FC<RewardProps> = ({
+  rewardInfo,
+  point,
+  rank,
+  reward_id,
+  isSold = false,
+  userHavePoint,
+  onDelete,
+  onExchanged,
+}) => {
   const [showPopup, setShowPopup] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isExchanged, setIsExchanged] = useState(isSold);
@@ -31,7 +40,7 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
     if (user) {
       setCurrentUser(user);
     }
-  },[]);
+  }, []);
 
   useEffect(() => {
     setIsExchanged(isSold);
@@ -44,11 +53,16 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
   // ランク値からランク名を返す関数
   const getRankName = (rank: number) => {
     switch (rank) {
-      case 0: return "ブロンズ";
-      case 1: return "シルバー";
-      case 2: return "ゴールド";
-      case 3: return "ダイヤモンド";
-      default: return "ブロンズ";
+      case 0:
+        return "ブロンズ";
+      case 1:
+        return "シルバー";
+      case 2:
+        return "ゴールド";
+      case 3:
+        return "ダイヤモンド";
+      default:
+        return "ブロンズ";
     }
   };
 
@@ -77,7 +91,11 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
       else if (sum >= 500) userRank = 1; // シルバー
       else userRank = 0; // ブロンズ
       if (userRank < rank) {
-        alert(`この報酬を交換するには${getRankName(rank)}ランクに到達する必要があります`);
+        alert(
+          `この報酬を交換するには${getRankName(
+            rank
+          )}ランクに到達する必要があります`
+        );
         return;
       }
     }
@@ -120,9 +138,12 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/rewards/${reward_id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/rewards/${reward_id}`,
+        {
+          method: "DELETE",
+        }
+      );
       if (response.ok) {
         setShowPopup(false);
         onDelete?.(reward_id);
@@ -155,7 +176,11 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
     <>
       <div className={styles.container}>
         <div className={styles.imageSection} style={{ position: "relative" }}>
-          <img src={getRankImage()} alt={rank + "ランク画像"} className={styles.rankImage} />
+          <img
+            src={getRankImage()}
+            alt={rank + "ランク画像"}
+            className={styles.rankImage}
+          />
           {isExchanged && (
             <div className={styles.soldOverlay}>
               <span className={styles.soldLabel}>sold</span>
@@ -169,9 +194,15 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
             {point}p
           </p>
         </div>
-        {currentUser?.user_type === "teacher"
-          ? <button className={styles.redeemButton} onClick={handleRedeem}>削除</button>
-          : <button className={styles.redeemButton} onClick={handleRedeem}>交換</button>}
+        {currentUser?.user_type === "teacher" ? (
+          <button className={styles.redeemButton} onClick={handleRedeem}>
+            削除
+          </button>
+        ) : (
+          <button className={styles.redeemButton} onClick={handleRedeem}>
+            交換
+          </button>
+        )}
       </div>
       {/* ポップアップはteacherまたは未交換時のみ */}
       {showPopup && !isExchanged && (
@@ -181,15 +212,28 @@ const RewardComponent: React.FC<RewardProps> = ({ rewardInfo, point, rank, rewar
               ×
             </button>
             <div className={styles.popupContent}>
-              {currentUser?.user_type === "teacher"
-                ? <p className={styles.popupText}>この報酬を削除しますか？</p>
-                : <p className={styles.popupText}>この報酬と交換しますか？</p>}
-              {currentUser?.user_type === "teacher" ? null : <p className={styles.popupText}><HiCurrencyYen className={styles.currencyIcon} />{point}p</p>}
+              {currentUser?.user_type === "teacher" ? (
+                <p className={styles.popupText}>この報酬を削除しますか？</p>
+              ) : (
+                <p className={styles.popupText}>この報酬と交換しますか？</p>
+              )}
+              {currentUser?.user_type === "teacher" ? null : (
+                <p className={styles.popupText}>
+                  <HiCurrencyYen className={styles.currencyIcon} />
+                  {point}p
+                </p>
+              )}
             </div>
             <div className={styles.buttonContainer}>
-              {currentUser?.user_type === "teacher"
-                ? <button className={styles.button} onClick={handleDelete}>削除</button>
-                : <button className={styles.button} onClick={handleExchange}>交換</button>}
+              {currentUser?.user_type === "teacher" ? (
+                <button className={styles.button} onClick={handleDelete}>
+                  削除
+                </button>
+              ) : (
+                <button className={styles.button} onClick={handleExchange}>
+                  交換
+                </button>
+              )}
             </div>
           </div>
         </div>

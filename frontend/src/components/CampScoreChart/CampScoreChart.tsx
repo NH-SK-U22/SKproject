@@ -54,7 +54,7 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
   const rightPercentageRef = useRef<HTMLSpanElement>(null);
   const leftCampRef = useRef<HTMLDivElement>(null);
   const rightCampRef = useRef<HTMLDivElement>(null);
-  const hasChartAnimated = useRef(false); // チャートの重複アニメーション防止
+  const hasChartAnimated = useRef(false);
   const chartRef = useRef<HTMLDivElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
 

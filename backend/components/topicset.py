@@ -50,6 +50,13 @@ def add_topic():
             (theme_id, team1, theme_id, team2)
         )
         
+        # 新しいテーマ開始時、当該学校の学生の陣営選択をリセット
+        c.execute('''
+            UPDATE students
+               SET camp_id = NULL
+             WHERE school_id = ?
+        ''', (school_id,))
+        
         conn.commit()
         return jsonify({'message': 'テーマが追加されました', 'theme_id': theme_id}), 201
     except Exception as e:
@@ -179,6 +186,30 @@ def clear_camp_selections():
             'cleared_students': c.rowcount
         }), 200
         
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        conn.close()
+
+@topicset_o.route('/force_clear_camps', methods=['POST'])
+def force_clear_camps():
+    """管理用: 討論期間に関係なく、指定学校の学生 camp_id を全てクリアする"""
+    data = request.get_json() or {}
+    school_id = data.get('school_id')
+    if not school_id:
+        return jsonify({'error': 'school_idが必要です'}), 400
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    try:
+        c.execute('''
+            UPDATE students
+               SET camp_id = NULL
+             WHERE school_id = ?
+        ''', (school_id,))
+        conn.commit()
+        return jsonify({'message': 'camp_id をクリアしました', 'cleared_students': c.rowcount}), 200
     except Exception as e:
         conn.rollback()
         return jsonify({'error': str(e)}), 500

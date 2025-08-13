@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import TeacherRewardComponent from "../../components/TeacherReward/TeacherRewardComponent";
@@ -25,17 +25,17 @@ interface HoldReward {
 
 const Reward = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [rewards,setRewards] = useState<Rewarddata[]>([]);
+  const [rewards, setRewards] = useState<Rewarddata[]>([]);
   const [holdRewards, setHoldRewards] = useState<HoldReward[]>([]);
 
   const fetchRewards = () => {
     fetch("http://localhost:5000/api/rewards")
-    .then((res) => res.json())
-    .then((data) => {
-      if (Array.isArray(data)) {
-        setRewards(data);
-      }
-    });
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setRewards(data);
+        }
+      });
   };
 
   useEffect(() => {
@@ -45,18 +45,18 @@ const Reward = () => {
       // holdReward情報も取得
       if (user.user_type === "student") {
         fetch(`http://localhost:5000/api/holdRewards?student_id=${user.id}`)
-          .then(res => res.json())
-          .then(data => {
+          .then((res) => res.json())
+          .then((data) => {
             if (Array.isArray(data)) setHoldRewards(data);
           });
       }
     }
-  },[]);
+  }, []);
 
   useEffect(() => {
     fetchRewards();
-  },[]);
-  
+  }, []);
+
   return (
     <>
       {currentUser?.user_type === "teacher" ? <TeacherSidebar /> : <Sidebar />}
@@ -66,13 +66,17 @@ const Reward = () => {
             <p className={styles.rewardp}>報酬</p>
           </div>
           <div className={styles.point}>
-            <p className={styles.pointp}>保有ポイント：{currentUser?.have_point ?? 0}</p>
+            <p className={styles.pointp}>
+              保有ポイント：{currentUser?.have_point ?? 0}
+            </p>
           </div>
         </div>
         <div className={styles.down}>
           <div className={styles.rewardContainer}>
             {rewards.map((reward) => {
-              const isSold = holdRewards.some(hr => hr.reward_id === reward.reward_id && hr.is_holding);
+              const isSold = holdRewards.some(
+                (hr) => hr.reward_id === reward.reward_id && hr.is_holding
+              );
               return (
                 <RewardComponent
                   key={reward.reward_id}
@@ -82,8 +86,14 @@ const Reward = () => {
                   reward_id={reward.reward_id}
                   isSold={isSold}
                   userHavePoint={currentUser?.have_point ?? 0}
-                  onDelete={(id) => setRewards((prev) => prev.filter((r) => r.reward_id !== id))}
-                  onExchanged={(newHavePoint) => setCurrentUser(cur => cur ? { ...cur, have_point: newHavePoint } : cur)}
+                  onDelete={(id) =>
+                    setRewards((prev) => prev.filter((r) => r.reward_id !== id))
+                  }
+                  onExchanged={(newHavePoint) =>
+                    setCurrentUser((cur) =>
+                      cur ? { ...cur, have_point: newHavePoint } : cur
+                    )
+                  }
                 />
               );
             })}

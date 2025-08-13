@@ -14,11 +14,11 @@
 .notesGrid {
   position: relative;
   width: 100%;
-  height: calc(100vh - 40px); /* 画面の高さから上下のマージンを引いた固定高さ */
+  height: calc(100vh - 40px);
   min-height: 600px;
   padding: 0;
   z-index: 10px;
-  overflow-y: auto; /* 必要に応じてスクロール可能に */
+  overflow-y: auto;
 }
 
 .stickyNote {
@@ -59,7 +59,7 @@
   word-wrap: break-word;
 }
 
-/* Dark mode 下的付箋文字顏色固定為較深的字色，避免在淡色便條背景上看不清 */
+/* Dark mode 付箋文字色 */
 :global(.dark) .noteText {
   color: #333;
 }

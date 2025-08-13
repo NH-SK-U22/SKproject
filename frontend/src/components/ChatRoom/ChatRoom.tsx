@@ -1,4 +1,3 @@
-// react
 import { useState, useEffect, useRef } from "react";
 
 // react-icons
