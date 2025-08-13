@@ -8,7 +8,6 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Button,
 } from "@mui/material";
 import TopicDelete from "../TopicDelete/TopicDelete";
 import TopicForm from "../TopicForm/TopicForm";
@@ -83,54 +82,37 @@ const TopicList = () => {
     setTopics([topicWithId, ...topics]);
   };
 
-  const handleDeleteTopic = (topicId: number) => {
-    setTopics(topics.filter((topic) => topic.id !== topicId));
-  };
-
-  const calculateWinner = async (topicId: number) => {
+  const handleDeleteTopic = async (topicId: number) => {
     try {
       const user = getCurrentUser();
       if (!user) return;
 
       const response = await fetch(
-        `http://localhost:5000/api/calculate_winner/${topicId}`,
+        `http://localhost:5000/api/delete_debate/${topicId}`,
         {
-          method: "POST",
+          method: "DELETE",
           headers: {
             "Content-Type": "application/json",
           },
         }
       );
 
-      if (!response.ok) throw new Error("計算勝者失敗");
+      if (!response.ok) {
+        throw new Error("テーマの削除に失敗しました");
+      }
 
-      const data = await response.json();
-
-      // ローカルの状態を更新する
-      setTopics(
-        topics.map((topic) =>
-          topic.id === topicId
-            ? {
-                ...topic,
-                winner: data.winner,
-                team1_score: data.team1_score,
-                team2_score: data.team2_score,
-              }
-            : topic
-        )
-      );
-
-      return data;
+      // 成功した場合のみ、フロントエンドの状態を更新
+      setTopics(topics.filter((topic) => topic.id !== topicId));
     } catch (error) {
-      console.error("勝者を計算する時にエラーが発生しました:", error);
-      throw error;
+      console.error("テーマ削除エラー:", error);
+      alert("テーマの削除に失敗しました。");
     }
   };
 
   return (
     <>
       <TopicForm onAddTopic={handleAddTopic} />
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 3, mb: 8 }}>
         <Typography variant="h6" gutterBottom>
           設定済みテーマ一覧
         </Typography>
@@ -142,9 +124,7 @@ const TopicList = () => {
                 <TableCell>説明</TableCell>
                 <TableCell>期限</TableCell>
                 <TableCell>陣営</TableCell>
-                <TableCell>勝者</TableCell>
-                <TableCell>得点</TableCell>
-                <TableCell align="right">操作</TableCell>
+                <TableCell align="right">削除</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -159,20 +139,7 @@ const TopicList = () => {
                   <TableCell>
                     {topic.team1} vs {topic.team2}
                   </TableCell>
-                  <TableCell>{topic.winner || "-"}</TableCell>
-                  <TableCell>
-                    {topic.team1}: {topic.team1_score?.toFixed(2) || "0.00"} vs{" "}
-                    {topic.team2}: {topic.team2_score?.toFixed(2) || "0.00"}
-                  </TableCell>
                   <TableCell align="right">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => calculateWinner(topic.id)}
-                      sx={{ mr: 1 }}
-                    >
-                      勝者を計算する
-                    </Button>
                     <TopicDelete
                       topicId={topic.id}
                       onDelete={handleDeleteTopic}

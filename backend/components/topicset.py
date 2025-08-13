@@ -2,8 +2,16 @@ from flask import Blueprint, request, jsonify
 import sqlite3
 import random
 from datetime import datetime
+from flask_cors import CORS
 
 topicset_o = Blueprint('topicset_o', __name__, url_prefix='/api')
+CORS(topicset_o, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 @topicset_o.route('/topics', methods=['POST'])
 def add_topic():
@@ -21,7 +29,7 @@ def add_topic():
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     try:
-        # debate_settingsk記録を挿入する
+        # debate_settings記録を挿入する
         c.execute(
             '''
             INSERT INTO debate_settings (title, description, colorset_id, start_date, end_date, team1, team2, school_id)
@@ -79,19 +87,28 @@ def get_all_debates():
     try:
         c.execute('''
             SELECT 
-                d.*,
-                c1.is_winner as team1_is_winner,
-                c2.is_winner as team2_is_winner
+                d.theme_id,
+                d.title,
+                d.description,
+                d.start_date,
+                d.end_date,
+                d.team1,
+                d.team2
             FROM debate_settings d
-            LEFT JOIN camps c1 ON d.theme_id = c1.theme_id AND d.team1 = c1.camp_name
-            LEFT JOIN camps c2 ON d.theme_id = c2.theme_id AND d.team2 = c2.camp_name
             WHERE d.school_id = ? 
             ORDER BY d.theme_id DESC
         ''', (school_id,))
         rows = c.fetchall()
         if rows:
-            col_names = [description[0] for description in c.description] + ['team1_is_winner', 'team2_is_winner']
-            themes = [dict(zip(col_names, row)) for row in rows]
+            themes = [{
+                'theme_id': row[0],
+                'title': row[1],
+                'description': row[2],
+                'start_date': row[3],
+                'end_date': row[4],
+                'team1': row[5],
+                'team2': row[6]
+            } for row in rows]
             return jsonify(themes), 200
         else:
             return jsonify([]), 200
@@ -100,92 +117,22 @@ def get_all_debates():
     finally:
         conn.close()
 
-@topicset_o.route('/calculate_winner/<int:theme_id>', methods=['POST'])
-def calculate_winner(theme_id):
-    """計算してディベートテーマの勝者を更新する"""
+@topicset_o.route('/delete_debate/<int:theme_id>', methods=['DELETE'])
+def delete_debate(theme_id):
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
     try:
-        # テーマ情報を取得する
-        c.execute('''
-            SELECT team1, team2 FROM debate_settings 
-            WHERE theme_id = ?
-        ''', (theme_id,))
-        theme = c.fetchone()
-        if not theme:
-            return jsonify({'error': 'テーマが見つかりません'}), 404
-
-        team1, team2 = theme
-
-        # 各陣営の総得点を計算する
-        # sticky表から各陣営の平均得点を取得する
-        c.execute('''
-            SELECT 
-                s.theme_id,
-                AVG(CASE WHEN st.camp_id = 1 THEN s.overall_avg_score ELSE NULL END) as team1_score,
-                AVG(CASE WHEN st.camp_id = 2 THEN s.overall_avg_score ELSE NULL END) as team2_score
-            FROM sticky s
-            JOIN students st ON s.student_id = st.student_id
-            WHERE s.theme_id = ?
-            GROUP BY s.theme_id
-        ''', (theme_id,))
+        # 先に関連する camps 記録を削除する
+        c.execute('DELETE FROM camps WHERE theme_id = ?', (theme_id,))
         
-        result = c.fetchone()
-        if not result:
-            return jsonify({'error': '関連する得点データが見つかりません'}), 404
-
-        _, team1_score, team2_score = result
-        team1_score = team1_score or 0
-        team2_score = team2_score or 0
-
-        # 勝者を決定する
-        winner = team1 if team1_score > team2_score else team2 if team2_score > team1_score else None
-
-        # debate_settings表を更新する
-        c.execute('''
-            UPDATE debate_settings 
-            SET winner = ?,
-                team1_score = ?,
-                team2_score = ?
-            WHERE theme_id = ?
-        ''', (winner, team1_score, team2_score, theme_id))
-
-        # camps表の記録を取得する
-        c.execute('''
-            SELECT camp_id, camp_name FROM camps
-            WHERE theme_id = ?
-            ORDER BY camp_id
-        ''', (theme_id,))
-        camps = c.fetchall()
-
-        # camps表に記録がない場合、新規に記録を作成する
-        if not camps:
-            c.execute('''
-                INSERT INTO camps (theme_id, camp_name, is_winner)
-                VALUES (?, ?, ?), (?, ?, ?)
-            ''', (
-                theme_id, team1, 1 if winner == team1 else 0,
-                theme_id, team2, 1 if winner == team2 else 0
-            ))
-        else:
-            # 既存の記録を更新する
-            for camp in camps:
-                camp_id, camp_name = camp
-                is_winner = 1 if (camp_name == team1 and winner == team1) or (camp_name == team2 and winner == team2) else 0
-                c.execute('''
-                    UPDATE camps
-                    SET is_winner = ?
-                    WHERE camp_id = ?
-                ''', (is_winner, camp_id))
-
+        # sticky 記録を削除する
+        c.execute('DELETE FROM sticky WHERE theme_id = ?', (theme_id,))
+        
+        # 最後に debate_settings 記録を削除する
+        c.execute('DELETE FROM debate_settings WHERE theme_id = ?', (theme_id,))
+        
         conn.commit()
-        return jsonify({
-            'message': '勝者が更新されました',
-            'winner': winner,
-            'team1_score': team1_score,
-            'team2_score': team2_score
-        }), 200
-
+        return jsonify({'message': 'テーマが削除されました'}), 200
     except Exception as e:
         conn.rollback()
         return jsonify({'error': str(e)}), 500
