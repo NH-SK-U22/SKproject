@@ -138,9 +138,31 @@ def init_db():
         team1        TEXT    NOT NULL,
         team2        TEXT    NOT NULL,
         school_id    INTEGER NOT NULL,
+        winner       TEXT,                  -- 勝者
+        team1_score  REAL DEFAULT 0,        -- 陣営1の総得点
+        team2_score  REAL DEFAULT 0,        -- 陣営2の総得点
         FOREIGN KEY(colorset_id) REFERENCES colorsets(id)
     )''')
     
+    # debate_settings表に新しいカラムを追加する
+    try:
+        c.execute('ALTER TABLE debate_settings ADD COLUMN winner TEXT')
+        print("Added winner column to debate_settings table")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        c.execute('ALTER TABLE debate_settings ADD COLUMN team1_score REAL DEFAULT 0')
+        print("Added team1_score column to debate_settings table")
+    except sqlite3.OperationalError:
+        pass
+
+    try:
+        c.execute('ALTER TABLE debate_settings ADD COLUMN team2_score REAL DEFAULT 0')
+        print("Added team2_score column to debate_settings table")
+    except sqlite3.OperationalError:
+        pass
+
     # campsを作成(陣営)
     c.execute('''CREATE TABLE IF NOT EXISTS camps (
         camp_id     INTEGER PRIMARY KEY AUTOINCREMENT,
