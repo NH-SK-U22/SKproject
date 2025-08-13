@@ -23,7 +23,6 @@ const NOTE_WIDTH = 200;
 
 const StickyNote = ({
   post,
-  idx,
   gridRef,
   maxPerRow,
   isLastMoved,
@@ -31,6 +30,7 @@ const StickyNote = ({
   isSidebarHovered,
   currentUserId,
   localPosition,
+  fixedPosition,
 }: {
   post: {
     id: number;
@@ -40,8 +40,8 @@ const StickyNote = ({
     y_axis?: number;
     gemini?: string;
     student_id?: number;
+    display_index?: number;
   };
-  idx: number;
   gridRef: React.RefObject<HTMLDivElement | null>;
   maxPerRow: number;
   isLastMoved: boolean;
@@ -49,48 +49,56 @@ const StickyNote = ({
   isSidebarHovered: boolean;
   currentUserId: number;
   localPosition?: { x: number; y: number };
+  fixedPosition?: { x: number; y: number };
 }) => {
   // ドラッグ状態
   const [dragging, setDragging] = useState(false);
 
-  // 位置が優先順位を決める：localPosition > database position > null
-  const getInitialPosition = () => {
+  // 位置が優先順位を決める：localPosition > fixedPosition > database position > display_index based position
+  const getInitialPosition = useCallback(() => {
     if (localPosition) {
       return localPosition;
+    }
+    if (fixedPosition) {
+      return fixedPosition;
     }
     if (post.x_axis !== undefined && post.y_axis !== undefined) {
       // (0, 0)位置も有効な位置として扱う
       return { x: post.x_axis, y: post.y_axis };
     }
-    return null;
-  };
+    // DB/ローカルに座標が無い場合は、display_index を使用（配列順序に依存しない）
+    const displayIdx = post.display_index || 0;
+    const x = (displayIdx % maxPerRow) * (NOTE_WIDTH + GRID_GAP);
+    const y = Math.floor(displayIdx / maxPerRow) * (NOTE_WIDTH + GRID_GAP);
+    return { x, y };
+  }, [
+    localPosition,
+    fixedPosition,
+    post.x_axis,
+    post.y_axis,
+    post.display_index,
+    maxPerRow,
+  ]);
 
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
     getInitialPosition()
   );
 
-  // localPositionの変更をリッスンし、すぐに更新する
+  // 位置初期化: 一度だけ実行
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (position === null && !initializedRef.current) {
+      setPosition(getInitialPosition());
+      initializedRef.current = true;
+    }
+  }, [position, getInitialPosition]);
+
+  // ローカル位置の更新のみ監視（Socket/DB更新は無視）
   useEffect(() => {
     if (localPosition && !dragging) {
       setPosition(localPosition);
     }
   }, [localPosition, dragging]);
-
-  // 他のユーザーからの位置更新を受信した時にローカル位置を同期
-  useEffect(() => {
-    // ローカルロケーションのオーバーライドがなく、ドラッグ＆ドロップの状態でない場合のみ同期させる
-    if (
-      !localPosition &&
-      !dragging &&
-      post.x_axis !== undefined &&
-      post.y_axis !== undefined &&
-      (position === null ||
-        position.x !== post.x_axis ||
-        position.y !== post.y_axis)
-    ) {
-      setPosition({ x: post.x_axis, y: post.y_axis });
-    }
-  }, [post.x_axis, post.y_axis, dragging, position, localPosition]);
   const offset = useRef({ x: 0, y: 0 });
   const noteRef = useRef<HTMLDivElement>(null);
 
@@ -132,10 +140,12 @@ const StickyNote = ({
               e.clientX - grid.getBoundingClientRect().left - offset.current.x;
             let y =
               e.clientY - grid.getBoundingClientRect().top - offset.current.y;
-            // 4面すべてDRAG_MARGINを使用
+            // 4面すべてDRAG_MARGINを使用（左上ははみ出さない）
             const maxX = grid.clientWidth - noteWidth - DRAG_MARGIN;
-            const maxY = grid.clientHeight - noteHeight - DRAG_MARGIN;
             x = Math.max(DRAG_MARGIN, Math.min(x, maxX));
+
+            // 下方向も制限（画面の高さを超えないように）
+            const maxY = grid.clientHeight - noteHeight - DRAG_MARGIN;
             y = Math.max(DRAG_MARGIN, Math.min(y, maxY));
             setPosition({ x, y });
           }
@@ -165,14 +175,8 @@ const StickyNote = ({
     };
   }, [dragging, gridRef, post.id, onMoveEnd, position]);
 
-  // 初期位置：idxに基づく
   const getTransform = () => {
-    if (position === null) {
-      const x = (idx % maxPerRow) * (NOTE_WIDTH + GRID_GAP);
-      const y = Math.floor(idx / maxPerRow) * (NOTE_WIDTH + GRID_GAP);
-      return `translate3d(${x}px, ${y}px, 0)`;
-    }
-    return `translate3d(${position.x}px, ${position.y}px, 0)`;
+    return `translate3d(${position?.x ?? 0}px, ${position?.y ?? 0}px, 0)`;
   };
 
   // z-index の計算 - sidebarがhoverされている場合は低く設定
@@ -244,42 +248,131 @@ const Dashboard = () => {
   const [localPositions, setLocalPositions] = useState<{
     [key: number]: { x: number; y: number };
   }>({});
+  // サーバーACK待ちの座標（Socket/GETで反映されたら解除）
+  const [pendingAckPositions, setPendingAckPositions] = useState<{
+    [key: number]: { x: number; y: number };
+  }>({});
+  // 各便利貼の固定位置（一度決定したら変更しない）
+  const [fixedPositions, setFixedPositions] = useState<{
+    [key: number]: { x: number; y: number };
+  }>({});
 
   const moveTimeoutRef = useRef<number | null>(null);
+
+  // 便利貼が初めて表示される時のみ固定位置を記録（既存の位置は保持）
+  const initializedPostsRef = useRef<Set<number>>(new Set());
+  const lastDisplayIndexRef = useRef<number>(0); // 最後に使用した display_index を記録
+  useEffect(() => {
+    posts.forEach((post) => {
+      // この付箋の位置が初期化済みかチェック
+      if (!initializedPostsRef.current.has(post.id)) {
+        initializedPostsRef.current.add(post.id);
+
+        // 既に固定位置があれば保持
+        if (fixedPositions[post.id]) return;
+
+        // 新規付箋の初期位置を設定
+        if (post.x_axis !== undefined && post.y_axis !== undefined) {
+          // DB に座標がある場合はそれを使用
+          setFixedPositions((prev) => ({
+            ...prev,
+            [post.id]: { x: post.x_axis!, y: post.y_axis! },
+          }));
+        } else {
+          // DB に座標がない場合は最後の display_index の次の位置に配置
+          const displayIdx = Math.max(
+            lastDisplayIndexRef.current + 1,
+            post.display_index || 0
+          );
+          lastDisplayIndexRef.current = displayIdx;
+          const x = (displayIdx % maxPerRow) * (NOTE_WIDTH + GRID_GAP);
+          const y =
+            Math.floor(displayIdx / maxPerRow) * (NOTE_WIDTH + GRID_GAP);
+          setFixedPositions((prev) => ({
+            ...prev,
+            [post.id]: { x, y },
+          }));
+        }
+      }
+    });
+  }, [posts, maxPerRow]); // 移除 fixedPositions 依賴，避免重新計算
   const { theme, fetchTheme } = useDebateTheme();
   const navigate = useNavigate();
   const initializedRef = useRef<boolean>(false);
 
   const handleNoteMove = useCallback(
-    (id: number, x: number, y: number) => {
+    async (id: number, x: number, y: number) => {
       setLastMovedNoteId(id);
 
-      // 即時ローカル位置更新
+      // 固定位置を先に更新（今後の初期位置として使用）
+      setFixedPositions((prev) => ({
+        ...prev,
+        [id]: { x, y },
+      }));
+
+      // 即時ローカル位置更新（ドラッグ中の表示用）
       setLocalPositions((prev) => ({
         ...prev,
         [id]: { x, y },
       }));
 
-      if (moveTimeoutRef.current) {
-        clearTimeout(moveTimeoutRef.current);
-      }
+      try {
+        // 即時にサーバーに保存
+        await updatePost(id, { x_axis: x, y_axis: y });
 
-      // バックグラウンド・シンク・サーバー（最小遅延）
-      moveTimeoutRef.current = setTimeout(() => {
-        updatePost(id, { x_axis: x, y_axis: y });
-        moveTimeoutRef.current = null;
-        // 同期が完了したら、ローカル位置オーバーライドをクリア
-        setTimeout(() => {
-          setLocalPositions((prev) => {
-            const newPositions = { ...prev };
-            delete newPositions[id];
-            return newPositions;
-          });
-        }, 200); // Socket同期の待ち時間を短縮
-      }, 50); // 50ms遅延
+        // 保存成功後、ローカル位置をクリア（固定位置を使用）
+        setLocalPositions((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      } catch (error) {
+        console.error("Failed to save position:", error);
+        // エラー時は固定位置を元に戻す
+        setFixedPositions((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      }
     },
     [updatePost]
   );
+
+  // サーバーから反映されたら(= posts の該当付箋の座標が一致)ローカルオーバーライドを解除
+  useEffect(() => {
+    if (!posts || Object.keys(pendingAckPositions).length === 0) return;
+    const ids = Object.keys(pendingAckPositions).map((k) => Number(k));
+    const toClear: number[] = [];
+    ids.forEach((noteId) => {
+      const post = posts.find((p) => p.id === noteId);
+      const target = pendingAckPositions[noteId];
+      if (
+        post &&
+        post.x_axis !== undefined &&
+        post.y_axis !== undefined &&
+        target &&
+        post.x_axis === target.x &&
+        post.y_axis === target.y
+      ) {
+        toClear.push(noteId);
+      }
+    });
+    if (toClear.length > 0) {
+      setLocalPositions((prev) => {
+        const next = { ...prev } as { [key: number]: { x: number; y: number } };
+        toClear.forEach((id) => {
+          delete next[id];
+        });
+        return next;
+      });
+      setPendingAckPositions((prev) => {
+        const next = { ...prev } as { [key: number]: { x: number; y: number } };
+        toClear.forEach((id) => delete next[id]);
+        return next;
+      });
+    }
+  }, [posts, pendingAckPositions]);
 
   // コンポーネント装着時に主題取得とSocket接続を開始（初回のみ）
   useEffect(() => {
@@ -433,7 +526,6 @@ const Dashboard = () => {
               <StickyNote
                 key={post.id}
                 post={post}
-                idx={post.display_index || 0}
                 gridRef={gridRef}
                 maxPerRow={maxPerRow}
                 isLastMoved={post.id === lastMovedNoteId}
@@ -441,6 +533,7 @@ const Dashboard = () => {
                 isSidebarHovered={isSidebarHovered}
                 currentUserId={currentUser?.id || 0}
                 localPosition={localPositions[post.id]}
+                fixedPosition={fixedPositions[post.id]}
               />
             ))}
           </div>
