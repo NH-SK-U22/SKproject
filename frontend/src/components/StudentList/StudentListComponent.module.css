@@ -1,158 +1,157 @@
-.container{
-    width: 100%;
-    height: 100vh;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    background-color: #fff;
-
+.container {
+  width: 100%;
+  height: 100vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-default);
 }
-.up{
-    top: 0;
-    height: 10%;
-    display: flex;
-    background-color: transparent;
-    justify-content: space-around;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-    position: relative;
+.up {
+  top: 0;
+  height: 10%;
+  display: flex;
+  background-color: transparent;
+  justify-content: space-around;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  position: relative;
 }
-.sort{
-    width: 15%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 25px;
-    position: absolute;
-    left: 0;
-    z-index: 1;
+.sort {
+  width: 15%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 25px;
+  position: absolute;
+  left: 0;
+  z-index: 1;
 }
 .sortSelect {
-    width: 100%;
-    height: 50px;
-    font-size: 20px;
-    padding: 5px;
-    margin-left: 20px;
-    border: none;
-    background-color: transparent;
-    cursor: pointer;
-    position: relative;
-    z-index: 2;
+  width: 100%;
+  height: 50px;
+  font-size: 20px;
+  padding: 5px;
+  margin-left: 20px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
 }
 .sortSelect:focus {
-    outline: none;
-    border-color: #333;
+  outline: none;
+  border-color: #333;
 }
-.StudentList{
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 30px;
-    position: absolute;
-    left: 0;
-    z-index: 0;
+.StudentList {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+  position: absolute;
+  left: 0;
+  z-index: 0;
 }
-.StudentList p{
-    margin: 0;
-    color: #00e6b8;
-    font-size: 2.6rem;
-    font-weight: bold;
-    text-align: center;
+.StudentList p {
+  margin: 0;
+  color: #00e6b8;
+  font-size: 2.6rem;
+  font-weight: bold;
+  text-align: center;
 }
-.class{
-    width: 10%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 25px;
-    position: absolute;
-    right: 0;
-    z-index: 1;
+.class {
+  width: 10%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 25px;
+  position: absolute;
+  right: 0;
+  z-index: 1;
 }
 .classSelect {
-    width: 100%;
-    height: 50px;
-    font-size: 20px;
-    padding: 5px;
-    margin-right: 20px;
-    border: none;
-    background-color: transparent;
-    cursor: pointer;
-    position: relative;
-    z-index: 2;
+  width: 100%;
+  height: 50px;
+  font-size: 20px;
+  padding: 5px;
+  margin-right: 20px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
 }
 
 .classSelect:focus {
-    outline: none;
-    border-color: #333;
+  outline: none;
+  border-color: #333;
 }
-.down{
-    width: 95%;
-    height: 90%;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    overflow-y: auto;
+.down {
+  width: 95%;
+  height: 90%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
 }
-.down a{
-    width: 95%;
-    height: 80px;
-    margin: 5px 0;
-    text-decoration: none;
-    color: black;
+.down a {
+  width: 95%;
+  height: 80px;
+  margin: 5px 0;
+  text-decoration: none;
+  color: black;
 }
-.Student{
-    width: 100%;
-    height: 80px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background-color: transparent;
-    border-radius: 10px;
-    font-size: 25px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin: 5px 0;
+.Student {
+  width: 100%;
+  height: 80px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background-color: transparent;
+  border-radius: 10px;
+  font-size: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 5px 0;
 }
-.Student:hover{
-    background-color: #ccc;
+.Student:hover {
+  background-color: #ccc;
 }
-.lclass{
-    width: 10%;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-right: 3px dotted grey;
+.lclass {
+  width: 10%;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-right: 3px dotted grey;
 }
-.lnumber{
-    width: 8%;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-right: 3px dotted grey;
+.lnumber {
+  width: 8%;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-right: 3px dotted grey;
 }
-.lname{
-    width: 72%;
-    height: 60px;
-    display: flex;
-    justify-content: left;
-    align-items: center;
-    border-right: 3px dotted grey;
-    padding-left: 20px;
+.lname {
+  width: 72%;
+  height: 60px;
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  border-right: 3px dotted grey;
+  padding-left: 20px;
 }
-.llank{
-    width: 10%;
-    height: 60px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.llank {
+  width: 10%;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.limg{
-    width: auto;
-    height: 70px;
+.limg {
+  width: auto;
+  height: 70px;
 }

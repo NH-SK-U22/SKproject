@@ -29,6 +29,13 @@ const CampSelect = () => {
     // テーマ情報を取得
     fetchTheme();
 
+    // ユーザーが既に陣営を選択している場合はダッシュボードに移動
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.camp_id) {
+      navigate("/dashboard");
+      return;
+    }
+
     if (containerRef.current) {
       gsap.fromTo(
         containerRef.current,
@@ -44,7 +51,7 @@ const CampSelect = () => {
         }
       );
     }
-  }, [fetchTheme]);
+  }, [fetchTheme, navigate]);
 
   const handleSelect = (camp: string) => {
     setSelectedCamp(camp);
@@ -112,10 +119,17 @@ const CampSelect = () => {
                 navigate("/create");
               } else {
                 const errorData = await response.json();
-                alert(
-                  "陣営選択に失敗しました: " +
-                    (errorData.error || "不明なエラー")
-                );
+                if (errorData.error === "討論期間中は陣営を変更できません") {
+                  alert(
+                    "既に陣営を選択済みです。討論期間中は陣営を変更できません。"
+                  );
+                  navigate("/dashboard");
+                } else {
+                  alert(
+                    "陣営選択に失敗しました: " +
+                      (errorData.error || "不明なエラー")
+                  );
+                }
                 // エラー時にページ位置を復元
                 gsap.to(containerRef.current, {
                   x: 0,
@@ -162,9 +176,14 @@ const CampSelect = () => {
           navigate("/create");
         } else {
           const errorData = await response.json();
-          alert(
-            "陣営選択に失敗しました: " + (errorData.error || "不明なエラー")
-          );
+          if (errorData.error === "討論期間中は陣営を変更できません") {
+            alert("既に陣営を選択済みです。討論期間中は陣営を変更できません。");
+            navigate("/dashboard");
+          } else {
+            alert(
+              "陣営選択に失敗しました: " + (errorData.error || "不明なエラー")
+            );
+          }
         }
       } catch (error) {
         console.error("陣営選択エラー:", error);

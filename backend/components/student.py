@@ -120,6 +120,46 @@ def update_student_camp(student_id):
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
+        # 陣営IDを更新しようとしている場合は期間チェックを行う
+        if 'camp_id' in request.json:
+            # 学生の現在の情報を取得
+            c.execute('SELECT student_id, camp_id, school_id FROM students WHERE student_id = ?', (student_id,))
+            student = c.fetchone()
+            if not student:
+                conn.close()
+                return jsonify({'error': '学生が見つかりません'}), 404
+            
+            current_camp_id = student[1]
+            school_id = student[2]
+            
+            # 現在のテーマの終了日時をチェック
+            c.execute('''
+                SELECT end_date, theme_id FROM debate_settings 
+                WHERE school_id = ? 
+                ORDER BY theme_id DESC 
+                LIMIT 1
+            ''', (school_id,))
+            theme_result = c.fetchone()
+            
+            if theme_result:
+                end_date_str = theme_result[0]
+                
+                # 現在時刻と終了時刻を比較
+                from datetime import datetime
+                try:
+                    # SQLiteの日時形式をパース
+                    end_date = datetime.fromisoformat(end_date_str.replace('Z', ''))
+                    current_date = datetime.now()
+                    
+                    # 既に陣営を選択済みで、まだ期間が終了していない場合は変更を禁止
+                    if current_camp_id is not None and current_date < end_date:
+                        conn.close()
+                        return jsonify({'error': '討論期間中は陣営を変更できません'}), 400
+                        
+                except ValueError:
+                    # 日時パースエラーの場合は継続
+                    pass
+        
         update_fields = []
         values = []
         

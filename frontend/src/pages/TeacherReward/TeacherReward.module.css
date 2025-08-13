@@ -1,55 +1,58 @@
-.container{
-    height: 100vh;
-    margin: 0 0 0 70px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.container {
+  height: 100vh;
+  margin: 0 0 0 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--bg-default);
 }
-.up{
-    width: 90%;
-    height: 10%;
-    background-color:#ccc;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 20px 0;
-    border-radius: 20px;
-    box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
-    position: relative;
+.up {
+  width: 90%;
+  height: 10%;
+  background-color: var(--bg-paper);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0;
+  border-radius: 20px;
+  box-shadow: 10px 10px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
 }
-.reward{
-    width: 100%;
-    text-align: center;
-    position: absolute;
-    left: 0;
+.reward {
+  width: 100%;
+  text-align: center;
+  position: absolute;
+  left: 0;
 }
-.rewardp{
-    font-size: 30px;
+.rewardp {
+  font-size: 30px;
+  color: var(--text-primary);
 }
-.point{
-    width: 20%;
-    margin-right: 0;
-    position: absolute;
-    right: 0;
+.point {
+  width: 20%;
+  margin-right: 0;
+  position: absolute;
+  right: 0;
 }
-.pointp{
-    font-size: 25px;
+.pointp {
+  font-size: 25px;
+  color: var(--text-primary);
 }
-.down{
-    width: 90%;
-    height: 90%;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
+.down {
+  width: 90%;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
-.down #rewardbox{
-    height: 100%;
-    display: flex;
-    justify-content: space-around;
-    margin: 30px 0;
+.down #rewardbox {
+  height: 100%;
+  display: flex;
+  justify-content: space-around;
+  margin: 30px 0;
 }
-.box{
-    width: 100px;
-    height: 100%;
-    background-color: blue;
+.box {
+  width: 100px;
+  height: 100%;
+  background-color: blue;
 }

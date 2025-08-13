@@ -48,9 +48,17 @@ def init_db():
         enemy_avg_score REAL DEFAULT 0,
         overall_avg_score REAL DEFAULT 0,
         theme_id INTEGER NOT NULL,
+        author_camp_id INTEGER,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY (student_id) REFERENCES students(student_id)
         )''')
+    
+    # author_camp_id字段のマイグレーション
+    try:
+        c.execute('ALTER TABLE sticky ADD COLUMN author_camp_id INTEGER')
+        print("Added author_camp_id column to sticky table")
+    except sqlite3.OperationalError:
+        pass
     
     # display_index字段のマイグレーション（既存のテーブルに字段を追加）
     try:
@@ -178,11 +186,19 @@ def init_db():
         student_id INTEGER NOT NULL,
         sticky_id INTEGER NOT NULL,
         vote_type TEXT NOT NULL CHECK(vote_type IN ('A', 'B', 'C')),
+        voter_camp_id INTEGER,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY (student_id) REFERENCES students(student_id),
         FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id),
         UNIQUE(student_id, sticky_id)
     )''')
+    
+    # voter_camp_id字段のマイグレーション
+    try:
+        c.execute('ALTER TABLE sticky_votes ADD COLUMN voter_camp_id INTEGER')
+        print("Added voter_camp_id column to sticky_votes table")
+    except sqlite3.OperationalError:
+        pass
     
     # rank_history tableを作成（ランク履歴）
     c.execute('''CREATE TABLE IF NOT EXISTS rank_history(

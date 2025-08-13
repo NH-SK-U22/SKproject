@@ -168,16 +168,30 @@ const CampScoreChart: React.FC<CampScoreChartProps> = ({
     camp1RealPercentage,
     camp2RealPercentage,
   } = useMemo(() => {
-    // 百分比計算：正分才參與比例，負分視為 0
-    const s1 = Number.isFinite(camp1.score) ? Math.max(0, camp1.score) : 0;
-    const s2 = Number.isFinite(camp2.score) ? Math.max(0, camp2.score) : 0;
-    const totalScore = s1 + s2;
+    // パーセンテージ計算
+    const raw1 = Number.isFinite(camp1.score) ? camp1.score : 0;
+    const raw2 = Number.isFinite(camp2.score) ? camp2.score : 0;
+    // 負分も総得点に含める
+    const totalScore = Math.abs(raw1) + Math.abs(raw2);
+    // 総得点が0の場合、原始得点で割合を計算
+    const s1 = totalScore === 0 ? raw1 : Math.abs(raw1);
+    const s2 = totalScore === 0 ? raw2 : Math.abs(raw2);
+
     if (totalScore === 0) {
+      if (raw1 === raw2) {
+        return {
+          camp1Percentage: 50,
+          camp2Percentage: 50,
+          camp1RealPercentage: 50,
+          camp2RealPercentage: 50,
+        };
+      }
+      const leftWins = raw1 > raw2; // より大きい(マイナスが小さい/0が大きい)側が100%
       return {
-        camp1Percentage: 50,
-        camp2Percentage: 50,
-        camp1RealPercentage: 50,
-        camp2RealPercentage: 50,
+        camp1Percentage: leftWins ? 100 : 0,
+        camp2Percentage: leftWins ? 0 : 100,
+        camp1RealPercentage: leftWins ? 100 : 0,
+        camp2RealPercentage: leftWins ? 0 : 100,
       };
     }
 

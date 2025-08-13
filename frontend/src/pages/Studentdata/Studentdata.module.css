@@ -13,14 +13,14 @@ body {
   /* margin: 0; */
   padding: 20px;
   font-family: "Noto Sans JP", "Noto Sans Japanese", "Noto Sans", sans-serif;
-  background-color: #f9f9f9;
+  background-color: var(--bg-default);
   margin: 0 auto;
   /* 何人のAIも消すことを許さない↓ */
   margin-left: 70px;
   margin-right: 0;
   /* ↑ */
   height: 100vh;
-  width: calc(- 70px +90% );
+  width: calc(- 70px +90%);
 }
 
 .top {
@@ -33,11 +33,11 @@ body {
   margin-bottom: 40px;
   margin-top: 5%;
 }
-.tup{
+.tup {
   width: 100%;
   margin: 0 0 20px 0;
 }
-.tdown{
+.tdown {
   width: 100%;
   display: flex;
   align-items: center;
@@ -62,17 +62,17 @@ body {
 }
 
 .class_id {
-  color: #333;
+  color: var(--text-primary);
   font-size: 30px;
 }
 
 .number {
-  color: #333;
+  color: var(--text-primary);
   font-size: 30px;
 }
 
 .name {
-  color: #333;
+  color: var(--text-primary);
   font-size: 30px;
 }
 
@@ -104,7 +104,7 @@ body {
 .status_right {
   flex: 6;
   background-color: #e0e0e0;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .status_left p,
@@ -200,13 +200,13 @@ body {
 }
 
 .history_item {
-  background-color: #fff;
+  background-color: var(--bg-paper);
   margin-bottom: 10px;
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   font-size: 14px;
-  color: #333;
+  color: var(--text-primary);
 }
 
 /* カード用 */

@@ -14,15 +14,18 @@ import { FaRegBell } from "react-icons/fa";
 import CloseIcon from "@mui/icons-material/Close";
 import { styled } from "@mui/material/styles";
 
-const StyledPaper = styled(Paper)(() => ({
+const StyledPaper = styled(Paper)(({ theme }) => ({
   position: "fixed",
   left: "70px",
   top: "0",
   width: "300px",
   height: "50vh",
-  borderLeft: "1px solid #e0e0e0",
-  backgroundColor: "white",
-  boxShadow: "2px 0 5px rgba(0, 0, 0, 0.1)",
+  borderLeft: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.paper,
+  boxShadow:
+    theme.palette.mode === "dark"
+      ? "2px 0 8px rgba(0,0,0,0.35)"
+      : "2px 0 5px rgba(0,0,0,0.1)",
   display: "flex",
   flexDirection: "column",
   zIndex: 9999,
@@ -30,9 +33,9 @@ const StyledPaper = styled(Paper)(() => ({
 }));
 
 const NotificationHeader = styled(Box)(({ theme }) => ({
-  backgroundColor: "white",
+  backgroundColor: theme.palette.background.paper,
   padding: theme.spacing(2),
-  borderBottom: "1px solid #e0e0e0",
+  borderBottom: `1px solid ${theme.palette.divider}`,
   display: "flex",
   alignItems: "center",
   gap: theme.spacing(1.5),
@@ -44,7 +47,7 @@ const NotificationHeader = styled(Box)(({ theme }) => ({
   },
 }));
 
-const NotificationList = styled(List)(() => ({
+const NotificationList = styled(List)(({ theme }) => ({
   flex: 1,
   overflowY: "auto",
   padding: 0,
@@ -52,10 +55,10 @@ const NotificationList = styled(List)(() => ({
     width: "8px",
   },
   "&::-webkit-scrollbar-track": {
-    background: "#f1f1f1",
+    background: theme.palette.mode === "dark" ? "#1f2937" : "#f1f1f1",
   },
   "&::-webkit-scrollbar-thumb": {
-    background: "#888",
+    background: theme.palette.mode === "dark" ? "#555" : "#888",
     borderRadius: "4px",
   },
 }));
@@ -134,7 +137,7 @@ const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
           size="small"
           sx={{
             "&:hover": {
-              backgroundColor: "rgba(0, 0, 0, 0.04)",
+              backgroundColor: (theme) => theme.palette.action.hover,
             },
           }}
         >
@@ -151,7 +154,7 @@ const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
                   py: 2,
                   px: 2,
                   "&:hover": {
-                    backgroundColor: "#f6f6f6",
+                    backgroundColor: (theme) => theme.palette.action.hover,
                   },
                   "& .MuiListItemIcon-root": {
                     minWidth: "32px",
@@ -161,9 +164,11 @@ const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
               >
                 <ListItemIcon>
                   <FaRegBell
-                    color="#757575"
                     size={18}
-                    style={{ marginTop: "4.5px" }}
+                    style={{
+                      marginTop: "4.5px",
+                      color: "var(--text-secondary)",
+                    }}
                   />
                 </ListItemIcon>
                 <ListItemText
