@@ -7,9 +7,9 @@
   flex-direction: column;
   align-items: center;
   position: fixed;
-  background-color: #fff;
+  background-color: var(--bg-paper);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-  z-index: 100;
+  z-index: 2000;
   transition: width 0.3s;
 }
 
@@ -87,7 +87,7 @@
 .menuItem svg {
   width: 28px;
   height: 28px;
-  color: #222;
+  color: var(--text-primary);
   transition: color 0.2s;
 }
 
@@ -95,13 +95,32 @@
 .menuItem:hover svg,
 .profile:hover svg {
   color: #00e6b8;
-  background-color: #ebfef6;
 }
 
 .menuItem:hover,
 .menuItem.selected,
 .profile:hover {
   background-color: #ebfef6;
+}
+
+/* Dark mode hover/selected styles */
+:global(.dark) .menuItem:hover,
+:global(.dark) .menuItem.selected,
+:global(.dark) .profile:hover {
+  background-color: rgba(0, 230, 184, 0.12);
+}
+
+:global(.dark) .menuItem:hover svg,
+:global(.dark) .menuItem.selected svg,
+:global(.dark) .profile:hover svg {
+  color: #00e6b8;
+  background-color: transparent;
+}
+
+:global(.dark) .menuItem:hover .menuText,
+:global(.dark) .menuItem.selected .menuText,
+:global(.dark) .profile:hover .menuText {
+  color: #00e6b8;
 }
 
 .profile {
@@ -129,7 +148,7 @@
   margin-left: 16px;
   white-space: nowrap;
   font-size: 1rem;
-  color: #222;
+  color: var(--text-primary);
 }
 
 .sidebar.expanded .menuText {

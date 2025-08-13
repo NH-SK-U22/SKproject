@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  background-color: #fff;
+  background-color: var(--bg-paper);
   border: none;
   box-shadow: 0 0 30px 8px rgba(0, 0, 0, 0.1);
   position: relative;
@@ -23,12 +23,12 @@
 }
 
 .messageList::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bg-default);
   border-radius: 3px;
 }
 
 .messageList::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #777;
   border-radius: 3px;
 }
 
@@ -136,8 +136,8 @@
 }
 
 .otherMessage .messageText {
-  background-color: #f0f0f0;
-  color: #333;
+  background-color: var(--bg-default);
+  color: var(--text-primary);
   border-top-left-radius: 4px;
 }
 
@@ -155,14 +155,14 @@
   display: flex;
   gap: 12px;
   padding: 16px;
-  background-color: #fff;
+  background-color: var(--bg-paper);
   border-top: 1px solid #eee;
 }
 
 .messageInput {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 24px;
   font-size: 14px;
   outline: none;

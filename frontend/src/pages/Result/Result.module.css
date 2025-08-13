@@ -21,14 +21,14 @@
   position: fixed;
   top: 0;
   left: 70px;
-  width: calc(100vw - 70px);
+  width: calc(100% - 70px);
   height: 80px;
   margin-bottom: 30px;
-  padding: 0;
-  display: flex;
+  padding: 0 30px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  justify-content: center;
-  background-color: transparent;
+  background-color: var(--bg-paper);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
   z-index: 1000;
@@ -36,6 +36,7 @@
 }
 
 .result {
+  grid-column: 2;
   display: flex;
   align-items: center;
   justify-content: center;
