@@ -6,7 +6,18 @@ import { ja } from "date-fns/locale/ja";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { getCurrentUser } from "../../utils/auth";
 
-const TopicForm = () => {
+interface TopicFormProps {
+  onAddTopic: (newTopic: {
+    title: string;
+    description: string;
+    startDate: Date;
+    endDate: Date;
+    team1: string;
+    team2: string;
+  }) => void;
+}
+
+const TopicForm = ({ onAddTopic }: TopicFormProps) => {
   const [topic, setTopic] = useState({
     title: "",
     description: "",
@@ -41,6 +52,7 @@ const TopicForm = () => {
         throw new Error("テーマ追加に失敗しました");
       }
 
+      onAddTopic(topic);
       alert("テーマが追加されました");
       setTopic({
         title: "",
