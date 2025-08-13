@@ -246,8 +246,9 @@ const Dashboard = () => {
   }>({});
 
   const moveTimeoutRef = useRef<number | null>(null);
-  const { theme } = useDebateTheme();
+  const { theme, fetchTheme } = useDebateTheme();
   const navigate = useNavigate();
+  const initializedRef = useRef<boolean>(false);
 
   const handleNoteMove = useCallback(
     (id: number, x: number, y: number) => {
@@ -280,56 +281,48 @@ const Dashboard = () => {
     [updatePost]
   );
 
-  // コンポーネント装着時に同校の付箋を読み込み、Socket接続を開始
+  // コンポーネント装着時に主題取得とSocket接続を開始（初回のみ）
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     const user = getCurrentUser();
     if (user) {
       setCurrentUser(user);
 
-      // 討論主題の状態をチェック（期間終了後のみサーバ側のクリアAPIを呼ぶ）
-      const checkThemeStatus = async () => {
-        try {
-          if (theme) {
-            const now = new Date();
-            const end = new Date(theme.end_date);
-            if (now > end) {
-              const response = await fetch(
-                `http://localhost:5000/api/check_theme_status?school_id=${user.school_id}`
-              );
-              if (response.ok) {
-                const data = await response.json();
-                if (
-                  (data.message || "").includes(
-                    "討論が終了し、陣営選択がクリアされました"
-                  )
-                ) {
-                  const updatedUser = { ...user, camp_id: null };
-                  localStorage.setItem("user", JSON.stringify(updatedUser));
-                  setCurrentUser(updatedUser);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error("討論主題状態のチェックエラー:", error);
-        }
-      };
+      // 主題情報を取得（初回）
+      fetchTheme();
 
-      checkThemeStatus();
-
-      // 同校の付箋を読み込む（theme_idが必須）
-      if (theme?.theme_id) {
-        loadSchoolPosts(user.school_id, theme.theme_id);
-      }
-      // Socket接続を開始
+      // Socket接続を開始（初回）
       connectSocket(user.school_id);
     }
 
-    // コンポーネントのアンマウント時にSocket接続を切断
+    // アンマウント時にSocket接続を切断
     return () => {
       disconnectSocket();
     };
-  }, [loadSchoolPosts, connectSocket, disconnectSocket, theme]);
+  }, [connectSocket, disconnectSocket, fetchTheme]);
+
+  // テーマが読み込まれたら付箋をロード
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user && theme?.theme_id) {
+      console.log(
+        "Dashboard: Loading posts for school:",
+        user.school_id,
+        "theme:",
+        theme.theme_id
+      );
+      loadSchoolPosts(user.school_id, theme.theme_id);
+    } else {
+      console.log(
+        "Dashboard: Not loading posts - user:",
+        !!user,
+        "theme_id:",
+        theme?.theme_id
+      );
+    }
+  }, [theme, loadSchoolPosts]);
 
   useEffect(() => {
     const handleResize = () => {

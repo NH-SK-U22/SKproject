@@ -47,16 +47,16 @@ else:
     print("Warning: GEMINI_API_KEY not found in environment variables")
 
 def check_and_clear_expired_camps():
-    """定期检查并清除已结束讨论的camp_id"""
+    """定期的にチェックし、終了した議論のcamp_idを削除"""
     while True:
         try:
             conn = sqlite3.connect('database.db')
             c = conn.cursor()
             
-            # 获取当前时间
+            # 現在の時刻を取得する
             now = datetime.now()
             
-            # 查找已结束的讨论主题
+            # 終了した討論テーマを検索する
             c.execute('''
                 SELECT DISTINCT school_id FROM debate_settings 
                 WHERE end_date <= ?
@@ -163,13 +163,24 @@ def create_sticky():
             print(f"DEBUG: Gemini API call failed: {e}")
             ai_summary_content = sticky_content[:30]
         
-        # 付箋插入
+        # 作成者の陣営IDを取得
+        c.execute('SELECT camp_id FROM students WHERE student_id = ?', (request.json['student_id'],))
+        author_camp_result = c.fetchone()
+        if not author_camp_result or author_camp_result[0] is None:
+            conn.close()
+            return jsonify({'error': '付箋作成者の陣営が設定されていません'}), 400
+        author_camp_id = author_camp_result[0]
+        print(f"\n=== Creating Sticky ===")
+        print(f"Author ID: {request.json['student_id']}")
+        print(f"Author Camp ID: {author_camp_id}")
+        
+        # 付箋插入（作成時の陣営IDを保存）
         c.execute('''INSERT INTO sticky (
         student_id, sticky_content, sticky_color, x_axis, y_axis, display_index, 
         feedback_A, feedback_B, feedback_C, ai_summary_content, 
         ai_teammate_avg_prediction, ai_enemy_avg_prediction, ai_overall_avg_prediction, 
-        teammate_avg_score, enemy_avg_score, overall_avg_score, theme_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        teammate_avg_score, enemy_avg_score, overall_avg_score, theme_id, author_camp_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                  (request.json['student_id'], 
                   request.json['sticky_content'],
                   request.json['sticky_color'],
@@ -186,7 +197,8 @@ def create_sticky():
                   request.json.get('teammate_avg_score', 0),
                   request.json.get('enemy_avg_score', 0),
                   request.json.get('overall_avg_score', 0),
-                  theme_id
+                  theme_id,
+                  author_camp_id
                  ))
         
         sticky_id = c.lastrowid
@@ -455,68 +467,312 @@ def get_camp_scores(school_id, theme_id):
         # 同陣営の投票: A(+2), B(+1), C(-1)
         # 敵陣営の投票: A(+6), B(+3), C(-1)
         
+        print(f"\n=== Calculating scores for school_id: {school_id}, theme_id: {theme_id} ===")
+        
+        # デバッグ: 基本的な投票データを確認
         c.execute('''
             SELECT 
-                s.camp_id,
+                COUNT(*) as total_votes,
                 sv.vote_type,
-                st_voter.camp_id as voter_camp_id,
-                COUNT(*) as vote_count
-            FROM sticky sticky_target
-            JOIN students s ON sticky_target.student_id = s.student_id
-            JOIN sticky_votes sv ON sticky_target.sticky_id = sv.sticky_id
-            JOIN students st_voter ON sv.student_id = st_voter.student_id
-            WHERE s.school_id = ? AND sticky_target.theme_id = ?
-            GROUP BY s.camp_id, sv.vote_type, st_voter.camp_id
+                COUNT(DISTINCT sv.sticky_id) as unique_stickies,
+                COUNT(DISTINCT sv.student_id) as unique_voters
+            FROM sticky_votes sv
+            JOIN sticky s ON sv.sticky_id = s.sticky_id
+            JOIN students st ON s.student_id = st.student_id
+            WHERE st.school_id = ? AND s.theme_id = ?
+            GROUP BY sv.vote_type
         ''', (school_id, theme_id))
         
+        basic_vote_data = c.fetchall()
+        print("\n=== Basic Vote Summary ===")
+        for row in basic_vote_data:
+            print(f"Vote Type {row[1] if row[1] is not None else 'None'}: {row[0] if row[0] is not None else 'None'} votes on {row[2] if row[2] is not None else 'None'} stickies by {row[3] if row[3] is not None else 'None'} voters")
+        
+        # デバッグ: 陣営情報を確認
+        c.execute('''
+            SELECT 
+                s.sticky_id,
+                s.author_camp_id,
+                sv.vote_type,
+                sv.voter_camp_id,
+                st_target.name as target_student,
+                st_voter.name as voter_student
+            FROM sticky s
+            JOIN sticky_votes sv ON s.sticky_id = sv.sticky_id
+            JOIN students st_target ON s.student_id = st_target.student_id
+            JOIN students st_voter ON sv.student_id = st_voter.student_id
+            WHERE st_target.school_id = ? AND s.theme_id = ?
+            ORDER BY s.sticky_id, sv.vote_type
+        ''', (school_id, theme_id))
+        
+        detailed_vote_data = c.fetchall()
+        print("\n=== Detailed Vote Data ===")
+        print("Sticky ID | Target Camp | Vote Type | Voter Camp | Target Student | Voter Student")
+        print("-" * 90)
+        for row in detailed_vote_data:
+            print(f"{row[0] if row[0] is not None else 'None':^9}|{row[1] if row[1] is not None else 'None':^12}|{row[2] if row[2] is not None else 'None':^10}|{row[3] if row[3] is not None else 'None':^11}|{row[4] if row[4] is not None else 'None':^15}|{row[5] if row[5] is not None else 'None':^14}")
+        
+        if not detailed_vote_data:
+            print("Warning: No detailed vote data found!")
+            return jsonify({'error': '投票データが見つかりません'}), 404
+        
+        # まず、投票データを取得（投票者と被投票者の詳細情報を含む）
+        c.execute('''
+            WITH vote_summary AS (
+                SELECT 
+                    sticky_target.theme_id,
+                    sticky_target.author_camp_id as target_camp_id,
+                    sv.vote_type,
+                    sv.voter_camp_id,
+                    COUNT(*) as vote_count,
+                    GROUP_CONCAT(DISTINCT s.name) as target_students,
+                    GROUP_CONCAT(DISTINCT st_voter.name) as voter_students
+                FROM sticky sticky_target
+                JOIN students s ON sticky_target.student_id = s.student_id
+                JOIN sticky_votes sv ON sticky_target.sticky_id = sv.sticky_id
+                JOIN students st_voter ON sv.student_id = st_voter.student_id
+                WHERE s.school_id = ? AND sticky_target.theme_id = ?
+                  AND sticky_target.author_camp_id IS NOT NULL
+                  AND sv.voter_camp_id IS NOT NULL
+                GROUP BY sticky_target.author_camp_id, 
+                         sv.vote_type, 
+                         sv.voter_camp_id
+            )
+            SELECT 
+                target_camp_id,
+                vote_type,
+                voter_camp_id,
+                vote_count,
+                target_students,
+                voter_students,
+                c1.camp_name as target_camp_name,
+                c2.camp_name as voter_camp_name
+            FROM vote_summary
+            LEFT JOIN camps c1 ON vote_summary.target_camp_id = c1.camp_id AND vote_summary.theme_id = c1.theme_id
+            LEFT JOIN camps c2 ON vote_summary.voter_camp_id = c2.camp_id AND vote_summary.theme_id = c2.theme_id
+        ''', (school_id, theme_id))
+        
+        print("\n=== Raw Vote Data ===")
+        print("Target Camp | Vote Type | Voter Camp | Count | Target Camp Name | Voter Camp Name | Target Students | Voter Students")
+        
         vote_data = c.fetchall()
+        for row in vote_data:
+            # Columns: 0 target_camp_id | 1 vote_type | 2 voter_camp_id | 3 count | 4 target_students | 5 voter_students | 6 target_camp_name | 7 voter_camp_name
+            target_camp_str   = row[0] if row[0] is not None else 'None'
+            vote_type_str     = row[1] if row[1] is not None else 'None'
+            voter_camp_str    = row[2] if row[2] is not None else 'None'
+            count_str         = row[3] if row[3] is not None else 'None'
+            target_camp_name  = row[6] if len(row) > 6 and row[6] is not None else 'None'
+            voter_camp_name   = row[7] if len(row) > 7 and row[7] is not None else 'None'
+            target_students   = row[4] if row[4] is not None else 'None'
+            voter_students    = row[5] if row[5] is not None else 'None'
+
+            print(f"{str(target_camp_str):^11}|{str(vote_type_str):^11}|{str(voter_camp_str):^11}|{str(count_str):^7}|{str(target_camp_name):^15}|{str(voter_camp_name):^15}|{str(target_students):^20}|{str(voter_students):^20}")
         
         # 陣営別得点計算
         camp_scores = {}
         
-        for target_camp_id, vote_type, voter_camp_id, vote_count in vote_data:
-            if target_camp_id not in camp_scores:
-                camp_scores[target_camp_id] = 0
-            
-            is_same_camp = target_camp_id == voter_camp_id
-            
-            if is_same_camp:
-                # 同陣営の得点配分
-                if vote_type == 'A':  # めっちゃ共感！
-                    camp_scores[target_camp_id] += vote_count * 2
-                elif vote_type == 'B':  # なるほどね
-                    camp_scores[target_camp_id] += vote_count * 1
-                elif vote_type == 'C':  # それはちょっと違うんじゃない
-                    camp_scores[target_camp_id] += vote_count * (-1)
-            else:
-                # 敵陣営の得点配分
-                if vote_type == 'A':  # 意見が変わるくらい納得
-                    camp_scores[target_camp_id] += vote_count * 6
-                elif vote_type == 'B':  # 意見は変わらんけど興味深い
-                    camp_scores[target_camp_id] += vote_count * 3
-                elif vote_type == 'C':  # そうは思わないな
-                    camp_scores[target_camp_id] += vote_count * (-1)
+        # すべての陣営の得点を0に初期化
+        c.execute('SELECT camp_id FROM camps WHERE theme_id = ?', (theme_id,))
+        camp_rows = c.fetchall()
+        if not camp_rows:
+            print(f"Warning: No camps found for theme_id {theme_id}")
+            return jsonify({'error': 'テーマに対する陣営が見つかりません'}), 404
         
-        # 陣営名を取得
+        for (camp_id,) in camp_rows:
+            if camp_id is not None:
+                camp_scores[camp_id] = 0
+        
+        print("\nInitialized camp scores:", camp_scores)
+        
+        for row in vote_data:
+            try:
+                target_camp_id = int(row[0]) if row[0] is not None else None
+                vote_type = row[1]
+                voter_camp_id = int(row[2]) if row[2] is not None else None
+                vote_count = int(row[3]) if row[3] is not None else 0
+                
+                print(f"\nProcessing vote row:")
+                print(f"- Raw data: {row}")
+                print(f"- Converted target_camp_id: {target_camp_id} ({type(target_camp_id)})")
+                print(f"- Converted voter_camp_id: {voter_camp_id} ({type(voter_camp_id)})")
+                print(f"- Converted vote_count: {vote_count} ({type(vote_count)})")
+                
+                if target_camp_id is None or voter_camp_id is None:
+                    print("Warning: Skipping vote due to missing camp IDs")
+                    continue
+                
+                if target_camp_id not in camp_scores:
+                    print(f"Warning: Initializing score for unknown camp_id {target_camp_id}")
+                    camp_scores[target_camp_id] = 0
+            except (TypeError, ValueError) as e:
+                print(f"Error processing vote row: {e}")
+                continue
+            
+            print(f"\n=== Processing Vote ===")
+            print(f"Target Camp ID: {target_camp_id}")
+            print(f"Voter Camp ID: {voter_camp_id}")
+            print(f"Vote Type: {vote_type}")
+            print(f"Vote Count: {vote_count}")
+            
+            # 同陣営判定はNULLを同陣営とみなさない
+            is_same_camp = False
+            try:
+                if target_camp_id is not None and voter_camp_id is not None:
+                    is_same_camp = (str(target_camp_id) == str(voter_camp_id))
+                    print(f"Comparing camp IDs: {target_camp_id} ({type(target_camp_id)}) == {voter_camp_id} ({type(voter_camp_id)})")
+            except (TypeError, ValueError) as e:
+                print(f"Error in camp comparison: {e}")
+                print(f"target_camp_id type: {type(target_camp_id)}")
+                print(f"voter_camp_id type: {type(voter_camp_id)}")
+                is_same_camp = False
+            
+            print(f"\n=== Processing Vote ===")
+            print(f"Target Camp ID: {target_camp_id}")
+            print(f"Voter Camp ID: {voter_camp_id}")
+            print(f"Vote Type: {vote_type}")
+            print(f"Vote Count: {vote_count}")
+            
+            # 得点の変化を計算する
+            score_change = 0
+            
+            # 同陣営判定の詳細をログ出力
+            print(f"\n=== Vote Processing ===")
+            print(f"Target Camp: {target_camp_id} ({row[6] if row[6] is not None else 'None'})")  # camp_name from query
+            print(f"Voter Camp: {voter_camp_id} ({row[7] if row[7] is not None else 'None'})")    # camp_name from query
+            print(f"Vote Type: {vote_type}")
+            print(f"Vote Count: {vote_count}")
+            print(f"Target Students: {row[4] if row[4] is not None else 'None'}")
+            print(f"Voter Students: {row[5] if row[5] is not None else 'None'}")
+            
+            print(f"\nSame Camp Check:")
+            print(f"- Target Camp ID exists: {target_camp_id is not None}")
+            print(f"- Voter Camp ID exists: {voter_camp_id is not None}")
+            print(f"- Camp IDs match: {target_camp_id == voter_camp_id}")
+            print(f"- Final is_same_camp: {is_same_camp}")
+            
+            # 得点計算のルール表示
+            print("\nScoring Rules:")
+            if is_same_camp:
+                print("Same Camp Rules:")
+                print("- A vote: +2 points")
+                print("- B vote: +1 point")
+                print("- C vote: -1 point")
+            else:
+                print("Enemy Camp Rules:")
+                print("- A vote: +6 points")
+                print("- B vote: +3 points")
+                print("- C vote: -1 point")
+            
+            # 実際の得点計算
+            try:
+                if target_camp_id is None or voter_camp_id is None:
+                    print(f"Warning: Skipping vote due to missing camp IDs - target: {target_camp_id}, voter: {voter_camp_id}")
+                    continue
+
+                if is_same_camp:
+                    if vote_type == 'A':
+                        score_change = int(vote_count) * 2
+                    elif vote_type == 'B':
+                        score_change = int(vote_count) * 1
+                    elif vote_type == 'C':
+                        score_change = int(vote_count) * (-1)
+                else:
+                    if vote_type == 'A':
+                        score_change = int(vote_count) * 6
+                    elif vote_type == 'B':
+                        score_change = int(vote_count) * 3
+                    elif vote_type == 'C':
+                        score_change = int(vote_count) * (-1)
+            except (TypeError, ValueError) as e:
+                print(f"Error in score calculation: {e}")
+                print(f"vote_count type: {type(vote_count)}")
+                print(f"vote_count value: {vote_count}")
+                continue
+            
+            print(f"\nScore Calculation:")
+            print(f"- Vote type: {vote_type}")
+            print(f"- Vote count: {vote_count}")
+            print(f"- Multiplier: {score_change / vote_count if vote_count else 0}")
+            print(f"- Score change: {score_change}")
+            
+            # 得点を更新し、ログを出力する
+            old_score = camp_scores[target_camp_id]
+            camp_scores[target_camp_id] += score_change
+            print(f"\nScore Update:")
+            print(f"- Old score: {old_score}")
+            print(f"- Score change: {score_change}")
+            print(f"- New score: {camp_scores[target_camp_id]}")
+            print(f"\nVote calculation:")
+            print(f"- Target Camp: {target_camp_id}")
+            print(f"- Voter Camp: {voter_camp_id}")
+            print(f"- Vote Type: {vote_type}")
+            print(f"- Count: {vote_count}")
+            print(f"- Is Same Camp: {is_same_camp}")
+            print(f"- Score Change: {score_change}")
+            print(f"- Old Score: {old_score}")
+            print(f"- New Score: {camp_scores[target_camp_id]}")
+            
+            # デバッグ用ログ出力
+            print(f"Vote calculation - Target Camp: {target_camp_id}, Voter Camp: {voter_camp_id}, Vote Type: {vote_type}, Count: {vote_count}, Is Same Camp: {is_same_camp}, Current Score: {camp_scores[target_camp_id]}")
+        
+        # 陣営一覧を取得（投票が無い陣営も0点で返す）
         c.execute('''
             SELECT camp_id, camp_name
-            FROM camps
-            WHERE theme_id = ?
+              FROM camps
+             WHERE theme_id = ?
+             ORDER BY camp_id
         ''', (theme_id,))
-        
-        camp_names = dict(c.fetchall())
-        
-        # 結果をフォーマット
+
+        camp_rows = c.fetchall()
+
+        # 結果をフォーマット（全陣営を必ず返却）
         result = []
-        for camp_id, score in camp_scores.items():
+        print("\n=== Final Scores ===")
+        print("Camp ID | Camp Name | Raw Score | Percentage")
+        print("-" * 60)
+        
+        # 総得点（絶対値の合計）を計算
+        total_abs_score = sum(abs(score) for score in camp_scores.values())
+        
+        for row in camp_rows:
+            camp_id = row[0]
+            camp_name = row[1]
+            score = camp_scores.get(camp_id, 0)
+            
+            # パーセンテージ計算（総得点が0の場合は50%）
+            percentage = 50
+            if total_abs_score > 0:
+                percentage = (abs(score) / total_abs_score) * 100
+            
+            print(f"{camp_id if camp_id is not None else 'None':^7}|{camp_name if camp_name is not None else 'None':^10}|{score if score is not None else 'None':^10}|{percentage:^10.1f}%")
+            
             result.append({
                 'camp_id': camp_id,
-                'camp_name': camp_names.get(camp_id, f'陣営{camp_id}'),
+                'camp_name': camp_name or f'陣営{camp_id if camp_id is not None else "Unknown"}',
                 'score': score
             })
-        
-        # 陣営IDでソート
-        result.sort(key=lambda x: x['camp_id'])
+
+        # debate_settings に合計点と勝者を保存
+        if len(camp_rows) >= 2:
+            camp1_id, camp1_name = camp_rows[0][0], camp_rows[0][1]
+            camp2_id, camp2_name = camp_rows[1][0], camp_rows[1][1]
+            team1_score = float(camp_scores.get(camp1_id, 0))
+            team2_score = float(camp_scores.get(camp2_id, 0))
+
+            if team1_score > team2_score:
+                winner_name = camp1_name
+            elif team2_score > team1_score:
+                winner_name = camp2_name
+            else:
+                winner_name = 'draw'
+
+            c.execute('''
+                UPDATE debate_settings
+                   SET winner = ?, team1_score = ?, team2_score = ?
+                 WHERE theme_id = ?
+            ''', (winner_name, team1_score, team2_score, theme_id))
+            conn.commit()
         
         conn.close()
         return jsonify({
@@ -836,18 +1092,67 @@ def submit_feedback(sticky_id):
             c.execute(f'''UPDATE sticky SET feedback_{feedback_type} = feedback_{feedback_type} + 1 
                          WHERE sticky_id = ?''', (sticky_id,))
             
-            # 投票記録を更新
-            c.execute('''UPDATE sticky_votes SET vote_type = ?, created_at = datetime('now', '+9 hours')
-                         WHERE student_id = ? AND sticky_id = ?''', 
-                      (feedback_type, student_id, sticky_id))
+            # 投票者と付箋作成者の陣営IDを取得
+            c.execute('''
+                SELECT 
+                    s.camp_id as voter_camp_id,
+                    sticky.author_camp_id as target_camp_id
+                FROM students s
+                JOIN sticky ON sticky.sticky_id = ?
+                WHERE s.student_id = ?
+            ''', (sticky_id, student_id))
+            
+            camp_info = c.fetchone()
+            if not camp_info or camp_info[0] is None:
+                conn.close()
+                return jsonify({'error': '投票者の陣営が設定されていません'}), 400
+            
+            voter_camp_id = camp_info[0]
+            target_camp_id = camp_info[1]
+            
+            print(f"\n=== Vote Update Info ===")
+            print(f"Voter Camp ID: {voter_camp_id}")
+            print(f"Target Camp ID: {target_camp_id}")
+            print(f"Vote Type: {feedback_type}")
+            
+            # 投票記録を更新（投票時の陣営IDも更新）
+            c.execute('''UPDATE sticky_votes 
+                        SET vote_type = ?, 
+                            voter_camp_id = ?,
+                            created_at = datetime('now', '+9 hours')
+                        WHERE student_id = ? AND sticky_id = ?''', 
+                      (feedback_type, voter_camp_id, student_id, sticky_id))
         else:
+            # 投票者と付箋作成者の陣営IDを取得
+            c.execute('''
+                SELECT 
+                    s.camp_id as voter_camp_id,
+                    sticky.author_camp_id as target_camp_id
+                FROM students s
+                JOIN sticky ON sticky.sticky_id = ?
+                WHERE s.student_id = ?
+            ''', (sticky_id, student_id))
+            
+            camp_info = c.fetchone()
+            if not camp_info or camp_info[0] is None:
+                conn.close()
+                return jsonify({'error': '投票者の陣営が設定されていません'}), 400
+            
+            voter_camp_id = camp_info[0]
+            target_camp_id = camp_info[1]
+            
+            print(f"\n=== Vote Info ===")
+            print(f"Voter Camp ID: {voter_camp_id}")
+            print(f"Target Camp ID: {target_camp_id}")
+            print(f"Vote Type: {feedback_type}")
+            
             # 新しい投票を追加
             c.execute(f'''UPDATE sticky SET feedback_{feedback_type} = feedback_{feedback_type} + 1 
                          WHERE sticky_id = ?''', (sticky_id,))
             
-            # 投票記録を追加
-            c.execute('''INSERT INTO sticky_votes (student_id, sticky_id, vote_type) 
-                         VALUES (?, ?, ?)''', (student_id, sticky_id, feedback_type))
+            # 投票記録を追加（投票時の陣営IDを保存）
+            c.execute('''INSERT INTO sticky_votes (student_id, sticky_id, vote_type, voter_camp_id) 
+                         VALUES (?, ?, ?, ?)''', (student_id, sticky_id, feedback_type, voter_camp_id))
         
         # 更新後のフィードバック数を取得
         c.execute('''SELECT feedback_A, feedback_B, feedback_C FROM sticky 
