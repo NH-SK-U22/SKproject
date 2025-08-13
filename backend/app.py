@@ -603,7 +603,6 @@ def get_camp_scores(school_id, theme_id):
                 print(f"- Converted voter_camp_id: {voter_camp_id} ({type(voter_camp_id)})")
                 print(f"- Converted vote_count: {vote_count} ({type(vote_count)})")
                 
-                # 1/2 の論理IDを実際の camp_id に変換
                 if target_camp_id in camp_id_map:
                     original_target = target_camp_id
                     target_camp_id = camp_id_map[target_camp_id]

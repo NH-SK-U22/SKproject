@@ -29,11 +29,15 @@ const CampSelect = () => {
     // テーマ情報を取得
     fetchTheme();
 
-    // ユーザーが既に陣営を選択している場合はダッシュボードに移動
+    // ユーザーが既に陣営を選択している場合でも、選択が現行テーマに紐づくかを確認
     const currentUser = getCurrentUser();
-    if (currentUser && currentUser.camp_id) {
-      navigate("/dashboard");
-      return;
+    if (currentUser && currentUser.camp_id && theme) {
+      const key = `selected_camp_theme_id_${currentUser.id}`;
+      const selectedForTheme = localStorage.getItem(key);
+      if (selectedForTheme && Number(selectedForTheme) === theme.theme_id) {
+        navigate("/dashboard");
+        return;
+      }
     }
 
     if (containerRef.current) {
@@ -114,6 +118,11 @@ const CampSelect = () => {
                 // localStorageのユーザー情報を更新
                 const updatedUser = { ...currentUser, camp_id: campId };
                 localStorage.setItem("user", JSON.stringify(updatedUser));
+                // 現行テーマで選択完了フラグを保存
+                if (theme) {
+                  const key = `selected_camp_theme_id_${currentUser.id}`;
+                  localStorage.setItem(key, String(theme.theme_id));
+                }
 
                 // Createページに移動（その後自動的にdashboardに移動）
                 navigate("/create");
@@ -173,6 +182,10 @@ const CampSelect = () => {
         if (response.ok) {
           const updatedUser = { ...currentUser, camp_id: campId };
           localStorage.setItem("user", JSON.stringify(updatedUser));
+          if (theme) {
+            const key = `selected_camp_theme_id_${currentUser.id}`;
+            localStorage.setItem(key, String(theme.theme_id));
+          }
           navigate("/create");
         } else {
           const errorData = await response.json();

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import styles from "./DarkLightTogle.module.css";
 
 interface DarkLightToggleProps {
@@ -6,9 +6,9 @@ interface DarkLightToggleProps {
   onChange?: (checked: boolean) => void;
 }
 
-export const DarkLightTogle: React.FC<DarkLightToggleProps> = ({ 
+export const DarkLightTogle: React.FC<DarkLightToggleProps> = ({
   defaultChecked = true,
-  onChange 
+  onChange,
 }) => {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onChange?.(event.target.checked);
@@ -16,9 +16,9 @@ export const DarkLightTogle: React.FC<DarkLightToggleProps> = ({
 
   return (
     <label className={styles.switch}>
-      <input 
-        defaultChecked={defaultChecked} 
-        id="checkbox" 
+      <input
+        defaultChecked={defaultChecked}
+        id="checkbox"
         type="checkbox"
         onChange={handleChange}
       />
@@ -26,7 +26,10 @@ export const DarkLightTogle: React.FC<DarkLightToggleProps> = ({
         <div className={`${styles.star} ${styles.star_1}`}></div>
         <div className={`${styles.star} ${styles.star_2}`}></div>
         <div className={`${styles.star} ${styles.star_3}`}></div>
-        <svg viewBox="0 0 16 16" className={`${styles.cloud_1} ${styles.cloud}`}>
+        <svg
+          viewBox="0 0 16 16"
+          className={`${styles.cloud_1} ${styles.cloud}`}
+        >
           <path
             transform="matrix(.77976 0 0 .78395-299.99-418.63)"
             fill="#fff"

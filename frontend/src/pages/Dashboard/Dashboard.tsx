@@ -257,8 +257,6 @@ const Dashboard = () => {
     [key: number]: { x: number; y: number };
   }>({});
 
-  const moveTimeoutRef = useRef<number | null>(null);
-
   // 便利貼が初めて表示される時のみ固定位置を記録（既存の位置は保持）
   const initializedPostsRef = useRef<Set<number>>(new Set());
   const lastDisplayIndexRef = useRef<number>(0); // 最後に使用した display_index を記録
@@ -295,7 +293,7 @@ const Dashboard = () => {
         }
       }
     });
-  }, [posts, maxPerRow]); // 移除 fixedPositions 依賴，避免重新計算
+  }, [posts, maxPerRow]);
   const { theme, fetchTheme } = useDebateTheme();
   const navigate = useNavigate();
   const initializedRef = useRef<boolean>(false);
@@ -383,10 +381,10 @@ const Dashboard = () => {
     if (user) {
       setCurrentUser(user);
 
-      // 主題情報を取得（初回）
+      // テーマ情報を取得（初回）
       fetchTheme();
 
-      // Socket接続を開始（初回）
+      // Socket接続を開始（初回）（サーバーからのデータを受信するため）
       connectSocket(user.school_id);
     }
 
@@ -470,32 +468,43 @@ const Dashboard = () => {
   // 期間終了時にResultへ遷移
   useEffect(() => {
     if (!theme) return;
-    // 学生でキャンプ未選択の場合は DB で再確認し、必要時のみ CampSelect へ
+    // 学生の場合、必ずcamp_idの状態を確認する（現行テーマで未選択ならCampSelectへ）
     (async () => {
       const current = getCurrentUser();
       if (current && current.user_type === "student") {
-        const now = new Date();
-        const start = new Date(theme.start_date);
-        const end = new Date(theme.end_date);
-        if (now >= start && now <= end) {
-          try {
-            const res = await fetch(
-              `http://localhost:5000/api/students/${current.id}`
-            );
-            if (res.ok) {
-              const s = await res.json();
-              if (s && (s.camp_id === null || s.camp_id === undefined)) {
-                navigate("/campselect");
-                return;
-              } else if (s && s.camp_id !== current.camp_id) {
-                const updated = { ...current, camp_id: s.camp_id } as User;
-                localStorage.setItem("user", JSON.stringify(updated));
-                setCurrentUser(updated);
-              }
+        try {
+          // 常にデータベースで最新のcamp_id状態を確認
+          const res = await fetch(
+            `http://localhost:5000/api/students/${current.id}`
+          );
+          if (res.ok) {
+            const s = await res.json();
+            // 現行テーマに対して選択済みかをlocalStorageで確認
+            const key = `selected_camp_theme_id_${current.id}`;
+            const selectedForTheme = localStorage.getItem(key);
+            const selectedThemeId = selectedForTheme
+              ? Number(selectedForTheme)
+              : null;
+
+            if (
+              !s ||
+              s.camp_id === null ||
+              s.camp_id === undefined ||
+              !theme?.theme_id ||
+              selectedThemeId !== theme.theme_id
+            ) {
+              // DB未選択、または現行テーマ未選択の場合はCampSelectへ
+              navigate("/campselect");
+              return;
+            } else if (s && s.camp_id) {
+              // データベースにcamp_idがある場合は、ローカルストレージを更新
+              const updated = { ...current, camp_id: s.camp_id } as User;
+              localStorage.setItem("user", JSON.stringify(updated));
+              setCurrentUser(updated);
             }
-          } catch (e) {
-            console.error("Failed to verify camp selection on dashboard:", e);
           }
+        } catch (e) {
+          console.error("Failed to verify camp selection on dashboard:", e);
         }
       }
     })();

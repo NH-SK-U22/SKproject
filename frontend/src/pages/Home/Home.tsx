@@ -12,14 +12,14 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     if (theme) {
-      const startJST = new Date(theme.start_date)
-      const endJST = new Date(theme.end_date)
+      const startJST = new Date(theme.start_date);
+      const endJST = new Date(theme.end_date);
       console.log("start_date (JST):", startJST);
       console.log("end_date (JST):", endJST);
     }
   }, [theme]);
 
-  console.log()
+  console.log();
   return (
     <Box display="flex">
       <Sidebar />

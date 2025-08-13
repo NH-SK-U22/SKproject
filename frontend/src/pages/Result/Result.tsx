@@ -1,18 +1,20 @@
+// react
 import React, { useState, useEffect, useRef, useMemo } from "react";
+// react-router-dom
 import { useNavigate } from "react-router-dom";
+// react-icons
 import { IoHome } from "react-icons/io5";
+// gsap
 import { gsap } from "gsap";
+// components
 import Sidebar from "../../components/Sidebar/Sidebar";
 import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import Loading from "../../components/Loading/Loading";
-
+import CampScoreChart from "../../components/CampScoreChart/CampScoreChart";
+// context
+import { useDebateTheme } from "../../context/DebateThemeContext";
 // utils
 import { getCurrentUser, clearUserCamp } from "../../utils/auth";
-import { useDebateTheme } from "../../context/DebateThemeContext";
-
-// components
-import CampScoreChart from "../../components/CampScoreChart/CampScoreChart";
-
 // css
 import styles from "./Result.module.css";
 
