@@ -571,19 +571,24 @@ def get_camp_scores(school_id, theme_id):
         
         # 陣営別得点計算
         camp_scores = {}
-        
+
         # すべての陣営の得点を0に初期化
-        c.execute('SELECT camp_id FROM camps WHERE theme_id = ?', (theme_id,))
+        c.execute('SELECT camp_id FROM camps WHERE theme_id = ? ORDER BY camp_id', (theme_id,))
         camp_rows = c.fetchall()
         if not camp_rows:
             print(f"Warning: No camps found for theme_id {theme_id}")
             return jsonify({'error': 'テーマに対する陣営が見つかりません'}), 404
-        
-        for (camp_id,) in camp_rows:
-            if camp_id is not None:
-                camp_scores[camp_id] = 0
-        
+
+        theme_camp_ids = [row[0] for row in camp_rows if row[0] is not None]
+        for camp_id in theme_camp_ids:
+            camp_scores[camp_id] = 0
+
+        # 学生や付箋に保存されている 1/2 の論理IDを、このテーマの実際の camp_id にマッピング
+        camp_id_map = {}
+        if len(theme_camp_ids) >= 2:
+            camp_id_map = {1: theme_camp_ids[0], 2: theme_camp_ids[1]}
         print("\nInitialized camp scores:", camp_scores)
+        print("Camp ID map (logical -> actual):", camp_id_map)
         
         for row in vote_data:
             try:
@@ -597,6 +602,16 @@ def get_camp_scores(school_id, theme_id):
                 print(f"- Converted target_camp_id: {target_camp_id} ({type(target_camp_id)})")
                 print(f"- Converted voter_camp_id: {voter_camp_id} ({type(voter_camp_id)})")
                 print(f"- Converted vote_count: {vote_count} ({type(vote_count)})")
+                
+                # 1/2 の論理IDを実際の camp_id に変換
+                if target_camp_id in camp_id_map:
+                    original_target = target_camp_id
+                    target_camp_id = camp_id_map[target_camp_id]
+                    print(f"- Mapped target_camp_id: {original_target} -> {target_camp_id}")
+                if voter_camp_id in camp_id_map:
+                    original_voter = voter_camp_id
+                    voter_camp_id = camp_id_map[voter_camp_id]
+                    print(f"- Mapped voter_camp_id: {original_voter} -> {voter_camp_id}")
                 
                 if target_camp_id is None or voter_camp_id is None:
                     print("Warning: Skipping vote due to missing camp IDs")

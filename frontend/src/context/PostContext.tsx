@@ -105,7 +105,8 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           gemini: item.ai_summary_content,
           author_camp_id: item.author_camp_id,
         }));
-        // display_index順でソート
+        // 既にローカルで移動後の位置があれば尊重（Dashboard 側の localPositions は props ではないため、ここでは DB 値をそのまま採用）
+        // 表示順は display_index を保つ
         formattedPosts.sort(
           (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
         );
@@ -223,14 +224,34 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         );
 
-        if (response.ok) {
-          // Socket事件が更新された付箋を自動的に同期する
-          // console.log("付箋が正常に更新されました");
-        } else {
-          console.error("付箋の更新に失敗しました");
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
         }
+
+        // 即時にローカルの posts を更新（Socket更新を待たない）
+        setPosts((prev) =>
+          prev.map((post) =>
+            post.id === sticky_id
+              ? {
+                  ...post,
+                  ...(updates.text !== undefined && { text: updates.text }),
+                  ...(updates.color !== undefined && { color: updates.color }),
+                  ...(updates.x_axis !== undefined && {
+                    x_axis: updates.x_axis,
+                  }),
+                  ...(updates.y_axis !== undefined && {
+                    y_axis: updates.y_axis,
+                  }),
+                }
+              : post
+          )
+        );
+
+        // void を返す
+        return;
       } catch (error) {
         console.error("付箋の更新に失敗しました:", error);
+        throw error; // エラーを再スローしてコンポーネントで処理できるようにする
       }
     },
     []
@@ -304,13 +325,12 @@ export const PostProvider: React.FC<{ children: React.ReactNode }> = ({
         author_camp_id: data.author_camp_id,
       };
       setPosts((prev) => {
-        console.log(
-          "現在の付箋数:",
-          prev.length,
-          "新しい付箋追加後:",
-          prev.length + 1
+        // display_index を保ったまま末尾に追加し、既存要素の display_index は変更しない
+        const next = [...prev, newPost];
+        next.sort(
+          (a: Post, b: Post) => (a.display_index || 0) - (b.display_index || 0)
         );
-        return [...prev, newPost];
+        return next;
       });
     });
 
