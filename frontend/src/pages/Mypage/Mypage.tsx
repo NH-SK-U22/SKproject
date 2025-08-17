@@ -66,6 +66,7 @@ const Mypage = () => {
   const userCampId: number | undefined = userObj?.camp_id; // ← 付箋投稿の陣営ID
 
   const userId: number | undefined = userObj?.id;
+  const userColor: string = userObj?.user_color || '#ccc';
   const sumP = userObj?.sum_point ?? 0;
   const { rankName, rankImage, nextThreshold } = computeRank(sumP);
   const { rankName: rankName2 } = computeRank(nextThreshold);
@@ -178,7 +179,12 @@ const Mypage = () => {
       <Sidebar />
       <div className={styles.container}>
         <div className={styles.top}>
-          <div className={styles.icon_circle}></div>
+          <div 
+            className={styles.icon_circle}
+            style={{ backgroundColor: userColor }}
+          >
+            
+          </div>
           <div className={styles.status_container}>
             <div className={styles.status_left}>
               <p>あなたは</p>
