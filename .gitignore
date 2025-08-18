@@ -6,6 +6,7 @@
 
 # frontend
 /frontend/node_modules/
+/frontend/package-lock.json
 /frontend/dist/
 /frontend/.env
 /frontend/.vite/
@@ -15,3 +16,5 @@
 /backend/*.pyc
 /backend/.env
 /backend/*.db
+
+/node_modules/
