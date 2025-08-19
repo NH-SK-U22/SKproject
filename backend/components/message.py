@@ -49,7 +49,7 @@ def get_messages_by_sticky(sticky_id):
         c = conn.cursor()
         
         c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
-                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.user_color
+                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.number, s.user_color
                      FROM message m
                      JOIN students s ON m.student_id = s.student_id
                      WHERE m.sticky_id = ? ORDER BY m.created_at ASC''', (sticky_id,))
@@ -67,11 +67,19 @@ def get_messages_by_sticky(sticky_id):
                 'feedback_C': row[7],
                 'created_at': row[8],
                 'student_name': row[9],
-                'user_color': row[10]
+                'student_number': row[10],
+                'user_color': row[11]
             })
         
+        # メッセージ数を取得
+        c.execute('SELECT COUNT(*) FROM message WHERE sticky_id = ?', (sticky_id,))
+        message_count = c.fetchone()[0]
+        
         conn.close()
-        return jsonify(messages)
+        return jsonify({
+            'messages': messages,
+            'message_count': message_count
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

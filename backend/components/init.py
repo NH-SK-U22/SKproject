@@ -83,7 +83,17 @@ def init_db():
         FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id)
         )''')
     
-    
+    # ai_help tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS ai_help(
+        ai_help_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sticky_id INTEGER NOT NULL,
+        student_id INTEGER NOT NULL,
+        school_id INTEGER NOT NULL,
+        ai_help TEXT NOT NULL,
+        FOREIGN KEY (sticky_id) REFERENCES sticky,
+        FOREIGN KEY (student_id) REFERENCES students,
+        FOREIGN KEY (school_id) REFERENCES teachers 
+    )''')
     # colorsets tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS colorsets(
         id INTEGER PRIMARY KEY AUTOINCREMENT,

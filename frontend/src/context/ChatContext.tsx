@@ -57,10 +57,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       if (response.ok) {
         const data = await response.json();
         console.log("バックエンドから返されたメッセージデータ:", data);
-        setMessages(data);
+        // バックエンドは { messages: [...], message_count: ... } の形式で返す
+        const messagesArray =
+          data.messages && Array.isArray(data.messages) ? data.messages : [];
+        setMessages(messagesArray);
         setCurrentStickyId(sticky_id);
       } else {
         console.error("メッセージの読み込みに失敗しました");
+        setMessages([]);
       }
     } catch (error) {
       console.error("メッセージの読み込みエラー:", error);
@@ -88,6 +92,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         created_at: currentTime,
         student_name: "",
         student_number: "",
+        user_color: "",
       };
 
       console.log(

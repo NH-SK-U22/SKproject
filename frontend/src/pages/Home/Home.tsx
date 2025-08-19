@@ -23,7 +23,15 @@ const Home: React.FC = () => {
   return (
     <Box display="flex">
       <Sidebar />
-      <Box flex={1} p={3}>
+      <Box 
+        flex={1} 
+        p={3} 
+        display="flex" 
+        flexDirection="column" 
+        alignItems="center" 
+        justifyContent="center"
+        minHeight="100vh"
+      >
         {/* ここにHome画面の内容を追加 */}
         <h2>ホーム画面</h2>
       </Box>
