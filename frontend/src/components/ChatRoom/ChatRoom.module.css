@@ -9,6 +9,118 @@
   position: relative;
 }
 
+/* AIアドバイスコンテナ */
+.aiAdviceContainer {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  margin: 10px;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+}
+
+.aiAdviceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.aiAdviceButtons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.aiAdviceTitle {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.closeAdviceButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.closeAdviceButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.refreshAdviceButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.refreshAdviceButton:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.refreshAdviceButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aiAdviceContent {
+  font-size: 13px;
+  line-height: 1.4;
+  opacity: 0.95;
+}
+
+.loadingAdvice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-style: italic;
+}
+
+.loadingSpinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .messageList {
   flex: 1;
   overflow-y: auto;
@@ -173,6 +285,13 @@
   border-color: #00e6b8;
 }
 
+.messageInput:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .sendButton {
   width: 40px;
   height: 40px;
@@ -190,10 +309,17 @@
   position: relative;
 }
 
-.sendButton:hover {
+.sendButton:hover:not(:disabled) {
   background-color: #00a484;
   transform: rotate(35deg) translateX(1px) translateY(-1px);
   transition: all 0.2s ease-in-out;
+}
+
+.sendButton:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.6;
 }
 
 .sendIcon {

@@ -17,6 +17,9 @@ import { useChat } from "../../context/ChatContext";
 // utils
 import { getCurrentUser } from "../../utils/auth";
 
+// hooks
+import { useAIHelp } from "../../CustomHooks/AIHelpHooks";
+
 interface AvatarProps {
   isUser: boolean;
   userId: string;
@@ -42,6 +45,9 @@ interface ChatRoomProps {
 const ChatRoom = ({ stickyId }: ChatRoomProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [aiAdvice, setAiAdvice] = useState<string>("");
+  const [showAiAdvice, setShowAiAdvice] = useState(false);
+  const [isGeneratingAdvice, setIsGeneratingAdvice] = useState(false);
   const messageListRef = useRef<HTMLDivElement>(null);
   const {
     messages,
@@ -51,6 +57,23 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
     leaveStickyChat,
     connectChatSocket,
   } = useChat();
+  const { fetchAIAdvice, generateAIAdvice, isLoading: aiLoading } = useAIHelp();
+
+  // AIアドバイスを手動で更新する関数（生成して保存）
+  const refreshAIAdvice = async () => {
+    setIsGeneratingAdvice(true);
+    try {
+      // 手動更新は「生成して保存」を実行
+      const adviceResponse = await generateAIAdvice(stickyId);
+      if (adviceResponse.success) {
+        const text = (adviceResponse.advice || "").trim();
+        setAiAdvice(text);
+        setShowAiAdvice(text.length > 0);
+      }
+    } finally {
+      setIsGeneratingAdvice(false);
+    }
+  };
 
   // 一番下にあるかチェック
   const checkIfAtBottom = () => {
@@ -118,26 +141,60 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
     leaveStickyChat,
   ]); // 使用されているすべての関数が依存関係に含まれています
 
+  // 初期表示時は「取得のみ」
+  useEffect(() => {
+    const initFetchAIAdvice = async () => {
+      setIsGeneratingAdvice(true);
+      try {
+        const adviceResponse = await fetchAIAdvice(stickyId);
+        if (adviceResponse.success) {
+          const text = (adviceResponse.advice || "").trim();
+          setAiAdvice(text);
+          setShowAiAdvice(text.length > 0);
+        }
+      } finally {
+        setIsGeneratingAdvice(false);
+      }
+    };
+
+    initFetchAIAdvice();
+  }, [stickyId, fetchAIAdvice]); // stickyIdが変更された時のみ
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim()) {
+    if (newMessage.trim() && !isGeneratingAdvice) {
       const currentUser = getCurrentUser();
       if (!currentUser) {
         console.error("ユーザーがログインしていません");
         return;
       }
 
-      await sendMessage({
-        message_content: newMessage.trim(),
-        student_id: currentUser.id,
-        camp_id: currentUser.camp_id || 1,
-        sticky_id: stickyId,
-      });
+      setIsGeneratingAdvice(true);
+      try {
+        await sendMessage({
+          message_content: newMessage.trim(),
+          student_id: currentUser.id,
+          camp_id: currentUser.camp_id || 1,
+          sticky_id: stickyId,
+        });
 
-      // 送信後、DBから最新メッセージを取得
-      await loadMessages(stickyId);
+        // 送信後、DBから最新メッセージを取得
+        await loadMessages(stickyId);
 
-      setNewMessage("");
+        // メッセージ送信後は「生成して保存」→ その結果を表示
+        setTimeout(async () => {
+          const adviceResponse = await generateAIAdvice(stickyId);
+          if (adviceResponse.success) {
+            const text = (adviceResponse.advice || "").trim();
+            setAiAdvice(text);
+            setShowAiAdvice(text.length > 0);
+          }
+        }, 1000);
+
+        setNewMessage("");
+      } finally {
+        setIsGeneratingAdvice(false);
+      }
     }
   };
 
@@ -145,92 +202,129 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
 
   return (
     <div className={styles.chatContainer}>
-      <div className={styles.messageList} ref={messageListRef}>
-        {messages.map((message) => {
-          const isUser = currentUser && message.student_id === currentUser.id;
-
-          // 時間的フォーマット處理，エラーチェックを追加
-          const formatTime = (dateString: string) => {
-            try {
-              if (!dateString) {
-                console.warn("時間文字列が空です、現在の時間を使用します");
-                return new Date().toLocaleTimeString("ja-JP", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-              }
-
-              const date = new Date(dateString);
-              if (isNaN(date.getTime())) {
-                console.warn("無効な時間文字列:", dateString);
-                return new Date().toLocaleTimeString("ja-JP", {
-                  hour12: false,
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-              }
-              return date.toLocaleTimeString("ja-JP", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-            } catch (error) {
-              console.error(
-                "時間のフォーマットエラー:",
-                error,
-                "元の文字列:",
-                dateString
-              );
-              return new Date().toLocaleTimeString("ja-JP", {
-                hour12: false,
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-            }
-          };
-
-          const displayTime = formatTime(message.created_at);
-
-          return (
-            <div
-              key={message.message_id}
-              className={`${styles.messageItem} ${
-                isUser ? styles.userMessage : styles.otherMessage
-              }`}
-            >
-              <div className={styles.messageBox}>
-                {!isUser && (
-                  <Avatar
-                    isUser={false}
-                    userId={message.student_id.toString()}
-                    userColor={message.user_color}
-                  />
-                )}
-                <div className={styles.messageContent}>
-                  <div className={styles.messageTextContainer}>
-                    <div className={styles.messageText}>
-                      {message.message_content}
-                    </div>
-                    {!isUser && (
-                      <div className={styles.emojiFeedbackContainer}>
-                        <EmojiFeedback messageAuthorCampId={message.camp_id} />
-                      </div>
-                    )}
-                  </div>
-                  <div className={styles.messageTime}>{displayTime}</div>
-                </div>
-                {isUser && (
-                  <Avatar
-                    isUser={true}
-                    userId={currentUser.id.toString()}
-                    userColor={message.user_color}
-                  />
-                )}
-              </div>
+      {/* AIアドバイス表示場所 */}
+      {(showAiAdvice || isGeneratingAdvice || aiLoading) && (
+        <div className={styles.aiAdviceContainer}>
+          <div className={styles.aiAdviceHeader}>
+            <span className={styles.aiAdviceTitle}>🤖 AIアドバイス</span>
+            <div className={styles.aiAdviceButtons}>
+              <button
+                className={styles.refreshAdviceButton}
+                onClick={refreshAIAdvice}
+                disabled={isGeneratingAdvice || aiLoading}
+              >
+                🔄
+              </button>
+              <button
+                className={styles.closeAdviceButton}
+                onClick={() => setShowAiAdvice(false)}
+                disabled={isGeneratingAdvice}
+              >
+                ×
+              </button>
             </div>
-          );
-        })}
+          </div>
+          <div className={styles.aiAdviceContent}>
+            {isGeneratingAdvice || aiLoading ? (
+              <div className={styles.loadingAdvice}>
+                <span>アドバイスを生成中...</span>
+                <div className={styles.loadingSpinner}></div>
+              </div>
+            ) : (
+              aiAdvice
+            )}
+          </div>
+        </div>
+      )}
+      <div className={styles.messageList} ref={messageListRef}>
+        {Array.isArray(messages) &&
+          messages.map((message) => {
+            const isUser = currentUser && message.student_id === currentUser.id;
+
+            // 時間的フォーマット處理，エラーチェックを追加
+            const formatTime = (dateString: string) => {
+              try {
+                if (!dateString) {
+                  console.warn("時間文字列が空です、現在の時間を使用します");
+                  return new Date().toLocaleTimeString("ja-JP", {
+                    hour12: false,
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                }
+
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                  console.warn("無効な時間文字列:", dateString);
+                  return new Date().toLocaleTimeString("ja-JP", {
+                    hour12: false,
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                }
+                return date.toLocaleTimeString("ja-JP", {
+                  hour12: false,
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              } catch (error) {
+                console.error(
+                  "時間のフォーマットエラー:",
+                  error,
+                  "元の文字列:",
+                  dateString
+                );
+                return new Date().toLocaleTimeString("ja-JP", {
+                  hour12: false,
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+              }
+            };
+
+            const displayTime = formatTime(message.created_at);
+
+            return (
+              <div
+                key={message.message_id}
+                className={`${styles.messageItem} ${
+                  isUser ? styles.userMessage : styles.otherMessage
+                }`}
+              >
+                <div className={styles.messageBox}>
+                  {!isUser && (
+                    <Avatar
+                      isUser={false}
+                      userId={message.student_id.toString()}
+                      userColor={message.user_color}
+                    />
+                  )}
+                  <div className={styles.messageContent}>
+                    <div className={styles.messageTextContainer}>
+                      <div className={styles.messageText}>
+                        {message.message_content}
+                      </div>
+                      {!isUser && (
+                        <div className={styles.emojiFeedbackContainer}>
+                          <EmojiFeedback
+                            messageAuthorCampId={message.camp_id}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.messageTime}>{displayTime}</div>
+                  </div>
+                  {isUser && (
+                    <Avatar
+                      isUser={true}
+                      userId={currentUser.id.toString()}
+                      userColor={message.user_color}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
       </div>
 
       {/* 下までスクロールボタン */}
@@ -250,8 +344,16 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           className={styles.messageInput}
+          disabled={isGeneratingAdvice}
+          placeholder={
+            isGeneratingAdvice ? "AIアドバイス生成中..." : "メッセージを入力..."
+          }
         />
-        <button type="submit" className={styles.sendButton}>
+        <button
+          type="submit"
+          className={styles.sendButton}
+          disabled={isGeneratingAdvice || !newMessage.trim()}
+        >
           <IoSend className={styles.sendIcon} />
         </button>
       </form>
