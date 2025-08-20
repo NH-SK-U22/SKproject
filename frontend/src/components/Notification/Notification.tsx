@@ -13,6 +13,7 @@ import {
 import { FaRegBell } from "react-icons/fa";
 import CloseIcon from "@mui/icons-material/Close";
 import { styled } from "@mui/material/styles";
+import { useEffect, useState } from "react";
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   position: "fixed",
@@ -63,51 +64,84 @@ const NotificationList = styled(List)(({ theme }) => ({
   },
 }));
 
+interface NotificationData {
+  notification_id: number;
+  student_id: number;
+  reward_id: number;
+  notification_content: string;
+  is_read: boolean;
+  saved_time: string;
+}
+
 interface NotificationProps {
   onClose?: () => void;
   isSidebarExpanded?: boolean;
 }
 
 const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
-  const notifications = [
-    {
-      id: 1,
-      text: "「ちょこたっぷり...」に対して返信されました",
-      time: "1分前",
-    },
-    {
-      id: 2,
-      text: "「ちょこたっぷり...」に対して「いいね」されました",
-      time: "2分前",
-    },
-    {
-      id: 3,
-      text: "「総合的にはたけのこの方がも...」に対して「興味深い」されました",
-      time: "2分前",
-    },
-    { id: 4, text: "報酬リクエストが承認されました", time: "3分前" },
-    {
-      id: 5,
-      text: "「総合的にはたけのこの方がも...」に対して返信されました",
-      time: "3分前",
-    },
-    {
-      id: 6,
-      text: "「ちょこたっぷり...」に対して「いいね」されました",
-      time: "4分前",
-    },
-    {
-      id: 7,
-      text: "「ちょこたっぷり...」に対して「うーん」されました",
-      time: "5分前",
-    },
-    {
-      id: 8,
-      text: "新しい討論が始まりました！最初の投稿を完了させましょう",
-      time: "6分前",
-    },
-    { id: 9, text: "報酬リクエストが承認されませんでした", time: "30分前" },
-  ];
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // 時間を相対的に表示する関数
+  const getRelativeTime = (dateString: string): string => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return "今";
+    if (diffInMinutes < 60) return `${diffInMinutes}分前`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}時間前`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}日前`;
+  };
+
+  // 通知を取得
+  useEffect(() => {
+    const userJson = localStorage.getItem("user");
+    const userObj = userJson ? JSON.parse(userJson) : null;
+    
+    if (!userObj || userObj.user_type !== "teacher") {
+      setLoading(false);
+      return;
+    }
+
+    fetch(`http://localhost:5000/api/notifications/${userObj.id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("通知の取得に失敗しました");
+        return res.json() as Promise<NotificationData[]>;
+      })
+      .then((data) => {
+        setNotifications(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  // 通知を既読にする
+  const markAsRead = async (notificationId: number) => {
+    try {
+      await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+        method: "PATCH",
+      });
+      
+      // ローカル状態を更新
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.notification_id === notificationId 
+            ? { ...notification, is_read: true }
+            : notification
+        )
+      );
+    } catch (err) {
+      console.error("通知の既読処理に失敗しました:", err);
+    }
+  };
 
   return (
     <StyledPaper
@@ -145,55 +179,82 @@ const Notification = ({ onClose, isSidebarExpanded }: NotificationProps) => {
         </IconButton>
       </NotificationHeader>
       <NotificationList>
-        {notifications.map((notification, index) => (
-          <Fade in={true} timeout={500} key={notification.id}>
-            <div>
-              <ListItem
-                alignItems="flex-start"
-                sx={{
-                  py: 2,
-                  px: 2,
-                  "&:hover": {
-                    backgroundColor: (theme) => theme.palette.action.hover,
-                  },
-                  "& .MuiListItemIcon-root": {
-                    minWidth: "32px",
-                    marginTop: "3px",
-                  },
-                }}
-              >
-                <ListItemIcon>
-                  <FaRegBell
-                    size={18}
-                    style={{
-                      marginTop: "4.5px",
-                      color: "var(--text-secondary)",
+        {loading ? (
+          <ListItem>
+            <ListItemText
+              primary="読み込み中..."
+              primaryTypographyProps={{
+                color: "text.secondary",
+                fontFamily: '"Noto Sans JP", sans-serif',
+              }}
+            />
+          </ListItem>
+        ) : notifications.length > 0 ? (
+          notifications.map((notification, index) => (
+            <Fade in={true} timeout={500} key={notification.notification_id}>
+              <div>
+                <ListItem
+                  alignItems="flex-start"
+                  onClick={() => markAsRead(notification.notification_id)}
+                  sx={{
+                    py: 2,
+                    px: 2,
+                    cursor: "pointer",
+                    backgroundColor: notification.is_read ? "transparent" : "rgba(0, 230, 184, 0.1)",
+                    "&:hover": {
+                      backgroundColor: (theme) => theme.palette.action.hover,
+                    },
+                    "& .MuiListItemIcon-root": {
+                      minWidth: "32px",
+                      marginTop: "3px",
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <FaRegBell
+                      size={18}
+                      style={{
+                        marginTop: "4.5px",
+                        color: notification.is_read ? "var(--text-secondary)" : "#00e6b8",
+                      }}
+                    />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={notification.notification_content}
+                    secondary={getRelativeTime(notification.saved_time)}
+                    primaryTypographyProps={{
+                      variant: "body1",
+                      color: "text.primary",
+                      fontFamily: '"Noto Sans JP", sans-serif',
+                      lineHeight: 1.4,
+                      fontSize: "0.95rem",
+                      fontWeight: notification.is_read ? 400 : 500,
+                    }}
+                    secondaryTypographyProps={{
+                      variant: "caption",
+                      color: "text.secondary",
+                      fontFamily: '"Noto Sans JP", sans-serif',
+                      marginTop: "4px",
+                      display: "block",
                     }}
                   />
-                </ListItemIcon>
-                <ListItemText
-                  primary={notification.text}
-                  secondary={notification.time}
-                  primaryTypographyProps={{
-                    variant: "body1",
-                    color: "text.primary",
-                    fontFamily: '"Noto Sans JP", sans-serif',
-                    lineHeight: 1.4,
-                    fontSize: "0.95rem",
-                  }}
-                  secondaryTypographyProps={{
-                    variant: "caption",
-                    color: "text.secondary",
-                    fontFamily: '"Noto Sans JP", sans-serif',
-                    marginTop: "4px",
-                    display: "block",
-                  }}
-                />
-              </ListItem>
-              {index < notifications.length - 1 && <Divider component="li" />}
-            </div>
-          </Fade>
-        ))}
+                </ListItem>
+                {index < notifications.length - 1 && <Divider component="li" />}
+              </div>
+            </Fade>
+          ))
+        ) : (
+          <ListItem>
+            <ListItemText
+              primary="通知はありません"
+              primaryTypographyProps={{
+                color: "text.secondary",
+                fontFamily: '"Noto Sans JP", sans-serif',
+                textAlign: "center",
+              }}
+            />
+          </ListItem>
+        )}
       </NotificationList>
     </StyledPaper>
   );

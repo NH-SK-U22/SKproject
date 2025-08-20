@@ -221,6 +221,21 @@ def init_db():
         FOREIGN KEY(theme_id)   REFERENCES debate_settings(theme_id)
     )''')
     
+    # notification tableを作成（通知）
+    c.execute('''CREATE TABLE IF NOT EXISTS notification(
+        notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,          -- 報酬を使用した生徒
+        teacher_id INTEGER NOT NULL,          -- 通知を受け取る先生
+        reward_id INTEGER NOT NULL,           -- 使用された報酬
+        notification_content TEXT NOT NULL,   -- 通知内容
+        is_read BOOLEAN DEFAULT 0,            -- 既読フラグ
+        saved_time TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        FOREIGN KEY(student_id) REFERENCES students(student_id),
+        FOREIGN KEY(teacher_id) REFERENCES teachers(teacher_id),
+        FOREIGN KEY(reward_id) REFERENCES reward(reward_id),
+        UNIQUE(student_id, teacher_id, reward_id)  -- 重複防止のためのユニーク制約
+    )''')
+    
     # colorsetsデータの挿入
     colorsets_data = [
         (1, 1, '["#8097f9", "#6273f2", "#343be4", "#373acb", "#2f33a4"]'),  # 1 陣営1
