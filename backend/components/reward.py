@@ -39,8 +39,8 @@ def add_reward():
                 return jsonify({'error': f'{field}が不足しています'}), 400
         
         # データの型チェック
-        if not isinstance(data['need_point'], int) or data['need_point'] <= 0:
-            return jsonify({'error': '必要ポイントは正の整数である必要があります'}), 400
+        if not isinstance(data['need_point'], int) or data['need_point'] < 0:
+            return jsonify({'error': '必要ポイントは0以上の整数である必要があります'}), 400
         
         if not isinstance(data['need_rank'], int) or data['need_rank'] < 0:
             return jsonify({'error': '必要ランクは0以上の整数である必要があります'}), 400
@@ -225,15 +225,66 @@ def update_hold_reward(hold_id):
     try:
         conn = get_db_connection()
         c = conn.cursor()
+        
+        # 報酬使用前の情報を取得
+        c.execute('''
+            SELECT hr.student_id, hr.reward_id, s.name, s.class_id, r.reward_content
+            FROM holdReward hr
+            JOIN students s ON hr.student_id = s.student_id
+            JOIN reward r ON hr.reward_id = r.reward_id
+            WHERE hr.hold_id = ?
+        ''', (hold_id,))
+        hold_info = c.fetchone()
+        
+        if not hold_info:
+            conn.close()
+            return jsonify({'error': 'hold_id が見つかりません'}), 404
+            
+        student_id, reward_id, student_name, class_id, reward_content = hold_info
+        
+        # 報酬使用処理
         c.execute(f'''
           UPDATE holdReward
              SET {', '.join(allowed)}
            WHERE hold_id = ?
         ''', vals)
+        
+        # 報酬が使用された場合（is_holdingがFalseになった場合）に通知を作成
+        if 'is_holding' in data and not data['is_holding']:
+            # 同じclass_idの先生を取得
+            c.execute('''
+                SELECT teacher_id FROM teachers 
+                WHERE class_id = ? AND user_type = 'teacher'
+            ''', (class_id,))
+            teachers = c.fetchall()
+            
+            # 各先生に通知を作成（重複チェック付き）
+            for teacher in teachers:
+                teacher_id = teacher[0]
+                
+                # 既に同じ報酬に対する通知が存在するかチェック
+                c.execute('''
+                    SELECT COUNT(*) FROM notification 
+                    WHERE student_id = ? AND teacher_id = ? AND reward_id = ?
+                ''', (student_id, teacher_id, reward_id))
+                
+                existing_count = c.fetchone()[0]
+                if existing_count == 0:  # 通知が存在しない場合のみ作成
+                    notification_content = f"{student_name}が{reward_content}を使用しました"
+                    
+                    c.execute('''
+                        INSERT INTO notification (student_id, teacher_id, reward_id, notification_content)
+                        VALUES (?, ?, ?, ?)
+                    ''', (student_id, teacher_id, reward_id, notification_content))
+                else:
+                    # 既存の通知を更新（時間を最新に）
+                    c.execute('''
+                        UPDATE notification 
+                        SET saved_time = datetime('now', '+9 hours')
+                        WHERE student_id = ? AND teacher_id = ? AND reward_id = ?
+                    ''', (student_id, teacher_id, reward_id))
+        
         conn.commit()
-        if c.rowcount == 0:
-            conn.close()
-            return jsonify({'error': 'hold_id が見つかりません'}), 404
         conn.close()
         return jsonify({'status': 'updated'})
     except Exception as e:

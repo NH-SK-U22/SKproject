@@ -307,8 +307,26 @@ const Mypage = () => {
                     rewardInfo={rewa.reward_content ?? ""}
                     isHolding={rewa.is_holding}
                     onUsed={(id) => {
-                      // 使用済みとする
-                      setHolds((prev) => prev.filter((x) => x.hold_id !== id));
+                      // APIを呼び出して報酬を使用済みにする
+                      fetch(`${URL}/api/holdRewards/${id}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          is_holding: false,
+                          used_at: new Date().toISOString()
+                        })
+                      })
+                      .then((res) => {
+                        if (!res.ok) throw new Error('報酬の使用に失敗しました');
+                        // 使用済みとする
+                        setHolds((prev) => prev.filter((x) => x.hold_id !== id));
+                      })
+                      .catch((err) => {
+                        console.error('報酬使用エラー:', err);
+                        alert('報酬の使用に失敗しました');
+                      });
                     }}
                   />
                 ))}
