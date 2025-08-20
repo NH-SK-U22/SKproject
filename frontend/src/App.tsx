@@ -14,6 +14,7 @@ import Setting from "./pages/Setting/Setting";
 import TopicSet from "./pages/TopicSet/Topicset";
 import CampSelect from "./pages/CampSelect/CampSelect";
 import Result from "./pages/Result/Result";
+import AppGuide from "./pages/Explanation/Explanation";
 
 import { PostProvider } from "./context/PostContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -49,6 +50,7 @@ function App() {
                 <Route path="/result" element={<Result />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/studentdata/:studentId" element={<Studentdata />} />
+                <Route path="/explanation" element={<AppGuide />} />
               </Routes>
             </Router>
           </ChatProvider>
