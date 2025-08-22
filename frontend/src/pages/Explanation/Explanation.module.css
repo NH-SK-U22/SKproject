@@ -1,0 +1,171 @@
+/* AppGuide.module.css */
+
+.appGuideContainer {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  
+  .guideCard {
+    max-width: 64rem;
+    width: 100%;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+  
+  .guideContent {
+    padding: 2rem;
+  }
+  
+  .guideTitle {
+    font-size: 1.875rem;
+    font-weight: 700;
+    text-align: center;
+    color: #1f2937;
+    margin-bottom: 2rem;
+  }
+  
+  .stepIndicator {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .stepDot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+  }
+  
+  .stepDot.active {
+    background-color: #3b82f6;
+  }
+  
+  .stepDot.inactive {
+    background-color: #d1d5db;
+  }
+  
+  .contentSection {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+  
+  .imageSection {
+    flex: 1;
+  }
+  
+  .guideImage {
+    width: 100%;
+    height: 20rem;
+    object-fit: contain;
+    object-position: center;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  }
+  
+  .textSection {
+    flex: 1;
+  }
+  
+  .stepTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
+  }
+  
+  .stepDescription {
+    color: #4b5563;
+    line-height: 1.625;
+    font-size: 1.125rem;
+  }
+  
+  .buttonSection {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+  
+  .guideButton {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    font-size: 1rem;
+  }
+  
+  .nextButton {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .nextButton:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15), 0 4px 8px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .finishButton {
+    background-color: #10b981;
+    color: white;
+  }
+  
+  .finishButton:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15), 0 4px 8px -1px rgba(0, 0, 0, 0.1);
+  }
+  
+  .guideButton:active {
+    transform: translateY(0);
+  }
+  
+  /* レスポンシブ対応 */
+  @media (max-width: 768px) {
+    .appGuideContainer {
+      padding: 1rem;
+    }
+    
+    .guideContent {
+      padding: 1.5rem;
+    }
+    
+    .guideTitle {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .contentSection {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .guideImage {
+      height: 15rem;
+    }
+    
+    .stepTitle {
+      font-size: 1.25rem;
+    }
+    
+    .stepDescription {
+      font-size: 1rem;
+    }
+    
+    .guideButton {
+      padding: 0.625rem 1.5rem;
+      font-size: 0.875rem;
+    }
+  }

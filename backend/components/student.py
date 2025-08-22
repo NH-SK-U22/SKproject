@@ -175,6 +175,10 @@ def update_student_camp(student_id):
             update_fields.append('user_color = ?')
             values.append(request.json['user_color'])
         
+        if 'ai_advice' in request.json:
+            update_fields.append('ai_advice = ?')
+            values.append(request.json['ai_advice'])
+            
         if not update_fields:
             return jsonify({'error': '更新するフィールドがありません'}), 400
         
@@ -222,6 +226,51 @@ def get_students_by_class(class_id):
         conn.close()
         
         return jsonify(students)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@student_o.route('/notifications/<int:teacher_id>', methods=['GET'])
+def get_notifications(teacher_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('''
+            SELECT notification_id, student_id, reward_id, notification_content, is_read, saved_time
+            FROM notification 
+            WHERE teacher_id = ? 
+            ORDER BY saved_time DESC
+        ''', (teacher_id,))
+        
+        notifications = []
+        for row in c.fetchall():
+            notifications.append({
+                'notification_id': row[0],
+                'student_id': row[1],
+                'reward_id': row[2],
+                'notification_content': row[3],
+                'is_read': bool(row[4]),
+                'saved_time': row[5]
+            })
+        conn.close()
+        
+        return jsonify(notifications)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@student_o.route('/notifications/<int:notification_id>/read', methods=['PATCH'])
+def mark_notification_read(notification_id):
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('''
+            UPDATE notification 
+            SET is_read = 1 
+            WHERE notification_id = ?
+        ''', (notification_id,))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'status': 'marked as read'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import styles from "./mypage.module.css";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import Progressbar from "../../components/Mypage/Progressbar";
-import itist from "../../../public/images/1st.png";
 import Popup from "../../components/Mypage/Popup";
 import HoldReward from "../../components/Mypage/HoldReward";
 import { computeRank } from "../../utils/rank";
@@ -18,6 +17,7 @@ type HoldReward = {
   need_point?: number;
   need_rank?: number;
 };
+
 type RawHold = {
   hold_id: number;
   student_id: number;
@@ -27,6 +27,13 @@ type RawHold = {
   reward_content?: string;
   need_point?: number;
   need_rank?: number;
+};
+
+type RewardDetail = {
+  reward_id: number;
+  reward_content: string;
+  need_point: number;
+  need_rank: number;
 };
 
 type Message = {
@@ -55,29 +62,67 @@ type HistoryItem = {
   created_at: string;
 };
 
+type User = {
+  id: number;
+  school_id: string;
+  class_id: string;
+  number: string;
+  name: string;
+  user_type: "student" | "teacher";
+  sum_point: number;
+  have_point: number;
+  camp_id: number | null;
+  theme_color: string | null;
+  user_color: string | null;
+  blacklist_point: number;
+  created_at: string;
+};
+
 const Mypage = () => {
-  const [reward, setReward] = useState<HoldReward[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [tabs, setTabs] = useState(0);
-  const userJson = localStorage.getItem("user");
-  const userObj = userJson ? JSON.parse(userJson) : null;
-  const userCampId: number | undefined = userObj?.camp_id; // ← 付箋投稿の陣営ID
-
-  const userId: number | undefined = userObj?.id;
-  const userColor: string = userObj?.user_color || '#ccc';
-  const sumP = userObj?.sum_point ?? 0;
-  const { rankName, rankImage, nextThreshold } = computeRank(sumP);
-  const { rankName: rankName2 } = computeRank(nextThreshold);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const URL = "http://localhost:5000";
   const [holds, setHolds] = useState<RawHold[]>([]);
 
+  // 最新のユーザー情報を取得
   useEffect(() => {
-    if (!userId) return;
+    const userJson = localStorage.getItem("user");
+    const userObj = userJson ? JSON.parse(userJson) : null;
+    
+    if (!userObj?.id) {
+      setLoading(false);
+      return;
+    }
+
+    // APIから最新のユーザー情報を取得
+    fetch(`${URL}/api/students/${userObj.id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("ユーザー情報の取得に失敗しました");
+        return res.json() as Promise<User>;
+      })
+      .then((userData) => {
+        setUser(userData);
+        // ローカルストレージも更新
+        localStorage.setItem("user", JSON.stringify(userData));
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        // API取得に失敗した場合はローカルストレージの情報を使用
+        setUser(userObj);
+        setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    
     // ───① holds の取得──────────
-    fetch(`${URL}/api/holdRewards?student_id=${userId}`)
+    fetch(`${URL}/api/holdRewards?student_id=${user.id}`)
       .then((res) => {
         if (!res.ok) throw new Error(res.statusText);
         return res.json() as Promise<RawHold[]>;
@@ -99,14 +144,13 @@ const Mypage = () => {
       .then((fullHolds) => setHolds(fullHolds))
       .catch((err) => {
         console.error(err);
-        setError("報酬の取得に失敗しました");
       });
 
     /// --- 履歴（付箋＋メッセージ）を取る ---
     (async () => {
       try {
         // 1) 付箋一覧
-        const stickyRes = await fetch(`${URL}/api/sticky?student_id=${userId}`);
+        const stickyRes = await fetch(`${URL}/api/sticky?student_id=${user.id}`);
         if (!stickyRes.ok) throw new Error("sticky取得失敗");
         const stickies = (await stickyRes.json()) as Array<{
           sticky_id: number;
@@ -128,7 +172,7 @@ const Mypage = () => {
         // 3) 必要な陣営IDを一意化
         const messageCampIds = allMessages.map((m) => m.camp_id);
         // 付箋投稿にも current user's camp_id を含めておく
-        if (userCampId != null) messageCampIds.push(userCampId);
+        if (user.camp_id != null) messageCampIds.push(user.camp_id);
         const uniqueCampIds = Array.from(new Set(messageCampIds));
 
         // 4) camp_id → camp_name マップ
@@ -148,7 +192,7 @@ const Mypage = () => {
 
         // 5) 付箋履歴アイテム
         const stickyItems: HistoryItem[] = stickies.map((s) => ({
-          camp_name: campNameMap[userCampId!] || `陣営 ${userCampId}`,
+          camp_name: campNameMap[user.camp_id!] || `陣営 ${user.camp_id}`,
           message_content: s.sticky_content,
           created_at: s.created_at,
         }));
@@ -169,10 +213,37 @@ const Mypage = () => {
         setHistory(combined);
       } catch (e) {
         console.error(e);
-        setError("履歴の取得に失敗しました");
+        setHistoryError("履歴の取得に失敗しました");
       }
     })();
-  }, [userId]);
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className={styles.vh}>
+        <Sidebar />
+        <div className={styles.container}>
+          <div>読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className={styles.vh}>
+        <Sidebar />
+        <div className={styles.container}>
+          <div>ユーザー情報が見つかりません</div>
+        </div>
+      </div>
+    );
+  }
+
+  const userColor: string = user.user_color || '#ccc';
+  const sumP = user.sum_point ?? 0;
+  const { rankName, rankImage, nextThreshold } = computeRank(sumP);
+  const { rankName: rankName2 } = computeRank(nextThreshold);
 
   return (
     <div className={styles.vh}>
@@ -236,8 +307,26 @@ const Mypage = () => {
                     rewardInfo={rewa.reward_content ?? ""}
                     isHolding={rewa.is_holding}
                     onUsed={(id) => {
-                      // 使用済みとする
-                      setHolds((prev) => prev.filter((x) => x.hold_id !== id));
+                      // APIを呼び出して報酬を使用済みにする
+                      fetch(`${URL}/api/holdRewards/${id}`, {
+                        method: 'PATCH',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          is_holding: false,
+                          used_at: new Date().toISOString()
+                        })
+                      })
+                      .then((res) => {
+                        if (!res.ok) throw new Error('報酬の使用に失敗しました');
+                        // 使用済みとする
+                        setHolds((prev) => prev.filter((x) => x.hold_id !== id));
+                      })
+                      .catch((err) => {
+                        console.error('報酬使用エラー:', err);
+                        alert('報酬の使用に失敗しました');
+                      });
                     }}
                   />
                 ))}

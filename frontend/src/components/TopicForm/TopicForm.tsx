@@ -32,6 +32,12 @@ const TopicForm = ({ onAddTopic }: TopicFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 期間バリデーション
+    if (topic.endDate.getTime() < topic.startDate.getTime()) {
+      alert("期間設定が不適切です");
+      return;
+    }
+
     try {
       const response = await fetch(`http://localhost:5000/api/topics`, {
         method: "POST",

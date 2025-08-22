@@ -23,6 +23,7 @@ def init_db():
         camp_id INTEGER,
         theme_color TEXT,
         user_color TEXT,
+        ai_advice INTEGER DEFAULT 1,
         blacklist_point INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         UNIQUE(school_id, class_id, number, user_type)
@@ -219,6 +220,21 @@ def init_db():
         created_at   TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         FOREIGN KEY(student_id) REFERENCES students(student_id),
         FOREIGN KEY(theme_id)   REFERENCES debate_settings(theme_id)
+    )''')
+    
+    # notification tableを作成（通知）
+    c.execute('''CREATE TABLE IF NOT EXISTS notification(
+        notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id INTEGER NOT NULL,          -- 報酬を使用した生徒
+        teacher_id INTEGER NOT NULL,          -- 通知を受け取る先生
+        reward_id INTEGER NOT NULL,           -- 使用された報酬
+        notification_content TEXT NOT NULL,   -- 通知内容
+        is_read BOOLEAN DEFAULT 0,            -- 既読フラグ
+        saved_time TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+        FOREIGN KEY(student_id) REFERENCES students(student_id),
+        FOREIGN KEY(teacher_id) REFERENCES teachers(teacher_id),
+        FOREIGN KEY(reward_id) REFERENCES reward(reward_id),
+        UNIQUE(student_id, teacher_id, reward_id)  -- 重複防止のためのユニーク制約
     )''')
     
     # colorsetsデータの挿入

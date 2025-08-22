@@ -69,8 +69,8 @@ const TeacherRewardComponent: React.FC<TeacherRewardComponentProps> = ({
       alert("報酬の内容を入力してください");
       return;
     }
-    if (!formData.points || parseInt(formData.points) <= 0) {
-      alert("有効なポイント数を入力してください");
+    if (!formData.points || parseInt(formData.points) < 0) {
+      alert("有効なポイント数を入力してください（0以上）");
       return;
     }
     setIsSubmitting(true);
@@ -86,6 +86,9 @@ const TeacherRewardComponent: React.FC<TeacherRewardComponentProps> = ({
       // handleSubmit関数のfetchリクエストを修正
       const response = await fetch("http://localhost:5000/api/rewards", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(requestData),
       });
 
@@ -112,6 +115,7 @@ const TeacherRewardComponent: React.FC<TeacherRewardComponentProps> = ({
         }
       }
     } catch (error) {
+      console.log("❌ 通信エラー:", error);
       alert("通信エラーが発生しました。再度お試しください。");
     } finally {
       setIsSubmitting(false);
