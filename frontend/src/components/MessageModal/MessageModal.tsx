@@ -24,9 +24,10 @@ interface MessageModalProps {
     feedback_C?: number;
     author_camp_id?: number;
   };
+  aiAdviceAgreed?: boolean;
 }
 
-const MessageModal = ({ post }: MessageModalProps) => {
+const MessageModal = ({ post, aiAdviceAgreed = false }: MessageModalProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -75,7 +76,10 @@ const MessageModal = ({ post }: MessageModalProps) => {
                     </div>
                   </div>
                   <div className={styles.chatArea}>
-                    <ChatRoom stickyId={post.id} />
+                    <ChatRoom
+                      stickyId={post.id}
+                      aiAdviceAgreed={aiAdviceAgreed}
+                    />
                   </div>
                 </div>
               </div>

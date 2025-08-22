@@ -17,6 +17,9 @@ import { useNavigate } from "react-router-dom";
 // utils
 import { getCurrentUser, type User, clearUserCamp } from "../../utils/auth";
 
+// hooks
+import { useAIAdviceAgree } from "../../CustomHooks/AIAdviceAgree";
+
 const DRAG_MARGIN = 0;
 const GRID_GAP = 30;
 const NOTE_WIDTH = 200;
@@ -31,6 +34,7 @@ const StickyNote = ({
   currentUserId,
   localPosition,
   fixedPosition,
+  aiAdviceAgreed,
 }: {
   post: {
     id: number;
@@ -50,6 +54,7 @@ const StickyNote = ({
   currentUserId: number;
   localPosition?: { x: number; y: number };
   fixedPosition?: { x: number; y: number };
+  aiAdviceAgreed: boolean;
 }) => {
   // ドラッグ状態
   const [dragging, setDragging] = useState(false);
@@ -226,7 +231,7 @@ const StickyNote = ({
       </div>
       <div className={styles.noteText}>{post.gemini}</div>
       <div className={styles.cornerFold}></div>
-      <MessageModal post={post} />
+      <MessageModal post={post} aiAdviceAgreed={aiAdviceAgreed} />
     </div>
   );
 };
@@ -244,6 +249,8 @@ const Dashboard = () => {
   const [lastMovedNoteId, setLastMovedNoteId] = useState<number | null>(null);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // AIアドバイス同意状態を取得
+  const { aiAdviceAgreed } = useAIAdviceAgree();
   // ローカル・ロケーション・オーバーライド・ステータス（即時フィードバック用）
   const [localPositions, setLocalPositions] = useState<{
     [key: number]: { x: number; y: number };
@@ -543,6 +550,7 @@ const Dashboard = () => {
                 currentUserId={currentUser?.id || 0}
                 localPosition={localPositions[post.id]}
                 fixedPosition={fixedPositions[post.id]}
+                aiAdviceAgreed={aiAdviceAgreed || false}
               />
             ))}
           </div>

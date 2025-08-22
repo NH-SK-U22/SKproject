@@ -21,6 +21,7 @@ from components.init import get_db_connection
 from components.topicset import topicset_o
 from components.reward import reward_o
 from components.ai_help import ai_help_bp
+from components.ai_advice import ai_advice_o
 
 # Load environment variables safely
 try:
@@ -94,6 +95,7 @@ app.register_blueprint(student_o)
 app.register_blueprint(topicset_o)
 app.register_blueprint(reward_o)
 app.register_blueprint(ai_help_bp)
+app.register_blueprint(ai_advice_o)
 
 # Sticky Notes API endpoints
 @app.route('/api/sticky', methods=['POST'])

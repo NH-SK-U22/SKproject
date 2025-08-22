@@ -1,11 +1,11 @@
-import styles from "./LanguageTogle.module.css";
+import styles from "./AIAgree.module.css";
 
-interface LanguageToggleProps {
+interface AIAgreeProps {
   defaultChecked?: boolean;
   onChange?: (checked: boolean) => void;
 }
 
-export const LanguageTogle: React.FC<LanguageToggleProps> = ({
+export const AIAgree: React.FC<AIAgreeProps> = ({
   defaultChecked = false,
   onChange,
 }) => {
@@ -17,12 +17,12 @@ export const LanguageTogle: React.FC<LanguageToggleProps> = ({
     <div className={styles["toggle-switch"]}>
       <input
         className={styles["toggle-input"]}
-        id="language-toggle"
+        id="ai-agree"
         type="checkbox"
         defaultChecked={defaultChecked}
         onChange={handleChange}
       />
-      <label className={styles["toggle-label"]} htmlFor="language-toggle" />
+      <label className={styles["toggle-label"]} htmlFor="ai-agree" />
     </div>
   );
 };

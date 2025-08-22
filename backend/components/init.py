@@ -23,6 +23,7 @@ def init_db():
         camp_id INTEGER,
         theme_color TEXT,
         user_color TEXT,
+        ai_advice INTEGER DEFAULT 1,
         blacklist_point INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         UNIQUE(school_id, class_id, number, user_type)
