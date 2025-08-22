@@ -89,12 +89,12 @@ def generate_ai_advice():
             SELECT message_content, student_id, created_at
             FROM message 
             WHERE sticky_id = ? 
-            ORDER BY created_at DESC 
+            ORDER BY created_at ASC
             LIMIT 10
         ''', (sticky_id,))
         
         messages = cursor.fetchall()
-        
+        print(messages)
         # ユーザーのランクを取得
         cursor.execute('''
             SELECT sum_point FROM students 
@@ -235,7 +235,8 @@ def generate_advice(messages, rank_name, current_student_id):
             prompt = f"""
                 {rank_info['context']}
 
-                以下の議論の内容を分析し、{rank_name}ランクの学生（小学生）に適したアドバイスを提供してください。高ランクほど控えめに、低ランクほど手厚く具体的に。余分な言葉（あなたの挨拶、）は要りません。アスタリスクは使わないでください
+                以下は、小学生の授業内容としてのディスカッションのやり取りです。議論を分析し、{rank_name}ランクの学生（小学生）に適したアドバイスを提供してください。
+                高ランクほど控えめに、低ランクほど手厚く具体的に。余分な言葉（あなたの挨拶、）は要りません。アスタリスクは使わないでください
             
 
                 【分析対象の議論】

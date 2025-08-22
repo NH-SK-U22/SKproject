@@ -175,6 +175,10 @@ def update_student_camp(student_id):
             update_fields.append('user_color = ?')
             values.append(request.json['user_color'])
         
+        if 'ai_advice' in request.json:
+            update_fields.append('ai_advice = ?')
+            values.append(request.json['ai_advice'])
+            
         if not update_fields:
             return jsonify({'error': '更新するフィールドがありません'}), 400
         

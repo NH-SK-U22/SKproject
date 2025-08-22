@@ -19,12 +19,12 @@ import {
 import { FaUserCircle } from "react-icons/fa";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { DarkLightTogle } from "../../components/DarkLightTogle/DarkLightTogle";
-import { LanguageTogle } from "../../components/LanguageTogle/LanguageTogle";
+import { AIAgree } from "../../components/AIAgree/AIAgree";
 import { NotificationAgree } from "../../components/NotificationAgree/NotificationAgree";
 import { useTheme } from "../../context/ThemeContext";
 
 const Setting = () => {
-  const [languageEnabled, setLanguageEnabled] = useState(true);
+  const [AIAdviceEnabled, setAIAdviceEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const { darkMode, toggleDarkMode } = useTheme();
   const [colorPalette, setColorPalette] = useState("#f9bc60");
@@ -58,6 +58,7 @@ const Setting = () => {
           },
           body: JSON.stringify({
             user_color: colorPalette,
+            ai_advice: AIAdviceEnabled
             // 必要に応じて他の設定もここに追加
           }),
         }
@@ -208,7 +209,7 @@ const Setting = () => {
                   <LanguageOutlined sx={{ color: "#00e6b8" }} />
                 </Avatar>
                 <Typography sx={{ minWidth: "100px", fontWeight: 500 }}>
-                  言語
+                  AIアドバイス
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
@@ -219,11 +220,11 @@ const Setting = () => {
                     color: "text.secondary",
                   }}
                 >
-                  {languageEnabled ? "日本語" : "英語"}
+                  {AIAdviceEnabled ? "オン" : "オフ"}
                 </Typography>
-                <LanguageTogle
-                  defaultChecked={languageEnabled}
-                  onChange={setLanguageEnabled}
+                <AIAgree
+                  defaultChecked={AIAdviceEnabled}
+                  onChange={setAIAdviceEnabled}
                 />
               </Box>
             </Box>

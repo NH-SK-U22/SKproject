@@ -40,9 +40,10 @@ const Avatar = ({ isUser, userId, userColor }: AvatarProps) => (
 
 interface ChatRoomProps {
   stickyId: number;
+  aiAdviceAgreed?: boolean;
 }
 
-const ChatRoom = ({ stickyId }: ChatRoomProps) => {
+const ChatRoom = ({ stickyId, aiAdviceAgreed = false }: ChatRoomProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string>("");
@@ -61,6 +62,8 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
 
   // AIアドバイスを手動で更新する関数（生成して保存）
   const refreshAIAdvice = async () => {
+    if (!aiAdviceAgreed) return;
+
     setIsGeneratingAdvice(true);
     try {
       // 手動更新は「生成して保存」を実行
@@ -143,6 +146,8 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
 
   // 初期表示時は「取得のみ」
   useEffect(() => {
+    if (!aiAdviceAgreed) return;
+
     const initFetchAIAdvice = async () => {
       setIsGeneratingAdvice(true);
       try {
@@ -158,7 +163,7 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
     };
 
     initFetchAIAdvice();
-  }, [stickyId, fetchAIAdvice]); // stickyIdが変更された時のみ
+  }, [stickyId, fetchAIAdvice, aiAdviceAgreed]); // stickyIdが変更された時のみ
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,15 +186,17 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
         // 送信後、DBから最新メッセージを取得
         await loadMessages(stickyId);
 
-        // メッセージ送信後は「生成して保存」→ その結果を表示
-        setTimeout(async () => {
-          const adviceResponse = await generateAIAdvice(stickyId);
-          if (adviceResponse.success) {
-            const text = (adviceResponse.advice || "").trim();
-            setAiAdvice(text);
-            setShowAiAdvice(text.length > 0);
-          }
-        }, 1000);
+        // メッセージ送信後は「生成して保存」→ その結果を表示（aiAdviceAgreedがtrueの場合のみ）
+        if (aiAdviceAgreed) {
+          setTimeout(async () => {
+            const adviceResponse = await generateAIAdvice(stickyId);
+            if (adviceResponse.success) {
+              const text = (adviceResponse.advice || "").trim();
+              setAiAdvice(text);
+              setShowAiAdvice(text.length > 0);
+            }
+          }, 1000);
+        }
 
         setNewMessage("");
       } finally {
@@ -203,7 +210,7 @@ const ChatRoom = ({ stickyId }: ChatRoomProps) => {
   return (
     <div className={styles.chatContainer}>
       {/* AIアドバイス表示場所 */}
-      {(showAiAdvice || isGeneratingAdvice || aiLoading) && (
+      {aiAdviceAgreed && (showAiAdvice || isGeneratingAdvice || aiLoading) && (
         <div className={styles.aiAdviceContainer}>
           <div className={styles.aiAdviceHeader}>
             <span className={styles.aiAdviceTitle}>🤖 AIアドバイス</span>
