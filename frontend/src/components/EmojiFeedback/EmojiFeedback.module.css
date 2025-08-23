@@ -110,13 +110,10 @@
   opacity: 1;
 }
 
-.emojiFeedback.userMessage {
-  position: absolute;
-  left: -143px;
-}
 /* ユーザー自身のメッセージの場合の展開方向 */
 .emojiFeedback.userMessage .emojiContainer.expanded {
-  padding: 0 24px 0 12px; /* パディングも反対に */
+  padding: 0 24px 0 12px;
+  transform: translateX(-120px); /* 左に120px移動 */
 }
 
 .emojiFeedback.userMessage .emojiContainer.expanded .emojiButton {
