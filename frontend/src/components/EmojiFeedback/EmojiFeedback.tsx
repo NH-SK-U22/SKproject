@@ -199,7 +199,7 @@ const EmojiFeedback: React.FC<EmojiFeedbackProps> = ({
       <div
         className={`${styles.emojiContainer} ${
           isHovered ? styles.expanded : ""
-        } ${isUser ? styles.userExpanded : ""}`}
+        }`}
       >
         {emojis.map((item) => {
           const IconComponent = item.icon;

@@ -229,8 +229,8 @@
 }
 
 .userMessage .emojiFeedbackContainer {
-  right: 0;
-  transform-origin: right top;
+  left: -18px;
+  transform-origin: left top;
 }
 
 .messageText {
