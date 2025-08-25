@@ -1,5 +1,5 @@
 // react
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 // mui
 import {
   Box,
@@ -22,12 +22,23 @@ import { DarkLightTogle } from "../../components/DarkLightTogle/DarkLightTogle";
 import { AIAgree } from "../../components/AIAgree/AIAgree";
 import { NotificationAgree } from "../../components/NotificationAgree/NotificationAgree";
 import { useTheme } from "../../context/ThemeContext";
+import { useAIAdviceAgree } from "../../CustomHooks/AIAdviceAgree";
 
 const Setting = () => {
   const [AIAdviceEnabled, setAIAdviceEnabled] = useState(true);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const { darkMode, toggleDarkMode } = useTheme();
   const [colorPalette, setColorPalette] = useState("#f9bc60");
+
+  // AIアドバイスの設定を取得
+  const { aiAdviceAgreed } = useAIAdviceAgree();
+
+  // AIアドバイスの設定が取得できたら、状態を更新
+  useEffect(() => {
+    if (aiAdviceAgreed !== null) {
+      setAIAdviceEnabled(aiAdviceAgreed);
+    }
+  }, [aiAdviceAgreed]);
 
   const handleSubmit = async () => {
     // localStorageからuser情報を取得
@@ -58,7 +69,7 @@ const Setting = () => {
           },
           body: JSON.stringify({
             user_color: colorPalette,
-            ai_advice: AIAdviceEnabled
+            ai_advice: AIAdviceEnabled,
             // 必要に応じて他の設定もここに追加
           }),
         }
@@ -223,7 +234,7 @@ const Setting = () => {
                   {AIAdviceEnabled ? "オン" : "オフ"}
                 </Typography>
                 <AIAgree
-                  defaultChecked={AIAdviceEnabled}
+                  checked={AIAdviceEnabled}
                   onChange={setAIAdviceEnabled}
                 />
               </Box>
