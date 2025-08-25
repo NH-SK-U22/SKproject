@@ -1,12 +1,12 @@
 import styles from "./AIAgree.module.css";
 
 interface AIAgreeProps {
-  defaultChecked?: boolean;
+  checked?: boolean;
   onChange?: (checked: boolean) => void;
 }
 
 export const AIAgree: React.FC<AIAgreeProps> = ({
-  defaultChecked = false,
+  checked = false,
   onChange,
 }) => {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,7 +19,7 @@ export const AIAgree: React.FC<AIAgreeProps> = ({
         className={styles["toggle-input"]}
         id="ai-agree"
         type="checkbox"
-        defaultChecked={defaultChecked}
+        checked={checked}
         onChange={handleChange}
       />
       <label className={styles["toggle-label"]} htmlFor="ai-agree" />

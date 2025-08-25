@@ -23,8 +23,8 @@
 
 .stickyNote {
   position: absolute;
-  width: 200px;
-  height: 200px;
+  width: 150px;
+  height: 150px;
   border-radius: 6px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -51,7 +51,7 @@
 .noteText {
   padding: 15px;
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
