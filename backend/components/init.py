@@ -292,6 +292,8 @@ def get_db_connection():
     
     try:
         conn = sqlite3.connect(db_path)
+        # 配列を辞書にしてくれる(本当は辞書だけど配列になっているから)
+        conn.row_factory = sqlite3.Row
         return conn
     except sqlite3.Error as e:
         raise
