@@ -34,7 +34,7 @@ function App() {
           <ChatProvider>
             <Router>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<SelectUsrtype />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -49,7 +49,10 @@ function App() {
                 <Route path="/campselect" element={<CampSelect />} />
                 <Route path="/result" element={<Result />} />
                 <Route path="/home" element={<Home />} />
-                <Route path="/studentdata/:studentId" element={<Studentdata />} />
+                <Route
+                  path="/studentdata/:studentId"
+                  element={<Studentdata />}
+                />
                 <Route path="/explanation" element={<AppGuide />} />
               </Routes>
             </Router>
