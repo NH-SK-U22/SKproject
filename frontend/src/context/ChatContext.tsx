@@ -8,6 +8,9 @@ import React, {
 } from "react";
 import { io, Socket } from "socket.io-client";
 
+// utils
+import { getCurrentUser } from "../utils/auth";
+
 interface Message {
   message_id: number;
   student_id: number;
@@ -21,6 +24,7 @@ interface Message {
   student_name: string;
   student_number: string;
   user_color: string;
+  user_vote_type?: string; // ユーザーの投票タイプを追加
 }
 
 interface ChatContextType {
@@ -51,8 +55,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   // 特定の付箋のメッセージを読み込む
   const loadMessages = useCallback(async (sticky_id: number) => {
     try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        console.error("ユーザーがログインしていません");
+        return;
+      }
+
       const response = await fetch(
-        `http://localhost:5000/api/message/sticky/${sticky_id}`
+        `http://localhost:5000/api/message/sticky/${sticky_id}?school_id=${currentUser.school_id}&voter_id=${currentUser.id}`
       );
       if (response.ok) {
         const data = await response.json();

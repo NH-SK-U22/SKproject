@@ -311,13 +311,18 @@ const ChatRoom = ({ stickyId, aiAdviceAgreed = false }: ChatRoomProps) => {
                       <div className={styles.messageText}>
                         {message.message_content}
                       </div>
-                      {!isUser && (
-                        <div className={styles.emojiFeedbackContainer}>
-                          <EmojiFeedback
-                            messageAuthorCampId={message.camp_id}
-                          />
-                        </div>
-                      )}
+                      <div className={styles.emojiFeedbackContainer}>
+                        <EmojiFeedback
+                          messageAuthorCampId={message.camp_id}
+                          stickyId={stickyId}
+                          messageId={message.message_id}
+                          feedback_A={message.feedback_A}
+                          feedback_B={message.feedback_B}
+                          feedback_C={message.feedback_C}
+                          userVoteType={message.user_vote_type}
+                          isUser={isUser} // isUserプロパティを追加
+                        />
+                      </div>
                     </div>
                     <div className={styles.messageTime}>{displayTime}</div>
                   </div>

@@ -204,6 +204,19 @@ def init_db():
         UNIQUE(student_id, sticky_id)
     )''')
     
+    # sticky_room_votes tableを作成
+    c.execute('''CREATE TABLE IF NOT EXISTS sticky_room_votes(
+        room_vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sticky_id INTEGER NOT NULL,
+        message_id INTEGER NOT NULL,
+        voter_id integer NOT NULL,
+        school_id INTEGER NOT NULL,
+        vote_type TEXT NOT NULL CHECK(vote_type IN ('A', 'B', 'C')),
+        FOREIGN KEY (sticky_id) REFERENCES sticky(sticky_id),
+        FOREIGN KEY (message_id) REFERENCES messages(message_id),
+        FOREIGN KEY (voter_id) REFERENCES students(student_id),
+        FOREIGN KEY (school_id) REFERENCES students(school_id)
+    )''')
     # voter_camp_id字段のマイグレーション
     try:
         c.execute('ALTER TABLE sticky_votes ADD COLUMN voter_camp_id INTEGER')

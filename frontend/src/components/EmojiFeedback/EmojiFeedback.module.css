@@ -16,31 +16,14 @@
   border: 2px solid #fff;
   border-radius: 50%;
   box-shadow: 0 8px 15px 3px #274c7799;
-  transition: all 0.2s ease-in-out;
+  transition: all 0.3s ease-in-out;
 }
 
-.emojiContainer.selectedMode {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-}
-
-.emojiContainer.selectedMode .emojiButton {
-  position: static !important;
-  top: auto !important;
-  left: auto !important;
-}
-
-.emojiContainer:hover {
-  width: 110px;
-  height: 38px;
-  border-radius: 24px;
-}
-
-.emojiContainer.selectedMode:hover {
-  width: 110px;
-  height: 38px;
-  border-radius: 24px;
+.emojiContainer.expanded {
+  width: 120px;
+  height: 40px;
+  border-radius: 30px;
+  padding: 0 24px 0 12px;
 }
 
 .emojiButton {
@@ -53,57 +36,33 @@
   background-color: transparent;
   border: none;
   cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease-in-out;
 }
 
 .emojiButton:hover {
   transform: scale(1.05);
 }
 
-.emojiContainer:hover .emojiButton {
-  position: static;
-  top: auto;
-  left: auto;
-  bottom: auto;
-  right: auto;
+/* 通常時の配置 */
+.emojiCount[data-color="green"] {
+  color: #70b02c;
 }
 
-.emojiContainer.selectedMode:hover .emojiButton {
-  position: static;
-  top: auto;
-  left: auto;
-  bottom: auto;
-  right: auto;
+.emojiCount[data-color="yellow"] {
+  color: #ffc84a;
 }
 
-.emojiContainer.selectedMode:hover .emojiButton[data-color="green"] {
-  position: absolute;
-  top: -3px;
-  left: 5px;
+.emojiCount[data-color="red"] {
+  color: #ff441f;
 }
 
-.emojiContainer.selectedMode:hover .emojiButton[data-color="yellow"] {
-  position: absolute;
-  top: 8px;
-  left: -4px;
-}
-
-.emojiContainer.selectedMode:hover .emojiButton[data-color="red"] {
-  position: absolute;
-  top: 11px;
-  left: 9px;
-}
-
-.emojiButton.selected {
-  background-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 0 2px white;
-}
-
+/* 通常時の配置 */
 .emojiButton[data-color="green"] {
   position: absolute;
   top: -3px;
   left: 5.5px;
   color: #70b02c;
-  z-index: 10;
 }
 
 .emojiButton[data-color="yellow"] {
@@ -111,7 +70,6 @@
   top: 8px;
   left: -3px;
   color: #ffc84a;
-  z-index: 9;
 }
 
 .emojiButton[data-color="red"] {
@@ -119,22 +77,55 @@
   top: 10.5px;
   left: 10px;
   color: #ff441f;
-  z-index: 8;
 }
 
-.emojiButton[data-color="green"]:hover {
-  background-color: rgba(34, 197, 94, 0.2);
+/* 展開時の配置 */
+.emojiContainer.expanded .emojiButton {
+  position: static;
+  margin: 0 4px;
 }
 
-.emojiButton[data-color="yellow"]:hover {
-  background-color: rgba(234, 179, 8, 0.2);
+.emojiCount {
+  padding: 0 1px 16px 1px;
 }
 
-.emojiButton[data-color="red"]:hover {
-  background-color: rgba(239, 68, 68, 0.2);
+.emojiButton.selected {
+  background-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 2px white;
+  transform: scale(1.1);
+}
+
+.emojiButton.clicked {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 0 2px white !important;
+  transform: scale(1.1);
 }
 
 .emojiIcon {
   font-size: 16px;
-  line-height: 1;
+}
+
+/* シンプルな表示ルール */
+.emojiContainer:hover .emojiCount {
+  opacity: 1;
+}
+
+/* ユーザー自身のメッセージの場合の展開方向 */
+.emojiFeedback.userMessage .emojiContainer.expanded {
+  padding: 0 24px 0 12px;
+  transform: translateX(-120px); /* 左に120px移動 */
+}
+
+.emojiFeedback.userMessage .emojiContainer.expanded .emojiButton {
+  margin: 0 4px;
+}
+
+/* ユーザー自身のメッセージの場合のボタン無効化スタイル */
+.emojiFeedback.userMessage .emojiButton:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.emojiFeedback.userMessage .emojiButton:disabled:hover {
+  transform: none;
 }

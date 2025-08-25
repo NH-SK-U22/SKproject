@@ -45,14 +45,24 @@ def create_message():
 @message_o.route('/message/sticky/<int:sticky_id>', methods=['GET'])
 def get_messages_by_sticky(sticky_id):
     try:
+        # クエリパラメータからschool_idとvoter_idを取得
+        school_id = request.args.get('school_id')
+        voter_id = request.args.get('voter_id')
+        
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         
-        c.execute('''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
-                            m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.number, s.user_color
-                     FROM message m
-                     JOIN students s ON m.student_id = s.student_id
-                     WHERE m.sticky_id = ? ORDER BY m.created_at ASC''', (sticky_id,))
+        # 投票情報も含めてメッセージを取得
+        query = '''SELECT m.message_id, m.student_id, m.message_content, m.camp_id, m.sticky_id, 
+                          m.feedback_A, m.feedback_B, m.feedback_C, m.created_at, s.name, s.number, s.user_color,
+                          v.vote_type
+                   FROM message m
+                   JOIN students s ON m.student_id = s.student_id
+                   LEFT JOIN sticky_room_votes v ON m.message_id = v.message_id 
+                        AND v.school_id = ? AND v.voter_id = ?
+                   WHERE m.sticky_id = ? ORDER BY m.created_at ASC'''
+        
+        c.execute(query, (school_id, voter_id, sticky_id))
         
         messages = []
         for row in c.fetchall():
@@ -68,7 +78,8 @@ def get_messages_by_sticky(sticky_id):
                 'created_at': row[8],
                 'student_name': row[9],
                 'student_number': row[10],
-                'user_color': row[11]
+                'user_color': row[11],
+                'user_vote_type': row[12]  # ユーザーの投票タイプ
             })
         
         # メッセージ数を取得
