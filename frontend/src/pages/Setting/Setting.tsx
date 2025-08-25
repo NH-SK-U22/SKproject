@@ -157,7 +157,7 @@ const Setting = () => {
                     color: "text.secondary",
                   }}
                 >
-                  {darkMode ? "ライト" : "ダーク"}
+                  {darkMode ? "ダーク" : "ライト"}
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
                   <Box sx={{ p: 1, pr: 2 }}>
