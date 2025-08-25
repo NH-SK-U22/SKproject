@@ -127,7 +127,7 @@ const Sidebar = () => {
       >
         <div className={styles.logo}>
           <FaRegSmile />
-          <span className={styles.logoText}>Logo</span>
+          <span className={styles.logoText}>ロジスタ</span>
         </div>
         <div className={styles.menu}>
           <div className={styles.menuItem} onClick={handleDebateClick}>
