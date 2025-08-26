@@ -144,6 +144,7 @@ const Result: React.FC = () => {
     }
   }, [loading]);
 
+
   if (loading) {
     return (
       <div className={styles.loadingContainer}>
