@@ -793,6 +793,77 @@ def get_camp_scores(school_id, theme_id):
                  WHERE theme_id = ?
             ''', (winner_name, team1_score, team2_score, theme_id))
             conn.commit()
+
+        # === 学生ポイント集計をここで実施（自分が受けた評価のみ） ===
+        try:
+            c.execute('''
+                SELECT 
+                    s.student_id,
+                    s.name,
+                    s.sum_point as current_sum_point,
+                    s.have_point as current_have_point,
+                    s.camp_id as student_camp_id,
+                    sv.vote_type,
+                    sv.voter_camp_id,
+                    COUNT(*) as vote_count
+                FROM sticky st
+                JOIN students s ON st.student_id = s.student_id
+                JOIN sticky_votes sv ON st.sticky_id = sv.sticky_id
+                WHERE s.school_id = ? AND st.theme_id = ?
+                  AND st.author_camp_id IS NOT NULL
+                  AND sv.voter_camp_id IS NOT NULL
+                GROUP BY s.student_id, sv.vote_type, sv.voter_camp_id
+                ORDER BY s.student_id, sv.vote_type
+            ''', (school_id, theme_id))
+
+            per_student_rows = c.fetchall()
+
+            per_student_points = {}
+            for row in per_student_rows:
+                student_id = row[0]
+                current_sum = row[2] or 0
+                current_have = row[3] or 0
+                student_camp_id = row[4]
+                vote_type = row[5]
+                voter_camp_id = row[6]
+                vote_count = int(row[7] or 0)
+
+                if student_id not in per_student_points:
+                    per_student_points[student_id] = {
+                        'sum': current_sum,
+                        'have': current_have,
+                        'add': 0
+                    }
+
+                same = (student_camp_id == voter_camp_id)
+                add = 0
+                if same:
+                    if vote_type == 'A':
+                        add = vote_count * 10
+                    elif vote_type == 'B':
+                        add = vote_count * 5
+                    elif vote_type == 'C':
+                        add = vote_count * (-5)
+                else:
+                    if vote_type == 'A':
+                        add = vote_count * 30
+                    elif vote_type == 'B':
+                        add = vote_count * 15
+                    elif vote_type == 'C':
+                        add = vote_count * (-5)
+
+                per_student_points[student_id]['add'] += add
+
+            # DB更新
+            for sid, data in per_student_points.items():
+                new_sum = data['sum'] + data['add']
+                new_have = data['have'] + data['add']
+                c.execute('UPDATE students SET sum_point = ?, have_point = ? WHERE student_id = ?', (new_sum, new_have, sid))
+
+            if per_student_points:
+                conn.commit()
+        except Exception as e:
+            print(f"Warning: per-student aggregation failed: {e}")
         
         conn.close()
         return jsonify({
@@ -802,6 +873,8 @@ def get_camp_scores(school_id, theme_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# （統合済みのため削除）
 
 app.register_blueprint(message_o)
 
