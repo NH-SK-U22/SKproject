@@ -12,8 +12,10 @@ import { LuLayoutDashboard } from "react-icons/lu";
 import { MdCreate } from "react-icons/md";
 import { ImCoinYen } from "react-icons/im";
 import { PiStudentFill } from "react-icons/pi";
+import { IoLogOutOutline } from "react-icons/io5";
 import Notification from "../Notification/Notification";
 import { useDebateTheme } from "../../context/DebateThemeContext";
+import { logout } from "../../utils/auth";
 
 const TeacherSidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -66,6 +68,11 @@ const TeacherSidebar = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/usertypeSelect");
+  };
+
   return (
     <div className={styles.sidebarContainer}>
       <div
@@ -98,6 +105,10 @@ const TeacherSidebar = () => {
           <div className={styles.menuItem} onClick={handleStudentList}>
             <PiStudentFill />
             <span className={styles.menuText}>生徒一覧</span>
+          </div>
+          <div className={styles.menuItem} onClick={handleLogout}>
+            <IoLogOutOutline />
+            <span className={styles.menuText}>ログアウト</span>
           </div>
         </div>
         <div className={`${styles.menuItem} ${styles.profileItem}`}>

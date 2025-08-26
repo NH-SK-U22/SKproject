@@ -11,14 +11,14 @@ import { FaRegSmile, FaRegBell, FaUserCircle } from "react-icons/fa";
 import { LuLayoutDashboard } from "react-icons/lu";
 import { MdCreate } from "react-icons/md";
 import { ImCoinYen } from "react-icons/im";
-import { IoSettingsSharp } from "react-icons/io5";
+import { IoSettingsSharp, IoLogOutOutline } from "react-icons/io5";
 
 // components
 import Notification from "../Notification/Notification";
 import { useDebateTheme } from "../../context/DebateThemeContext";
 
 // utils
-import { getCurrentUser, clearUserCamp } from "../../utils/auth";
+import { getCurrentUser, clearUserCamp, logout } from "../../utils/auth";
 
 const Sidebar = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -117,6 +117,11 @@ const Sidebar = () => {
     navigate("/mypage");
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/usertypeSelect");
+  };
+
   return (
     <div className={styles.sidebarContainer}>
       <div
@@ -150,6 +155,10 @@ const Sidebar = () => {
           <div className={styles.menuItem} onClick={handleSetting}>
             <IoSettingsSharp />
             <span className={styles.menuText}>設定</span>
+          </div>
+          <div className={styles.menuItem} onClick={handleLogout}>
+            <IoLogOutOutline />
+            <span className={styles.menuText}>ログアウト</span>
           </div>
         </div>
         <div

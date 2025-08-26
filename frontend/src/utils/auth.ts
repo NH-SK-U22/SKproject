@@ -40,8 +40,14 @@ export const getUserType = (): "student" | "teacher" | null => {
 
 // ログアウト機能
 export const logout = (): void => {
-  localStorage.removeItem("user");
-  localStorage.removeItem("isLoggedIn");
+  try {
+    localStorage.clear();
+  } catch (e) {
+    console.error("Failed to clear localStorage:", e);
+    // フォールバック
+    localStorage.removeItem("user");
+    localStorage.removeItem("isLoggedIn");
+  }
 };
 
 // ユーザーが教師であるかどうかを確認する
