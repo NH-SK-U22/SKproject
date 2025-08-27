@@ -496,9 +496,7 @@ const Dashboard = () => {
             if (
               !s ||
               s.camp_id === null ||
-              s.camp_id === undefined ||
-              !theme?.theme_id ||
-              selectedThemeId !== theme.theme_id
+              s.camp_id === undefined
             ) {
               // DB未選択、または現行テーマ未選択の場合はCampSelectへ
               navigate("/campselect");

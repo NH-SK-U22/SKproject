@@ -157,6 +157,12 @@ def update_student_camp(student_id):
                     if current_camp_id is not None and current_date < end_date:
                         conn.close()
                         return jsonify({'error': '討論期間中は陣営を変更できません'}), 400
+                    elif current_date > end_date:
+                        c.execute('''
+                        UPDATE students 
+                        SET camp_id = NULL 
+                        WHERE school_id = ?
+                    ''', (school_id,))
                         
                 except ValueError:
                     # 日時パースエラーの場合は継続
