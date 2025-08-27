@@ -6,6 +6,8 @@ import Progressbar from "../../components/Mypage/Progressbar";
 import Popup from "../../components/Mypage/Popup";
 import HoldReward from "../../components/Mypage/HoldReward";
 import { computeRank } from "../../utils/rank";
+import { MdOutlineIntegrationInstructions } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 
 type HoldReward = {
   hold_id: number;
@@ -84,6 +86,7 @@ const Mypage = () => {
   const [tabs, setTabs] = useState(0);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const URL = "http://localhost:5000";
   const [holds, setHolds] = useState<RawHold[]>([]);
@@ -248,6 +251,12 @@ const Mypage = () => {
   return (
     <div className={styles.vh}>
       <Sidebar />
+      {/* 固定ヘルプアイコン */}
+      <MdOutlineIntegrationInstructions
+        className={styles.helpIconFixed}
+        onClick={() => navigate("/explanation", { state: { from: "mypage" } })}
+        aria-label="アプリの使い方"
+      />
       <div className={styles.container}>
         <div className={styles.top}>
           <div 
@@ -299,38 +308,40 @@ const Mypage = () => {
         {tabs === 0 && (
           <div id="cards" className={`${styles.tab_content} ${styles.active}`}>
             <div className={styles.bottom}>
-              <div className={styles.rewardContainer}>
-                {holds.map((rewa) => (
-                  <HoldReward
-                    key={rewa.hold_id}
-                    hold_id={rewa.hold_id}
-                    rewardInfo={rewa.reward_content ?? ""}
-                    isHolding={rewa.is_holding}
-                    onUsed={(id) => {
-                      // APIを呼び出して報酬を使用済みにする
-                      fetch(`${URL}/api/holdRewards/${id}`, {
-                        method: 'PATCH',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                          is_holding: false,
-                          used_at: new Date().toISOString()
+              <div className={styles.scrollArea}>
+                <div className={styles.rewardContainer}>
+                  {holds.map((rewa) => (
+                    <HoldReward
+                      key={rewa.hold_id}
+                      hold_id={rewa.hold_id}
+                      rewardInfo={rewa.reward_content ?? ""}
+                      isHolding={rewa.is_holding}
+                      onUsed={(id) => {
+                        // APIを呼び出して報酬を使用済みにする
+                        fetch(`${URL}/api/holdRewards/${id}`, {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            is_holding: false,
+                            used_at: new Date().toISOString()
+                          })
                         })
-                      })
-                      .then((res) => {
-                        if (!res.ok) throw new Error('報酬の使用に失敗しました');
-                        // 使用済みとする
-                        setHolds((prev) => prev.filter((x) => x.hold_id !== id));
-                      })
-                      .catch((err) => {
-                        console.error('報酬使用エラー:', err);
-                        alert('報酬の使用に失敗しました');
-                      });
-                    }}
-                  />
-                ))}
-                {holds.length === 0 && <div>保持報酬がありません</div>}
+                        .then((res) => {
+                          if (!res.ok) throw new Error('報酬の使用に失敗しました');
+                          // 使用済みとする
+                          setHolds((prev) => prev.filter((x) => x.hold_id !== id));
+                        })
+                        .catch((err) => {
+                          console.error('報酬使用エラー:', err);
+                          alert('報酬の使用に失敗しました');
+                        });
+                      }}
+                    />
+                  ))}
+                  {holds.length === 0 && <div>保持報酬がありません</div>}
+                </div>
               </div>
             </div>
           </div>
@@ -342,17 +353,19 @@ const Mypage = () => {
             className={`${styles.tab_content} ${styles.active}`}
           >
             {historyError && <div style={{ color: "red" }}>{historyError}</div>}
-            <ul className={styles.history_list}>
-              {history.length > 0 ? (
-                history.map((h, i) => (
-                  <li key={i} className={styles.history_item}>
-                    <strong>{h.camp_name}:</strong> {h.message_content}
-                  </li>
-                ))
-              ) : (
-                <li className={styles.history_item}>発言がありません</li>
-              )}
-            </ul>
+            <div className={styles.scrollArea}>
+              <ul className={styles.history_list}>
+                {history.length > 0 ? (
+                  history.map((h, i) => (
+                    <li key={i} className={styles.history_item}>
+                      <strong>{h.camp_name}:</strong> {h.message_content}
+                    </li>
+                  ))
+                ) : (
+                  <li className={styles.history_item}>発言がありません</li>
+                )}
+              </ul>
+            </div>
           </div>
         )}
       </div>

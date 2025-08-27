@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import styles from "./Explanation.module.css";
+import { getCurrentUser } from "../../utils/auth";
 
 interface Step {
   title: string;
@@ -8,26 +9,31 @@ interface Step {
   description: string;
 }
 
+interface LocationState {
+  from?: "mypage" | string;
+}
+
 const AppGuide: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(0);
   
   const navigate = useNavigate();
+  const location = useLocation() as unknown as { state?: LocationState };
 
   const steps: Step[] = [
     {
       title: "1：陣営の選択",
       image: "/images/EX1.png",
-      description: ""
+      description: "自分が討論したい陣営を選ぼう！"
     },
     {
       title: "2：意見の投稿",
       image: "/images/EX2.png",
-      description: ""
+      description: "選んだ陣営がなぜいいと思ったかを投稿！"
     },
     {
       title: "3：相手の意見への評価",
       image: "/images/EX3.png",
-      description: ""
+      description: "相手の意見に評価をし、反論してみよう！"
     }
   ];
 
@@ -37,12 +43,41 @@ const AppGuide: React.FC = () => {
     }
   };
 
-  const handleFinish = (): void => {
-    // 任意のURLに遷移（例: アプリのメイン画面）
+  const handleFinish = async (): Promise<void> => {
+    const user = getCurrentUser();
+    if (user && user.user_type === "student") {
+      try {
+        await fetch(`http://localhost:5000/api/students/${user.id}/ex_flag`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ex_flag: 1 }),
+        });
+        // ローカルのユーザー情報も更新
+        const updated = { ...user, ex_flag: 1 };
+        localStorage.setItem("user", JSON.stringify(updated));
+        // 遷移先決定
+        if (location.state?.from === "mypage") {
+          navigate("/mypage");
+          return;
+        }
+        if (updated.camp_id) {
+          navigate("/dashboard");
+        } else {
+          navigate("/campselect");
+        }
+        return;
+      } catch (e) {
+        console.error("ex_flag 更新失敗", e);
+      }
+    }
+    if (location.state?.from === "mypage") {
+      navigate("/mypage");
+      return;
+    }
     navigate("/dashboard");
   };
 
-  const renderStepIndicator = (): JSX.Element => {
+  const renderStepIndicator = () => {
     return (
       <div className={styles.stepIndicator}>{steps.map((_, index) => (<div key={index} className={`${styles.stepDot} ${index === currentStep ? styles.active : styles.inactive}`} />))}</div>
     );

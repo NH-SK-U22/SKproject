@@ -114,8 +114,11 @@ const Login = () => {
                 localStorage.setItem("isLoggedIn", "true");
 
                 if (userType == "student") {
-                  // 学生の場合：既に陣営を選択していればダッシュボードへ、未選択なら陣営選択ページへ
-                  if (data.user.camp_id) {
+                  // 初回のみ説明ページへ
+                  if (data.user.ex_flag === 0) {
+                    navigate("/explanation");
+                  } else if (data.user.camp_id) {
+                    // 学生：陣営済ならダッシュボード、未選択なら陣営選択
                     navigate("/dashboard");
                   } else {
                     navigate("/campselect");

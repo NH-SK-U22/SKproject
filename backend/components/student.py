@@ -11,7 +11,7 @@ def get_students():
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point,
-                            camp_id, theme_color, user_color, blacklist_point, created_at 
+                            camp_id, theme_color, user_color, blacklist_point, created_at, ex_flag 
                      FROM students ORDER BY created_at DESC''')
         students = []
         for row in c.fetchall():
@@ -28,7 +28,8 @@ def get_students():
                 'theme_color': row[9],
                 'user_color': row[10],
                 'blacklist_point': row[11],
-                'created_at': row[12]
+                'created_at': row[12],
+                'ex_flag': row[13]
             })
         conn.close()
         
@@ -42,7 +43,7 @@ def get_student(student_id):
         conn = sqlite3.connect('database.db')
         c = conn.cursor()
         c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point,
-                            camp_id, theme_color, user_color, blacklist_point, created_at 
+                            camp_id, theme_color, user_color, blacklist_point, created_at, ex_flag 
                      FROM students WHERE student_id = ?''', (student_id,))
         student = c.fetchone()
         conn.close()
@@ -63,7 +64,8 @@ def get_student(student_id):
             'theme_color': student[9],
             'user_color': student[10],
             'blacklist_point': student[11],
-            'created_at': student[12]
+            'created_at': student[12],
+            'ex_flag': student[13]
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -195,6 +197,28 @@ def update_student_camp(student_id):
         conn.close()
         return jsonify({'status': 'success', 'message': '陣営設定が更新されました'})
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@student_o.route('/students/<int:student_id>/ex_flag', methods=['PATCH'])
+def update_student_ex_flag(student_id):
+    if not request.json:
+        return jsonify({'error': 'リクエストボディが必要です'}), 400
+    
+    if 'ex_flag' not in request.json:
+        return jsonify({'error': 'ex_flag が必要です'}), 400
+    
+    try:
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute('UPDATE students SET ex_flag = ? WHERE student_id = ?', (request.json['ex_flag'], student_id))
+        conn.commit()
+        affected = c.rowcount
+        conn.close()
+        if affected == 0:
+            return jsonify({'error': '学生が見つかりません'}), 404
+        return jsonify({'status': 'success', 'message': 'ex_flag を更新しました'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
