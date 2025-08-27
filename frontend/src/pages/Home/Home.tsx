@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
+import TeacherSidebar from "../../components/Sidebar/TeacherSidebar";
 import { useDebateTheme } from "../../context/DebateThemeContext";
 import Box from "@mui/material/Box";
+import { getCurrentUser } from "../../utils/auth";
 
 const Home: React.FC = () => {
   const { fetchTheme, theme } = useDebateTheme();
@@ -22,7 +24,11 @@ const Home: React.FC = () => {
   console.log();
   return (
     <Box display="flex">
-      <Sidebar />
+      {getCurrentUser()?.user_type === "teacher" ? (
+        <TeacherSidebar />
+      ) : (
+        <Sidebar />
+      )}
       <Box
         flex={1}
         p={3}
