@@ -86,8 +86,8 @@ def check_and_clear_expired_camps():
         
         time.sleep(300)
 
-camp_clear_thread = threading.Thread(target=check_and_clear_expired_camps, daemon=True)
-camp_clear_thread.start()
+# camp_clear_thread = threading.Thread(target=check_and_clear_expired_camps, daemon=True)
+# camp_clear_thread.start()
 
 app.register_blueprint(colorset_o)
 app.register_blueprint(signup_o)
