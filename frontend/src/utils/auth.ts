@@ -13,6 +13,7 @@ export interface User {
   user_color: string | null;
   blacklist_point: number;
   created_at: string;
+  ex_flag?: number;
 }
 
 // ユーザーがログインしているかチェックする

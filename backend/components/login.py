@@ -27,7 +27,7 @@ def login():
 
             # ユーザーを調べる
             c.execute('''SELECT student_id, school_id, class_id, number, name, user_type, sum_point, have_point, 
-                                camp_id, theme_color, user_color, blacklist_point, created_at 
+                                camp_id, theme_color, user_color, blacklist_point, created_at, ex_flag 
                          FROM students 
                          WHERE school_id = ? AND class_id = ? AND number = ? AND password = ? AND user_type = ?''',
                      (school_id, class_id, number, password, user_type))
@@ -51,7 +51,8 @@ def login():
                         'theme_color': user[9],
                         'user_color': user[10],
                         'blacklist_point': user[11],
-                        'created_at': user[12]
+                        'created_at': user[12],
+                        'ex_flag': user[13]
                     }
                 }), 200
             else:

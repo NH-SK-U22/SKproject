@@ -25,9 +25,17 @@ def init_db():
         user_color TEXT,
         ai_advice INTEGER DEFAULT 1,
         blacklist_point INTEGER DEFAULT 0,
+        ex_flag INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
         UNIQUE(school_id, class_id, number, user_type)
     )''')
+    
+    # students.ex_flag のマイグレーション（既存テーブルにカラム追加）
+    try:
+        c.execute('ALTER TABLE students ADD COLUMN ex_flag INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        # 既に存在する場合はスキップ
+        pass
     
     # sticky tableを作成
     c.execute('''CREATE TABLE IF NOT EXISTS sticky(
