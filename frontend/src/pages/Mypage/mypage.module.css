@@ -194,12 +194,13 @@ body {
 .tab_content {
   display: none;
   width: 90%;
-  height: 40%;
+  height: 45%;
   background-color: #ffffff;
   border: 2px solid #e6f9f6;
   border-radius: 16px;
   box-shadow: 0 6px 30px rgba(0, 230, 184, 0.1);
-  padding: 20px 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .tab_content.active {
@@ -208,10 +209,12 @@ body {
 
 /* スクロール領域 */
 .scrollArea {
-  max-height: 50vh;
+  height: 100%;
+  max-height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 20px;
+  padding: 20px 20px;
+  box-sizing: border-box;
 }
 
 /* 発言履歴用リスト */
@@ -224,7 +227,7 @@ body {
 
 .history_item {
   background: linear-gradient(135deg, #ffffff, #f8fffe);
-  /* margin-bottom: 12px; */
+  margin-bottom: 12px;
   padding: 16px;
   border: 2px solid #e6f9f6;
   border-radius: 12px;
@@ -233,6 +236,10 @@ body {
   color: #2d3748;
   transition: all 0.3s ease;
   border-left: 4px solid #00e6b8;
+}
+
+.history_item:last-child {
+  margin-bottom: 0;
 }
 
 .history_item:hover {
